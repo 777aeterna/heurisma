@@ -132,13 +132,150 @@ class TestRenderReport(unittest.TestCase):
             charts_path.write_text(json.dumps(SAMPLE_CHARTS), encoding="utf-8")
 
             res = subprocess.run(
-                [sys.executable, str(script_path), str(md_path), "--out", str(out_path), "--charts", str(charts_path)],
+                [sys.executable, "-B", str(script_path), str(md_path), "--out", str(out_path), "--charts", str(charts_path)],
                 capture_output=True,
                 text=True,
             )
             self.assertEqual(res.returncode, 0, msg=res.stderr)
             self.assertTrue(out_path.is_file())
             self.assertEqual(validate_report.validate_html(out_path), [])
+
+    def test_intext_citations_linked_and_references_ordered_by_appearance(self) -> None:
+        md = SAMPLE_MD.replace(
+            "Removing `T12` drops Pearson r from `+0.9804` to `-0.7742` (`[Strong]`), while full-sample Spearman rank correlation is already negative (`-0.3612`, `[Strong]`).",
+            "Removing `T12` drops Pearson r [@C2] while Spearman confirms the reversal [@C1; @C2] (`[Strong]`).",
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            appendix = Path(tmpdir) / "appendix"
+            appendix.mkdir()
+            (appendix / "sources.csv").write_text(
+                "claim_id,source_title,url,tier,accessed_date,data_as_of\n"
+                "C1,First CSV Source,https://example.org/c1,Tier 1,2026-11-20,2026-11\n"
+                "C2,Second CSV Source,https://example.org/c2,Tier 1,2026-11-20,2026-11\n",
+                encoding="utf-8",
+            )
+            rendered = render_report.render_html(md, charts=SAMPLE_CHARTS, appendix_dir=appendix)
+            self.assertNotIn("[@C2]", rendered)
+            self.assertNotIn("[@C1", rendered)
+            self.assertIn('<a href="#ref-1">[1]</a>', rendered)
+            self.assertIn('<a href="#ref-2">[2]</a>', rendered)
+            # C2 appeared first -> must be ref-1 before C1 (ref-2) in References
+            pos_c2 = rendered.find('id="ref-1"')
+            pos_c1 = rendered.find('id="ref-2"')
+            self.assertGreater(pos_c2, 0)
+            self.assertGreater(pos_c1, pos_c2)
+            self.assertLess(rendered.find("Second CSV Source"), rendered.find("First CSV Source"))
+
+    def test_spanish_localization_zero_english_chrome_and_lang_es(self) -> None:
+        es_md = """# Estudio del Dólar en Argentina
+
+> **Fecha de corte:** 2026-11-20 | **Nivel:** Nivel 2
+
+## 1. Resumen ejecutivo
+- **Veredicto calibrado:** `[Moderada]` El tipo de cambio real se apreció frente a su media histórica (`[Fuerte]`).
+- **Qué cambiaría esta conclusión:** Una reversión de flujos externos.
+
+## 2. Encuadre e hipótesis
+- **Hipótesis:**
+  - $H_0$: No hay apreciación sostenida.
+  - $H_1$: Existe apreciación sostenida.
+
+## 3. Metodología y estándares de evidencia
+- **Método:** Análisis reproducible en Python.
+
+## 4. Hallazgos
+La mediana proyectada muestra convergencia [@C1] (`[Moderada]`).
+
+{{fig:fan_es}}
+
+## 5. Contraevidencia y explicaciones alternativas
+La productividad sectorial puede elevar el tipo de cambio de equilibrio (`[Preliminar]`).
+
+## 6. Matriz de afirmaciones y evidencia
+| Afirmación | Disciplina | Evidencia | Confianza | Falsador |
+| :- | :- | :- | :- | :- |
+| Apreciación real | Macro | BCRA (Tier 1) | `[Fuerte]` | Cambio de régimen |
+| Convergencia 2027 | Proyección | Modelo (Tier 2) | `[Moderada]` | Shock externo |
+
+## 7. Limitaciones y preguntas abiertas
+- **Limitaciones:** Horizonte corto.
+"""
+        es_charts = [
+            {
+                "id": "fan_es",
+                "type": "fan",
+                "title": "Proyección del dólar",
+                "caption": "Bandas de simulación.",
+                "source": "BCRA",
+                "x": {"type": "date"},
+                "y": {"label": "ARS/USD"},
+                "quantiles": {
+                    "p10": [["2026-12", 1450], ["2027-12", 1600]],
+                    "p25": [["2026-12", 1500], ["2027-12", 1800]],
+                    "p50": [["2026-12", 1550], ["2027-12", 2050]],
+                    "p75": [["2026-12", 1620], ["2027-12", 2350]],
+                    "p90": [["2026-12", 1700], ["2027-12", 2800]],
+                },
+            }
+        ]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            appendix = Path(tmpdir) / "appendix"
+            appendix.mkdir()
+            (appendix / "sources.csv").write_text(
+                "claim_id,source_title,url,tier,accessed_date,data_as_of\n"
+                "C1,BCRA Serie A3500,https://api.bcra.gob.ar,Tier 1,2026-11-20,2026-11\n",
+                encoding="utf-8",
+            )
+            (appendix / "output.txt").write_text("ok\n", encoding="utf-8")
+            rendered = render_report.render_html(es_md, charts=es_charts, appendix_dir=appendix)
+            self.assertIn('<html lang="es">', rendered)
+            self.assertIn("Figura 1.", rendered)
+            self.assertIn("Nota:", rendered)
+            self.assertIn("Fuente:", rendered)
+            self.assertIn("Resumen", rendered)
+            self.assertIn("Referencias", rendered)
+            self.assertIn("Mediana (P50)", rendered)
+            for leaked in ("Figure ", "Note:", "Source:", "Abstract", "References", "Median (P50)"):
+                self.assertNotIn(leaked, rendered, f"English chrome leaked into Spanish HTML: {leaked!r}")
+
+    def test_latex_math_converted_without_breaking_currency(self) -> None:
+        md = SAMPLE_MD.replace(
+            "Removing `T12` drops Pearson r from `+0.9804` to `-0.7742` (`[Strong]`), while full-sample Spearman rank correlation is already negative (`-0.3612`, `[Strong]`).",
+            "Testing $H_0$ vs $H_1$ with $x^2$, $\\Delta \\le 5$, and $r = -0.77$ at prices $1.563 and $1,200–$1,400 ($1,200 to $1,400).",
+        )
+        rendered = render_report.render_html(md, charts=SAMPLE_CHARTS)
+        self.assertIn("H<sub>0</sub>", rendered)
+        self.assertIn("H<sub>1</sub>", rendered)
+        self.assertIn("x<sup>2</sup>", rendered)
+        self.assertIn("Δ ≤ 5", rendered)
+        self.assertNotIn("$H_0$", rendered)
+        self.assertNotIn("$x^2$", rendered)
+        # Currency MUST remain intact
+        self.assertIn("$1.563", rendered)
+        self.assertIn("$1,200–$1,400", rendered)
+        self.assertIn("$1,200 to $1,400", rendered)
+
+    def test_nested_lists_render_nested_ul(self) -> None:
+        rendered = render_report.render_html(SAMPLE_MD, charts=SAMPLE_CHARTS)
+        # SAMPLE_MD has 2-space indented - $H_0$ and - $H_1$ under - **Hypotheses:**
+        self.assertIn("<ul>\n<li>", rendered)
+        self.assertRegex(rendered, r"<li><strong>Hypotheses:</strong>\s*<ul>\s*<li>")
+
+    def test_abstract_not_duplicated_and_no_credit_flag(self) -> None:
+        rendered = render_report.render_html(SAMPLE_MD, charts=SAMPLE_CHARTS, no_credit=True)
+        # Verdict promoted to Abstract must appear only ONCE (not duplicated as first bullet of §1)
+        self.assertEqual(rendered.count("outlier artifact driven by"), 1)
+        self.assertNotIn("Prepared with Heurisma", rendered)
+
+    def test_numbers_json_placeholder_substitution(self) -> None:
+        md = SAMPLE_MD.replace("`-0.7742`", "`{{num:clean_r}}`")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            appendix = Path(tmpdir) / "appendix"
+            appendix.mkdir()
+            (appendix / "numbers.json").write_text(json.dumps({"clean_r": "-0.7742"}), encoding="utf-8")
+            rendered = render_report.render_html(md, charts=SAMPLE_CHARTS, appendix_dir=appendix)
+            self.assertNotIn("{{num:clean_r}}", rendered)
+            self.assertIn("-0.7742", rendered)
 
 
 if __name__ == "__main__":

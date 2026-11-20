@@ -85,8 +85,9 @@ def flag_outliers(vals: list[float]) -> list[int]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run Level 2 pair-programming audit and emit charts.json v2.")
+    parser = argparse.ArgumentParser(description="Run Level 2 pair-programming audit and emit charts.json v2 and numbers.json.")
     parser.add_argument("--charts-out", type=Path, default=None, help="Optional path to write charts.json v2.")
+    parser.add_argument("--numbers-out", type=Path, default=None, help="Optional path to write appendix/numbers.json.")
     args = parser.parse_args()
 
     rows = list(csv.DictReader(io.StringIO(RAW_CSV.strip())))
@@ -139,11 +140,24 @@ def main() -> None:
                 "y": {"label": "Bugs Fixed"},
                 "series": [
                     {"name": "Typical Teams (T01-T11)", "points": [[x[i], y[i]] for i in range(len(x)) if i not in outliers]},
-                    {"name": "Flagged Outlier (T12)", "points": [[x[i], y[i]] for i in outliers]},
                 ],
+                "highlight": {"x": x[outliers[0]], "y": y[outliers[0]], "label": f"{teams[outliers[0]]} (outlier)"},
             },
         ]
         args.charts_out.write_text(json.dumps(charts_v2, indent=2) + "\n", encoding="utf-8")
+
+    if args.numbers_out is not None:
+        numbers_payload = {
+            "n_full": len(x),
+            "n_clean": len(x_clean),
+            "full_r": f"{r_full:+.4f}",
+            "full_r_short": f"{r_full:+.2f}",
+            "full_rho": f"{rho_full:+.4f}",
+            "clean_r": f"{r_clean:+.4f}",
+            "clean_r_short": f"{r_clean:+.2f}",
+            "clean_rho": f"{rho_clean:+.4f}",
+        }
+        args.numbers_out.write_text(json.dumps(numbers_payload, indent=2) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

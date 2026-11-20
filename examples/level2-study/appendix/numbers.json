@@ -1,0 +1,10 @@
+{
+  "n_full": 12,
+  "n_clean": 11,
+  "full_r": "+0.9804",
+  "full_r_short": "+0.98",
+  "full_rho": "-0.3612",
+  "clean_r": "-0.7742",
+  "clean_r_short": "-0.77",
+  "clean_rho": "-0.7791"
+}

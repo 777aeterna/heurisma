@@ -2,10 +2,12 @@
 """Zero-dependency working-paper HTML + inline SVG renderer for Heurisma reports.
 
 Produces a lightweight, print-ready academic working-paper HTML5 document
-(serif typography, 700px single column, booktabs tables, sober small-caps
-epistemic tags, inline numbered {{fig:id}} SVG figures, auto-generated
-References from sources.csv, @media print A4 CSS, and strict appendix filtering
-excluding raw data/binaries and >200 KB files).
+(serif typography, 720px single column, booktabs tables, sober small-caps
+epistemic tags, inline numbered {{fig:id}} SVG figures, linked [@C1] citations
+ordered by appearance, full en/es localization, currency-safe inline LaTeX
+conversion, nested lists, deduplicated Abstract, {{num:key}} substitution,
+@media print A4 CSS, and strict appendix filtering excluding raw data/binaries
+and >200 KB files).
 """
 
 from __future__ import annotations
@@ -36,25 +38,187 @@ TAG_MAP: dict[str, tuple[str, str]] = {
     "[Especulativo]": ("tag-speculative", "especulativo"),
 }
 
+I18N: dict[str, dict[str, str]] = {
+    "en": {
+        "figure": "Figure",
+        "note": "Note:",
+        "source": "Source:",
+        "fig_data_preview": "Figure data preview",
+        "abstract": "Abstract",
+        "falsifier": "Falsifier:",
+        "references": "References",
+        "appendices": "Appendices &amp; Reproducible Artifacts",
+        "external_files": "External Data &amp; Large Files (Linked, Not Embedded)",
+        "external_artifact": "external artifact",
+        "additional_figures": "Additional Figures",
+        "credit": "Prepared with Heurisma",
+        "data_as_of": "data as of",
+        "accessed": "accessed",
+        "untitled_source": "Untitled source",
+        "group": "Group",
+        "label": "Label",
+        "value": "Value",
+    },
+    "es": {
+        "figure": "Figura",
+        "note": "Nota:",
+        "source": "Fuente:",
+        "fig_data_preview": "Ver datos de la figura",
+        "abstract": "Resumen",
+        "falsifier": "Falsador:",
+        "references": "Referencias",
+        "appendices": "Apéndices y artefactos reproducibles",
+        "external_files": "Datos externos y archivos grandes (enlazados, no incrustados)",
+        "external_artifact": "artefacto externo",
+        "additional_figures": "Figuras adicionales",
+        "credit": "Preparado con Heurisma",
+        "data_as_of": "datos al",
+        "accessed": "consultado",
+        "untitled_source": "Fuente sin título",
+        "group": "Grupo",
+        "label": "Etiqueta",
+        "value": "Valor",
+    },
+}
+
+LATEX_SYMBOLS: tuple[tuple[str, str], ...] = (
+    (r"\leq", "≤"),
+    (r"\le", "≤"),
+    (r"\geq", "≥"),
+    (r"\ge", "≥"),
+    (r"\neq", "≠"),
+    (r"\ne", "≠"),
+    (r"\times", "×"),
+    (r"\approx", "≈"),
+    (r"\pm", "±"),
+    (r"\Delta", "Δ"),
+    (r"\alpha", "α"),
+    (r"\beta", "β"),
+    (r"\rho", "ρ"),
+    (r"\sigma", "σ"),
+    (r"\mu", "μ"),
+    (r"\pi", "π"),
+    (r"\infty", "∞"),
+    (r"\cdot", "·"),
+    (r"\rightarrow", "→"),
+    (r"\to", "→"),
+)
+
 MAX_APPENDIX_FILE_BYTES = 200 * 1024
-ALLOWED_APPENDIX_FILES = {"output.txt", "sources.csv", "data_attempts.csv", "README.md"}
+ALLOWED_APPENDIX_FILES = {"output.txt", "sources.csv", "data_attempts.csv", "README.md", "numbers.json"}
 FIG_MARKER_RE = re.compile(r"^\{\{fig:([A-Za-z0-9_-]+)\}\}$")
+NUM_MARKER_RE = re.compile(r"\{\{num:([A-Za-z0-9_.-]+)\}\}")
 NUMERIC_CELL_RE = re.compile(r"^[+\-−]?\s*[$€%]?\s*[\d.,]+(?:\s*[%x×])?$")
+INLINE_MATH_RE = re.compile(r"(?<!\\)\$(?!\s)(?!\d[\d.,]*(?:\s|$|[^\\_^=a-zA-Z]))([^$\n]+?)(?<!\s)\$")
+CITE_GROUP_RE = re.compile(r"\[(@[A-Za-z0-9_.-]+(?:\s*[;,]\s*@[A-Za-z0-9_.-]+)*)\]")
+VERDICT_LINE_RE = re.compile(
+    r"^\s*[-*]\s*\*{0,2}(?:Calibrated Verdict|Veredicto calibrado)\s*:\*{0,2}\s*(.+)$",
+    re.IGNORECASE,
+)
+ABSTRACT_QUOTE_RE = re.compile(
+    r"^>\s*\*{0,2}(?:Abstract|Resumen)\s*:\*{0,2}\s*(.+)$",
+    re.IGNORECASE,
+)
 
 
-def _format_inline(text: str) -> str:
+def detect_language(report_md: str, lang: str = "auto") -> str:
+    """Resolve report language ('en' or 'es') from explicit flag or Spanish section headings."""
+    if lang and lang.lower() in ("en", "es"):
+        return lang.lower()
+    if re.search(
+        r"^##\s+(?:1\.\s+Resumen\s+ejecutivo|4\.\s+Hallazgos|6\.\s+Matriz\s+de\s+afirmaciones|7\.\s+Limitaciones)\b",
+        report_md,
+        flags=re.MULTILINE | re.IGNORECASE,
+    ):
+        return "es"
+    return "en"
+
+
+def _convert_math_expr(expr: str) -> str:
+    out = expr
+    for cmd, sym in LATEX_SYMBOLS:
+        out = re.sub(re.escape(cmd) + r"(?![A-Za-z])", sym, out)
+    out = re.sub(r"_\{([^}]+)\}", r"<sub>\1</sub>", out)
+    out = re.sub(r"_([A-Za-z0-9]+)", r"<sub>\1</sub>", out)
+    out = re.sub(r"\^\{([^}]+)\}", r"<sup>\1</sup>", out)
+    out = re.sub(r"\^([A-Za-z0-9+-]+)", r"<sup>\1</sup>", out)
+    return out
+
+
+class _CitationTracker:
+    """Tracks [@claim_id] citations in order of appearance against sources.csv."""
+
+    def __init__(self, sources: list[dict[str, str]]) -> None:
+        self.sources = sources
+        self.by_id: dict[str, dict[str, str]] = {}
+        for row in sources:
+            cid = (row.get("claim_id") or "").strip()
+            if cid and cid not in self.by_id:
+                self.by_id[cid] = row
+        self.order: list[str] = []
+        self.num_by_id: dict[str, int] = {}
+
+    def cite_match(self, match: re.Match[str]) -> str:
+        raw_group = match.group(1)
+        tokens = [t.strip().lstrip("@") for t in re.split(r"\s*[;,]\s*", raw_group) if t.strip()]
+        rendered: list[str] = []
+        for cid in tokens:
+            if cid in self.by_id:
+                if cid not in self.num_by_id:
+                    self.order.append(cid)
+                    self.num_by_id[cid] = len(self.order)
+                num = self.num_by_id[cid]
+                rendered.append(f'<a href="#ref-{num}">[{num}]</a>')
+            else:
+                rendered.append(f"[@{html.escape(cid)}]")
+        return ", ".join(rendered)
+
+
+def _load_sources(appendix_dir: Path | None) -> list[dict[str, str]]:
+    if appendix_dir is None:
+        return []
+    src_csv = appendix_dir / "sources.csv"
+    if not src_csv.is_file():
+        return []
+    try:
+        with src_csv.open(encoding="utf-8", newline="") as fh:
+            return list(csv.DictReader(fh))
+    except OSError:
+        return []
+
+
+def _format_inline(text: str, tracker: _CitationTracker | None = None) -> str:
     escaped = html.escape(text)
+    # Strip backticks around canonical epistemic tags so they render as small-caps tags
     escaped = re.sub(
         r"`(\[(?:Strong|Moderate|Preliminary|Speculative|Fuerte|Moderada|Moderado|Preliminar|Especulativa|Especulativo)\])`",
         r"\1",
         escaped,
     )
+
+    # Protect inline code spans from math/emphasis/citation transformations
+    code_spans: list[str] = []
+
+    def _stash_code(m: re.Match[str]) -> str:
+        idx = len(code_spans)
+        code_spans.append(f"<code>{m.group(1)}</code>")
+        return f"\x00CODE{idx}\x00"
+
+    escaped = re.sub(r"`([^`]+)`", _stash_code, escaped)
+
+    # Convert inline LaTeX math ($H_0$, $x^2$, $\Delta$) while preserving currency ($1.563, $1,200-$1,400)
+    escaped = INLINE_MATH_RE.sub(lambda m: _convert_math_expr(m.group(1)), escaped)
+
+    # Convert in-text citations [@C1] / [@C1; @C2]
+    if tracker is not None:
+        escaped = CITE_GROUP_RE.sub(tracker.cite_match, escaped)
+
     for raw_tag, (css_cls, label) in TAG_MAP.items():
         escaped = escaped.replace(
             raw_tag,
             f'<span class="ep-tag {css_cls}">[{label}]</span>',
         )
-    escaped = re.sub(r"`([^`]+)`", r"<code>\1</code>", escaped)
+
     escaped = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", escaped)
     escaped = re.sub(r"\*([^*]+)\*", r"<em>\1</em>", escaped)
     escaped = re.sub(
@@ -62,13 +226,18 @@ def _format_inline(text: str) -> str:
         lambda m: f'<a href="{m.group(2)}">{m.group(1)}</a>',
         escaped,
     )
+
+    for idx, code_html in enumerate(code_spans):
+        escaped = escaped.replace(f"\x00CODE{idx}\x00", code_html)
+
     return escaped
 
 
-def _extract_metadata(report_md: str) -> tuple[str, str, str, str]:
+def _extract_metadata(report_md: str) -> tuple[str, str, str, str, bool]:
     title = "Heurisma Working Paper"
     meta_line = ""
-    verdict = ""
+    abstract_text = ""
+    explicit_abstract = False
     change = ""
     for line in report_md.splitlines():
         s = line.strip()
@@ -76,20 +245,29 @@ def _extract_metadata(report_md: str) -> tuple[str, str, str, str]:
             title = s[2:].strip()
         elif s.startswith("> ") and ("As-Of" in s or "Fecha" in s or "Depth" in s or "Nivel" in s):
             meta_line = s[2:].strip()
-    vm = re.search(r"(?:Calibrated Verdict|Veredicto calibrado)\s*:\**\s*(.+)", report_md, re.IGNORECASE)
-    if vm:
-        verdict = vm.group(1).strip()
+        else:
+            am = ABSTRACT_QUOTE_RE.match(s)
+            if am and not abstract_text:
+                abstract_text = am.group(1).strip()
+                explicit_abstract = True
+
+    if not abstract_text:
+        vm = re.search(r"(?:Calibrated Verdict|Veredicto calibrado)\s*:\**\s*(.+)", report_md, re.IGNORECASE)
+        if vm:
+            abstract_text = vm.group(1).strip()
+
     cm = re.search(r"(?:What Would Change[^:]*|Qu[eé] cambiar[ií]a[^:]*)\s*:\**\s*(.+)", report_md, re.IGNORECASE)
     if cm:
         change = cm.group(1).strip()
-    return title, meta_line, verdict, change
+
+    return title, meta_line, abstract_text, change, explicit_abstract
 
 
-def _chart_data_table(chart: dict[str, Any]) -> str:
+def _chart_data_table(chart: dict[str, Any], i18n: dict[str, str]) -> str:
     """Compact collapsible data preview for figure accessibility."""
     rows: list[str] = []
     if chart.get("groups") and chart.get("series"):
-        headers = ["Group"] + [str(s.get("name", "")) for s in chart["series"]]
+        headers = [i18n["group"]] + [str(s.get("name", "")) for s in chart["series"]]
         rows.append("<tr>" + "".join(f"<th>{html.escape(h)}</th>" for h in headers) + "</tr>")
         for idx, g in enumerate(chart["groups"]):
             vals = [str((s.get("values") or [""])[idx]) if idx < len(s.get("values") or []) else "" for s in chart["series"]]
@@ -99,7 +277,7 @@ def _chart_data_table(chart: dict[str, Any]) -> str:
                 + "</tr>"
             )
     elif chart.get("series") and "value" in (chart["series"][0] if chart["series"] else {}):
-        rows.append("<tr><th>Label</th><th>Value</th></tr>")
+        rows.append(f"<tr><th>{i18n['label']}</th><th>{i18n['value']}</th></tr>")
         for s in chart["series"]:
             rows.append(f'<tr><td>{html.escape(str(s.get("label", "")))}</td><td class="num">{html.escape(str(s.get("value", "")))}</td></tr>')
     elif chart.get("series"):
@@ -112,27 +290,34 @@ def _chart_data_table(chart: dict[str, Any]) -> str:
     if len(rows) < 2:
         return ""
     return (
-        '<details class="fig-data"><summary>Figure data preview</summary>'
+        f'<details class="fig-data"><summary>{i18n["fig_data_preview"]}</summary>'
         f'<table class="booktabs compact"><thead>{rows[0]}</thead><tbody>{"".join(rows[1:])}</tbody></table></details>'
     )
 
 
-def _build_figure_html(chart: dict[str, Any], fig_num: int) -> str:
-    title = html.escape(str(chart.get("title", f"Figure {fig_num}")))
+def _build_figure_html(
+    chart: dict[str, Any],
+    fig_num: int,
+    *,
+    lang: str,
+    i18n: dict[str, str],
+    tracker: _CitationTracker | None = None,
+) -> str:
+    title = html.escape(str(chart.get("title", f"{i18n['figure']} {fig_num}")))
     caption = str(chart.get("caption", "")).strip()
     source = str(chart.get("source", "")).strip()
-    svg = svg_charts.render_chart_svg(chart)
+    svg = svg_charts.render_chart_svg(chart, lang=lang)
     parts = [f'<figure class="paper-fig" id="fig-{fig_num}">']
-    parts.append(f'<div class="fig-title"><strong>Figure {fig_num}.</strong> {title}</div>')
+    parts.append(f'<div class="fig-title"><strong>{i18n["figure"]} {fig_num}.</strong> {title}</div>')
     parts.append(svg)
     note_bits: list[str] = []
     if caption:
-        note_bits.append(f"<em>Note:</em> {_format_inline(caption)}")
+        note_bits.append(f"<em>{i18n['note']}</em> {_format_inline(caption, tracker)}")
     if source:
-        note_bits.append(f"<em>Source:</em> {_format_inline(source)}")
+        note_bits.append(f"<em>{i18n['source']}</em> {_format_inline(source, tracker)}")
     if note_bits:
         parts.append(f'<figcaption>{" ".join(note_bits)}</figcaption>')
-    parts.append(_chart_data_table(chart))
+    parts.append(_chart_data_table(chart, i18n))
     parts.append("</figure>")
     return "\n".join(parts)
 
@@ -140,6 +325,11 @@ def _build_figure_html(chart: dict[str, Any], fig_num: int) -> str:
 def _markdown_to_paper_html(
     report_md: str,
     charts_by_id: dict[str, dict[str, Any]],
+    *,
+    lang: str,
+    i18n: dict[str, str],
+    tracker: _CitationTracker | None,
+    skip_verdict_bullet: bool,
 ) -> tuple[str, set[str], int]:
     lines = report_md.splitlines()
     out: list[str] = []
@@ -148,16 +338,17 @@ def _markdown_to_paper_html(
 
     in_code = False
     code_buf: list[str] = []
-    in_list = False
+    list_stack: list[int] = []
     in_table = False
     table_buf: list[str] = []
     skipped_h1 = False
+    verdict_skipped = False
 
     def flush_list() -> None:
-        nonlocal in_list
-        if in_list:
+        while list_stack:
+            out.append("</li>")
             out.append("</ul>")
-            in_list = False
+            list_stack.pop()
 
     def flush_table() -> None:
         nonlocal in_table, table_buf
@@ -166,7 +357,7 @@ def _markdown_to_paper_html(
         rows = [[c.strip() for c in r.strip().strip("|").split("|")] for r in table_buf]
         out.append('<div class="table-wrap"><table class="booktabs">')
         if rows:
-            out.append("<thead><tr>" + "".join(f"<th>{_format_inline(c)}</th>" for c in rows[0]) + "</tr></thead>")
+            out.append("<thead><tr>" + "".join(f"<th>{_format_inline(c, tracker)}</th>" for c in rows[0]) + "</tr></thead>")
             out.append("<tbody>")
             for row in rows[1:]:
                 if all(re.fullmatch(r":?-{1,}:?", c.replace(" ", "")) for c in row):
@@ -175,7 +366,7 @@ def _markdown_to_paper_html(
                 for c in row:
                     clean_c = c.strip("`*")
                     cls = ' class="num"' if NUMERIC_CELL_RE.match(clean_c) else ""
-                    tds.append(f"<td{cls}>{_format_inline(c)}</td>")
+                    tds.append(f"<td{cls}>{_format_inline(c, tracker)}</td>")
                 out.append("<tr>" + "".join(tds) + "</tr>")
             out.append("</tbody>")
         out.append("</table></div>")
@@ -208,7 +399,7 @@ def _markdown_to_paper_html(
             if fid in charts_by_id:
                 fig_counter += 1
                 placed_ids.add(fid)
-                out.append(_build_figure_html(charts_by_id[fid], fig_counter))
+                out.append(_build_figure_html(charts_by_id[fid], fig_counter, lang=lang, i18n=i18n, tracker=tracker))
             continue
 
         if stripped.startswith("|") and stripped.endswith("|"):
@@ -226,25 +417,46 @@ def _markdown_to_paper_html(
         if stripped.startswith("# ") and not skipped_h1:
             skipped_h1 = True
             continue
-        if stripped.startswith("> ") and ("As-Of" in stripped or "Fecha" in stripped or "Depth" in stripped):
+        if stripped.startswith("> ") and ("As-Of" in stripped or "Fecha" in stripped or "Depth" in stripped or "Nivel" in stripped):
             continue
+        if ABSTRACT_QUOTE_RE.match(stripped):
+            continue
+
         if stripped.startswith("## "):
             flush_list()
-            out.append(f"<h2>{_format_inline(stripped[3:].strip())}</h2>")
+            out.append(f"<h2>{_format_inline(stripped[3:].strip(), tracker)}</h2>")
         elif stripped.startswith("### "):
             flush_list()
-            out.append(f"<h3>{_format_inline(stripped[4:].strip())}</h3>")
+            out.append(f"<h3>{_format_inline(stripped[4:].strip(), tracker)}</h3>")
         elif stripped.startswith("> "):
             flush_list()
-            out.append(f"<blockquote>{_format_inline(stripped[2:].strip())}</blockquote>")
-        elif re.match(r"^[-*]\s+", stripped):
-            if not in_list:
+            out.append(f"<blockquote>{_format_inline(stripped[2:].strip(), tracker)}</blockquote>")
+        elif re.match(r"^\s*[-*]\s+", line):
+            if skip_verdict_bullet and not verdict_skipped and VERDICT_LINE_RE.match(line):
+                verdict_skipped = True
+                continue
+            m = re.match(r"^(\s*)[-*]\s+(.*)$", line)
+            indent = len(m.group(1).expandtabs(4)) if m else 0
+            item_text = m.group(2).strip() if m else stripped[2:].strip()
+
+            if not list_stack:
                 out.append("<ul>")
-                in_list = True
-            out.append(f"<li>{_format_inline(re.sub(r'^[-*]\s+', '', stripped))}</li>")
+                list_stack.append(indent)
+                out.append(f"<li>{_format_inline(item_text, tracker)}")
+            elif indent > list_stack[-1]:
+                out.append("<ul>")
+                list_stack.append(indent)
+                out.append(f"<li>{_format_inline(item_text, tracker)}")
+            else:
+                while len(list_stack) > 1 and indent < list_stack[-1]:
+                    out.append("</li>")
+                    out.append("</ul>")
+                    list_stack.pop()
+                out.append("</li>")
+                out.append(f"<li>{_format_inline(item_text, tracker)}")
         else:
             flush_list()
-            out.append(f"<p>{_format_inline(stripped)}</p>")
+            out.append(f"<p>{_format_inline(stripped, tracker)}</p>")
 
     flush_list()
     flush_table()
@@ -254,37 +466,55 @@ def _markdown_to_paper_html(
     return "\n".join(out), placed_ids, fig_counter
 
 
-def _render_references(appendix_dir: Path | None) -> str:
-    if appendix_dir is None:
+def _render_references(tracker: _CitationTracker, i18n: dict[str, str]) -> str:
+    if not tracker.sources:
         return ""
-    src_csv = appendix_dir / "sources.csv"
-    if not src_csv.is_file():
-        return ""
+
+    ordered_rows: list[tuple[int, dict[str, str]]] = []
+    emitted_ids: set[str] = set()
+    for cid in tracker.order:
+        if cid in tracker.by_id:
+            ordered_rows.append((tracker.num_by_id[cid], tracker.by_id[cid]))
+            emitted_ids.add(cid)
+
+    next_num = len(ordered_rows) + 1
+    for row in tracker.sources:
+        cid = (row.get("claim_id") or "").strip()
+        if cid and cid in emitted_ids:
+            continue
+        ordered_rows.append((next_num, row))
+        next_num += 1
+
     items: list[str] = []
-    try:
-        with src_csv.open(encoding="utf-8", newline="") as fh:
-            for idx, row in enumerate(csv.DictReader(fh), start=1):
-                title = html.escape((row.get("source_title") or "Untitled source").strip())
-                url = (row.get("url") or "").strip()
-                tier = html.escape((row.get("tier") or "").strip())
-                accessed = html.escape((row.get("accessed_date") or "").strip())
-                as_of = html.escape((row.get("data_as_of") or "").strip())
-                url_html = (
-                    f' <a href="{html.escape(url)}">{html.escape(url)}</a>'
-                    if url.startswith(("http://", "https://"))
-                    else (f" <code>{html.escape(url)}</code>" if url else "")
-                )
-                meta = ", ".join(x for x in (tier, f"data as of {as_of}" if as_of else "", f"accessed {accessed}" if accessed else "") if x)
-                items.append(f"<li><strong>[{idx}]</strong> {title}.{url_html} ({meta})</li>")
-    except OSError:
-        return ""
+    for num, row in ordered_rows:
+        title = html.escape((row.get("source_title") or i18n["untitled_source"]).strip())
+        url = (row.get("url") or "").strip()
+        tier = html.escape((row.get("tier") or "").strip())
+        accessed = html.escape((row.get("accessed_date") or "").strip())
+        as_of = html.escape((row.get("data_as_of") or "").strip())
+        url_html = (
+            f' <a href="{html.escape(url)}">{html.escape(url)}</a>'
+            if url.startswith(("http://", "https://"))
+            else (f" <code>{html.escape(url)}</code>" if url else "")
+        )
+        meta = ", ".join(
+            x
+            for x in (
+                tier,
+                f"{i18n['data_as_of']} {as_of}" if as_of else "",
+                f"{i18n['accessed']} {accessed}" if accessed else "",
+            )
+            if x
+        )
+        items.append(f'<li id="ref-{num}"><strong>[{num}]</strong> {title}.{url_html} ({meta})</li>')
+
     if not items:
         return ""
-    return '<section class="references"><h2>References</h2><ol class="ref-list">' + "".join(items) + "</ol></section>"
+    return f'<section class="references"><h2>{i18n["references"]}</h2><ol class="ref-list">' + "".join(items) + "</ol></section>"
 
 
-def _render_appendices(appendix_dir: Path | None) -> str:
-    """Embed ONLY small (.py, output.txt, sources.csv, data_attempts.csv <=200KB); link raw data/binaries."""
+def _render_appendices(appendix_dir: Path | None, i18n: dict[str, str]) -> str:
+    """Embed ONLY small (.py, output.txt, sources.csv, data_attempts.csv, numbers.json <=200KB); link raw data/binaries."""
     if appendix_dir is None or not appendix_dir.is_dir():
         return ""
     embedded: list[str] = []
@@ -307,14 +537,17 @@ def _render_appendices(appendix_dir: Path | None) -> str:
                 f"<pre><code>{content}</code></pre></details>"
             )
         else:
-            linked.append(f'<li><a href="appendix/{rel_str}"><code>appendix/{rel_str}</code></a> ({size:,} bytes — external artifact)</li>')
+            linked.append(
+                f'<li><a href="appendix/{rel_str}"><code>appendix/{rel_str}</code></a> '
+                f'({size:,} bytes — {i18n["external_artifact"]})</li>'
+            )
 
     if not embedded and not linked:
         return ""
-    parts = ['<section class="appendices"><h2>Appendices &amp; Reproducible Artifacts</h2>']
+    parts = [f'<section class="appendices"><h2>{i18n["appendices"]}</h2>']
     parts.extend(embedded)
     if linked:
-        parts.append('<h3>External Data &amp; Large Files (Linked, Not Embedded)</h3><ul>' + "".join(linked) + "</ul>")
+        parts.append(f'<h3>{i18n["external_files"]}</h3><ul>' + "".join(linked) + "</ul>")
     parts.append("</section>")
     return "\n".join(parts)
 
@@ -324,9 +557,34 @@ def render_html(
     *,
     charts: list[dict[str, Any]] | None = None,
     appendix_dir: Path | None = None,
+    lang: str = "auto",
+    no_credit: bool = False,
+    numbers: dict[str, Any] | None = None,
 ) -> str:
     """Render a Heurisma Markdown report into a print-ready working-paper HTML5 document."""
-    title, meta_line, verdict, change = _extract_metadata(report_md)
+    resolved_lang = detect_language(report_md, lang)
+    i18n = I18N[resolved_lang]
+
+    # Substitute {{num:key}} placeholders from explicit numbers dict or appendix/numbers.json
+    nums: dict[str, Any] = {}
+    if appendix_dir is not None and (appendix_dir / "numbers.json").is_file():
+        try:
+            loaded = json.loads((appendix_dir / "numbers.json").read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                nums.update(loaded)
+        except (OSError, json.JSONDecodeError):
+            pass
+    if numbers:
+        nums.update(numbers)
+    if nums:
+        report_md = NUM_MARKER_RE.sub(
+            lambda m: str(nums[m.group(1)]) if m.group(1) in nums else m.group(0),
+            report_md,
+        )
+
+    title, meta_line, abstract_text, change, explicit_abstract = _extract_metadata(report_md)
+    sources = _load_sources(appendix_dir)
+    tracker = _CitationTracker(sources)
 
     charts_list = charts or []
     charts_by_id: dict[str, dict[str, Any]] = {}
@@ -334,7 +592,30 @@ def render_html(
         cid = str(ch.get("id") or f"fig_{idx + 1}")
         charts_by_id[cid] = ch
 
-    body_html, placed_ids, fig_counter = _markdown_to_paper_html(report_md, charts_by_id)
+    # Render Abstract first so any citations in Abstract get numbered first
+    abstract_html = ""
+    if abstract_text:
+        change_p = (
+            f'<p class="abstract-change"><strong>{i18n["falsifier"]}</strong> {_format_inline(change, tracker)}</p>'
+            if change
+            else ""
+        )
+        abstract_html = (
+            '<section class="abstract">'
+            f'<div class="abstract-label">{i18n["abstract"]}</div>'
+            f"<p>{_format_inline(abstract_text, tracker)}</p>"
+            f"{change_p}"
+            "</section>"
+        )
+
+    body_html, placed_ids, fig_counter = _markdown_to_paper_html(
+        report_md,
+        charts_by_id,
+        lang=resolved_lang,
+        i18n=i18n,
+        tracker=tracker,
+        skip_verdict_bullet=(bool(abstract_text) and not explicit_abstract),
+    )
 
     # Unplaced charts go to Additional Figures appendix (never dumped at the top)
     extra_figs: list[str] = []
@@ -342,31 +623,21 @@ def render_html(
         cid = str(ch.get("id") or f"fig_{idx + 1}")
         if cid not in placed_ids:
             fig_counter += 1
-            extra_figs.append(_build_figure_html(ch, fig_counter))
+            extra_figs.append(_build_figure_html(ch, fig_counter, lang=resolved_lang, i18n=i18n, tracker=tracker))
     extra_figs_html = (
-        '<section class="extra-figures"><h2>Additional Figures</h2>' + "\n".join(extra_figs) + "</section>"
+        f'<section class="extra-figures"><h2>{i18n["additional_figures"]}</h2>' + "\n".join(extra_figs) + "</section>"
         if extra_figs
         else ""
     )
 
-    refs_html = _render_references(appendix_dir)
-    appendices_html = _render_appendices(appendix_dir)
+    refs_html = _render_references(tracker, i18n)
+    appendices_html = _render_appendices(appendix_dir, i18n)
 
-    abstract_html = ""
-    if verdict:
-        change_p = f'<p class="abstract-change"><strong>Falsifier:</strong> {_format_inline(change)}</p>' if change else ""
-        abstract_html = (
-            '<section class="abstract">'
-            '<div class="abstract-label">Abstract</div>'
-            f"<p>{_format_inline(verdict)}</p>"
-            f"{change_p}"
-            "</section>"
-        )
-
-    meta_html = f'<p class="meta-line">{_format_inline(meta_line)} &middot; Prepared with Heurisma</p>' if meta_line else '<p class="meta-line">Prepared with Heurisma</p>'
+    meta_html = f'<p class="meta-line">{_format_inline(meta_line, tracker)}</p>' if meta_line else ""
+    footer_html = f'<footer class="paper-footer">{i18n["credit"]}</footer>' if not no_credit else ""
 
     return f"""<!DOCTYPE html>
-<html lang="en">
+<html lang="{resolved_lang}">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -401,6 +672,7 @@ def render_html(
     }}
     h3 {{ font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; page-break-after: avoid; }}
     p, li {{ margin: 0.45rem 0; }}
+    ul ul {{ margin-top: 0.25rem; margin-bottom: 0.25rem; padding-left: 1.35rem; }}
     a {{ color: var(--accent); text-decoration: none; }}
     a:hover {{ text-decoration: underline; }}
     .ep-tag {{
@@ -421,9 +693,9 @@ def render_html(
     table.booktabs thead th {{ border-bottom: 1px solid var(--rule-dark); font-weight: 700; }}
     table.booktabs td.num {{ text-align: right; white-space: nowrap; }}
     table.booktabs.compact {{ font-size: 0.8rem; margin-top: 0.5rem; }}
-    figure.paper-fig {{ margin: 1.75rem 0; page-break-inside: avoid; }}
-    .fig-title {{ font-size: 0.95rem; margin-bottom: 0.4rem; color: var(--text); }}
-    figcaption {{ font-size: 0.84rem; color: var(--muted); margin-top: 0.45rem; line-height: 1.4; }}
+    figure.paper-fig {{ margin: 1.5rem 0; page-break-inside: avoid; }}
+    .fig-title {{ font-size: 0.95rem; margin-bottom: 0.35rem; color: var(--text); }}
+    figcaption {{ font-size: 0.84rem; color: var(--muted); margin-top: 0.35rem; line-height: 1.4; }}
     details.fig-data, details.appendix-item {{
       margin-top: 0.5rem; font-size: 0.85rem; border-top: 1px solid var(--rule); padding-top: 0.35rem;
     }}
@@ -433,6 +705,10 @@ def render_html(
     ol.ref-list {{ list-style: none; padding-left: 0; font-size: 0.86rem; line-height: 1.45; }}
     ol.ref-list li {{ margin: 0.4rem 0; }}
     blockquote {{ border-left: 2.5px solid var(--rule); margin: 1rem 0; padding-left: 1rem; color: var(--muted); }}
+    footer.paper-footer {{
+      margin-top: 3rem; padding-top: 0.75rem; border-top: 1px solid var(--rule);
+      font-size: 0.8rem; color: var(--muted); font-family: system-ui, -apple-system, sans-serif;
+    }}
     @page {{ size: A4; margin: 2.2cm; }}
     @media print {{
       body {{ font-size: 11pt; }}
@@ -446,7 +722,7 @@ def render_html(
 <body>
   <article class="paper">
     <header class="title-block">
-      <h1>{_format_inline(title)}</h1>
+      <h1>{_format_inline(title, tracker)}</h1>
       {meta_html}
     </header>
     {abstract_html}
@@ -454,6 +730,7 @@ def render_html(
     {extra_figs_html}
     {refs_html}
     {appendices_html}
+    {footer_html}
   </article>
 </body>
 </html>
@@ -466,6 +743,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, required=True, help="Output HTML file path.")
     parser.add_argument("--charts", type=Path, default=None, help="Optional JSON file defining charts (v2 or v1 schema).")
     parser.add_argument("--appendix", type=Path, default=None, help="Optional appendix/ directory for References & small code/output appendices.")
+    parser.add_argument("--lang", choices=("auto", "en", "es"), default="auto", help="Output chrome language (default: auto-detected from headings).")
+    parser.add_argument("--no-credit", action="store_true", help="Omit the Heurisma footer credit.")
+    parser.add_argument("--numbers", type=Path, default=None, help="Optional JSON file mapping {{num:key}} placeholders to values.")
     args = parser.parse_args(argv)
 
     if not args.report_path.is_file():
@@ -479,8 +759,22 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         charts_data = json.loads(args.charts.read_text(encoding="utf-8"))
 
+    numbers_data = None
+    if args.numbers is not None:
+        if not args.numbers.is_file():
+            print(f"Error: Numbers JSON not found: {args.numbers}", file=sys.stderr)
+            return 1
+        numbers_data = json.loads(args.numbers.read_text(encoding="utf-8"))
+
     report_md = args.report_path.read_text(encoding="utf-8")
-    rendered = render_html(report_md, charts=charts_data, appendix_dir=args.appendix)
+    rendered = render_html(
+        report_md,
+        charts=charts_data,
+        appendix_dir=args.appendix,
+        lang=args.lang,
+        no_credit=args.no_credit,
+        numbers=numbers_data,
+    )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(rendered, encoding="utf-8")
     print(f"Rendered Heurisma working-paper HTML: {args.out} ({len(rendered.encode('utf-8')):,} bytes)")

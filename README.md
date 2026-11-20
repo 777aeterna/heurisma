@@ -10,7 +10,7 @@
   <a href="https://github.com/777aeterna/heurisma/actions/workflows/validate-skill.yml">
     <img src="https://github.com/777aeterna/heurisma/actions/workflows/validate-skill.yml/badge.svg" alt="CI Validation" />
   </a>
-  <img src="https://img.shields.io/badge/Version-v0.3.0-0072B2?style=flat-square" alt="Version v0.3.0" />
+  <img src="https://img.shields.io/badge/Version-v0.4.0-0072B2?style=flat-square" alt="Version v0.4.0" />
   <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=flat-square" alt="License: MIT" />
   <img src="https://img.shields.io/badge/Agent_Skills-Spec_Compliant-22D3EE?style=flat-square" alt="Agent Skills Spec" />
   <img src="https://img.shields.io/badge/Cross--Runtime-Antigravity_%7C_Claude_%7C_Codex_%7C_Gemini-0F172A?style=flat-square" alt="Cross-Runtime" />
@@ -25,7 +25,7 @@ Conventional **Deep Research** tools are primarily *retrieval and summarization 
 
 **Heurisma** (from Greek *heuriskein*, "to discover") forces an AI agent to **think and publish like a scientist**:
 
-| Dimension | Conventional Deep Research | Heurisma (`v0.3.0`) |
+| Dimension | Conventional Deep Research | Heurisma (`v0.4.0`) |
 | :--- | :--- | :--- |
 | **Before Searching** | Launches queries immediately | **Pre-Search Gate:** classifies scientific branch(es), `As-Of Date`, evidence standards, and depth level (`Level 0–3`) first |
 | **Hypotheses & Forecasts** | Implicit narrative confirmation | Explicit **$H_0$ / $H_1$ falsifiable hypotheses** + multi-scenario forecasting (*identities ≠ forecasts*) |
@@ -63,9 +63,10 @@ flowchart TD
 - **[`references/adversarial-review.md`](skills/heurisma/references/adversarial-review.md):** Self-falsification checklist, **Reviewer #2** prompt template, mandatory Disposition Table (EN/ES), and primary verification rule.
 - **[`references/scientific-writing.md`](skills/heurisma/references/scientific-writing.md):** Epistemic calibration scale, 100% English and 100% Spanish contracts, and `charts.json` v2 specification.
 - **[`references/example-report.md`](skills/heurisma/references/example-report.md):** Compact gold-standard working-paper reference example.
-- **[`scripts/svg_charts.py`](skills/heurisma/scripts/svg_charts.py):** Zero-dependency publication SVG engine (Heckbert ticks, calendar-year date axes, Okabe-Ito palette + print dash styles, automatic >30-pt marker hiding, `bands`, `annotations`, `fan` charts, grouped `bar`, safe `log` scale).
-- **[`scripts/render_report.py`](skills/heurisma/scripts/render_report.py):** Zero-dependency working-paper HTML renderer (serif typography, 720px column, booktabs tables, small-caps tags, inline `{{fig:id}}` figures, auto-generated References, `@media print` A4 rules, and strict appendix filtering excluding raw data/binaries).
-- **[`scripts/validate_report.py`](skills/heurisma/scripts/validate_report.py):** Zero-dependency bilingual (EN/ES) validator checking headings, substance, Section 2 hypotheses, per-row matrix tags, `[Strong]` vs. Tier 3/press bans, `--level 2|3` artifacts, and `--html`.
+- **[`scripts/local_data.py`](skills/heurisma/scripts/local_data.py):** Zero-dependency local data engine (`inventory`, `preview`, `read_table`, European CSV with `;`/decimal-comma/`latin-1`, stdlib XLSX reader + `excel_date`, JSON, and `register_local` with `file://` + SHA-256).
+- **[`scripts/svg_charts.py`](skills/heurisma/scripts/svg_charts.py):** Zero-dependency publication SVG engine (Heckbert ticks on Y and numeric X, calendar-year date axes, Okabe-Ito palette + print dash styles, automatic >30-pt marker hiding, `bands`, staggered non-overlapping `annotations`, white-halo reference labels, scatter `y=0` & `highlight`, `percent`/`thousands`/`currency` locale formatting, localized 3-layer `fan` charts, grouped `bar`, safe `log` scale).
+- **[`scripts/render_report.py`](skills/heurisma/scripts/render_report.py):** Zero-dependency working-paper HTML renderer (serif typography, 720px column, booktabs tables, small-caps tags, linked `[@C1]` citations ordered by appearance, full `en`/`es` localization, currency-safe inline math conversion, nested lists, inline `{{fig:id}}` figures, `{{num:key}}` substitution, `@media print` A4 rules, and strict appendix filtering excluding raw data/binaries).
+- **[`scripts/validate_report.py`](skills/heurisma/scripts/validate_report.py):** Zero-dependency bilingual (EN/ES) validator checking headings, substance, Section 2 hypotheses, per-row matrix tags, `[Strong]` vs. Tier 3/press bans, `{{fig:id}}` & `[@id]` consistency, Spanish HTML chrome purity, provenance (`file://` SHA-256, orphan `appendix/data/`, canonical `data_attempts.csv`), hygiene, `--level 2|3`, `--html`, and `--strict`.
 
 ---
 
@@ -97,20 +98,20 @@ Inspect validated outputs generated with Heurisma:
 Render and validate locally with zero external dependencies:
 
 ```bash
-python3 examples/level2-study/appendix/analysis.py --charts-out examples/level2-study/charts.json > examples/level2-study/appendix/output.txt
-python3 skills/heurisma/scripts/render_report.py examples/level2-study/report.md \
+python3 -B examples/level2-study/appendix/analysis.py --charts-out examples/level2-study/charts.json --numbers-out examples/level2-study/appendix/numbers.json > examples/level2-study/appendix/output.txt
+python3 -B skills/heurisma/scripts/render_report.py examples/level2-study/report.md \
   --out examples/level2-study/report.html \
   --charts examples/level2-study/charts.json \
   --appendix examples/level2-study/appendix
-python3 skills/heurisma/scripts/validate_report.py examples/level2-study/report.md \
-  --level 2 --html examples/level2-study/report.html
+python3 -B skills/heurisma/scripts/validate_report.py examples/level2-study/report.md \
+  --level 2 --html examples/level2-study/report.html --strict
 ```
 
 ---
 
 ## Verification & Quality Assurance
 
-- **22/22 unit tests passing** across [`tests/test_validate_report.py`](tests/test_validate_report.py), [`tests/test_svg_charts.py`](tests/test_svg_charts.py), and [`tests/test_render_report.py`](tests/test_render_report.py).
+- **44/44 unit tests passing** across [`tests/test_local_data.py`](tests/test_local_data.py), [`tests/test_svg_charts.py`](tests/test_svg_charts.py), [`tests/test_render_report.py`](tests/test_render_report.py), and [`tests/test_validate_report.py`](tests/test_validate_report.py).
 - **Skill TDD evals:** 4/4 RED baseline failures ([`evals/baselines/baseline-report.md`](evals/baselines/baseline-report.md)) → 6/6 GREEN passes ([`evals/results/green-eval-report.md`](evals/results/green-eval-report.md)), hardened further through two full external Claude audits (`v0.1 → v0.2 → v0.3`).
 
 ---

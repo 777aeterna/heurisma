@@ -53,7 +53,17 @@ Every Level 3 report MUST include a **Reviewer #2 Disposition Table** in Section
 Valid `Action` / `Acción` values checked by `validate_report.py --level 3` (with or without backticks):
 - **`Fixed`** / **`Corregida`**: You executed the additional regression/fetch/re-calibration and updated the report.
 - **`Refuted`** / **`Refutada`**: You disproved Reviewer #2's objection using Tier 1/2 evidence (or excluded an unverifiable reviewer claim after a primary check).
-- **`Deferred`** / **`Diferida`**: The requested data are genuinely inaccessible *after* logging a real fetch attempt in `appendix/data_attempts.csv` (checked automatically by `validate_report.py --level 3`).
+- **`Deferred`** / **`Diferida`**: The requested data are genuinely inaccessible *after* logging a real online fetch attempt **and** a local search in `appendix/data_attempts.csv` (checked automatically by `validate_report.py --level 3`).
+
+### Step 4: Tag-Downgrade Closures Count as Data Limitations (Iron Law 3)
+A critique is sometimes closed as `Fixed` / `Corregida` **by downgrading a tag** because the data needed to defend the original tag could not be obtained (e.g., *"downgraded to `[Preliminary]` because no alternative CPI series for 2007–2015 was found"*). That closure is a data limitation in disguise:
+- Before writing it, walk the 4-rung cascade (online primary → online alternatives → local inventory → limitation) for the missing series.
+- Log every failed rung in `appendix/data_attempts.csv` with the canonical columns, and reference the row in the Evidence / Artifact cell.
+- A downgrade with no matching `data_attempts.csv` row is an unattempted shortcut; Reviewer #2 category 2 applies to it.
+
+```markdown
+| 4 | Pre-2016 CPI series not cross-checked against provincial indices | `Fixed` | Tag downgraded to `[Preliminary]`; provincial-index search online + `local_data.py inventory` logged in appendix/data_attempts.csv (rows 3–4) |
+```
 
 ---
 
@@ -76,7 +86,7 @@ Do NOT be polite or agreeable. Evaluate strictly against scientific method stand
 ### Your Review Output Format
 Return a numbered list of concrete flaws across these 4 categories (every numbered item will require an explicit Fixed / Refuted / Deferred row in the author's final Disposition Table):
 1. **Over-Calibrated Claims (Tag Downgrades Required):** Every claim tagged `[Strong]` or `[Moderate]` whose actual source tier or sample size only supports `[Preliminary]` or `[Speculative]`.
-2. **Unattempted Data Shortcuts & Primary-Source Gaps:** Where the author relied on Tier 3 press/blogs or declared a "data limitation" when an accessible primary institutional series, archive, or proxy exists.
+2. **Unattempted Data Shortcuts & Primary-Source Gaps:** Where the author relied on Tier 3 press/blogs, declared a "data limitation", or closed a critique by downgrading a tag when an accessible primary institutional series, archive, mirror, local file, or proxy exists (check `data_attempts.csv` for both online and local rungs).
 3. **Missing Counter-Evidence, Regressions & Boundary Failures:** Specific statistical controls, lag regressions, regime separations, base-rate calibrations, or canonical literature the draft omitted.
 4. **Interdisciplinary & Forecasting Flaws:** Where an accounting identity was confused with a forecast, units were mixed (EoP vs. average, nominal vs. real), or one discipline's constraint invalidates another's assumption.
 ```

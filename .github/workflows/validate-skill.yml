@@ -20,7 +20,7 @@ jobs:
 
       - name: Validate SKILL.md frontmatter, portability, and relative links
         run: |
-          python3 - <<'EOF'
+          python3 -B - <<'EOF'
           import re
           from pathlib import Path
 
@@ -49,15 +49,22 @@ jobs:
           print(f"Frontmatter, portability & links OK (len={len(fm)} chars)")
           EOF
 
-      - name: Run validator, SVG engine, and renderer unit tests
-        run: python3 -m unittest discover -s tests -v
+      - name: Run local-data, SVG engine, renderer, and validator unit tests
+        run: python3 -B -m unittest discover -s tests -v
+
+      - name: Smoke-test local_data.py inventory
+        run: python3 -B skills/heurisma/scripts/local_data.py inventory examples/level2-study/appendix
 
       - name: Run Level 2 showcase analysis, render working-paper HTML, and validate deliverables
         run: |
-          python3 examples/level2-study/appendix/analysis.py --charts-out examples/level2-study/charts.json > examples/level2-study/appendix/output.txt
-          python3 skills/heurisma/scripts/render_report.py examples/level2-study/report.md \
+          python3 -B examples/level2-study/appendix/analysis.py \
+            --charts-out examples/level2-study/charts.json \
+            --numbers-out examples/level2-study/appendix/numbers.json \
+            > examples/level2-study/appendix/output.txt
+          python3 -B skills/heurisma/scripts/render_report.py examples/level2-study/report.md \
             --out examples/level2-study/report.html \
             --charts examples/level2-study/charts.json \
             --appendix examples/level2-study/appendix
-          python3 skills/heurisma/scripts/validate_report.py examples/level1-brief-example.md --level 1
-          python3 skills/heurisma/scripts/validate_report.py examples/level2-study/report.md --level 2 --html examples/level2-study/report.html
+          python3 -B skills/heurisma/scripts/validate_report.py examples/level1-brief-example.md --level 1
+          python3 -B skills/heurisma/scripts/validate_report.py examples/level2-study/report.md \
+            --level 2 --html examples/level2-study/report.html --strict

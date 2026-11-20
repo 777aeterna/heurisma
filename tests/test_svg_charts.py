@@ -106,6 +106,120 @@ class TestSvgCharts(unittest.TestCase):
         self.assertIn("<rect", svg)
         self.assertIn("Full r", svg)
 
+    def test_close_annotations_stagger_vertically_and_flip_near_right_edge(self) -> None:
+        import re
+
+        pts = [[f"{2016 + i // 12:04d}-{(i % 12) + 1:02d}", 100.0 + i * 5.0] for i in range(120)]
+        chart = {
+            "id": "ann_test",
+            "type": "line",
+            "title": "Close Annotations & Right Edge",
+            "x": {"type": "date"},
+            "y": {"label": "Index"},
+            "series": [{"name": "Series", "points": pts}],
+            "annotations": [
+                {"x": "2023-11", "label": "Elecciones"},
+                {"x": "2023-12", "label": "Devaluación fuerte"},
+                {"x": "2025-11", "label": "Salida convert."},
+            ],
+        }
+        svg = svg_charts.render_chart_svg(chart)
+        # Long label (>16 chars) should be truncated with ellipsis
+        self.assertIn("…", svg)
+        # Close annotations must have distinct y coordinates
+        m1 = re.search(r'<text[^>]*y="([0-9.]+)"[^>]*>Elecciones</text>', svg)
+        m2 = re.search(r'<text[^>]*y="([0-9.]+)"[^>]*>Devaluación[^<]*</text>', svg)
+        self.assertIsNotNone(m1, msg=svg)
+        self.assertIsNotNone(m2, msg=svg)
+        self.assertNotEqual(float(m1.group(1)), float(m2.group(1)), "Close annotations must stagger vertically")
+        # Right-edge annotation must flip left with text-anchor="end"
+        m3 = re.search(r'<text[^>]*text-anchor="end"[^>]*>Salida convert\.</text>', svg)
+        self.assertIsNotNone(m3, "Right-edge annotation must flip left using text-anchor='end'")
+
+    def test_reference_line_label_has_white_halo(self) -> None:
+        chart = {
+            "id": "ref_halo",
+            "type": "line",
+            "title": "ITCRM with Mean",
+            "x": {"type": "date"},
+            "y": {"label": "Index"},
+            "series": [{"name": "ITCRM", "points": [["2020-01", 90], ["2021-01", 110], ["2022-01", 95]]}],
+            "reference_lines": [{"name": "Media 1997-2026", "value": 100}],
+        }
+        svg = svg_charts.render_chart_svg(chart)
+        self.assertIn("Media 1997-2026", svg)
+        self.assertIn("paint-order", svg)
+
+    def test_scatter_uses_nice_x_ticks_zero_line_and_highlight_point(self) -> None:
+        chart = {
+            "id": "scatter_nice",
+            "type": "scatter",
+            "title": "Scatter Test",
+            "x": {"label": "Real Rate (%)"},
+            "y": {"label": "FX Change (%)"},
+            "series": [{"name": "Periods", "points": [[-29.0, -15.0], [12.3, 8.5], [148.7, 62.0]]}],
+            "highlight": {"x": 12.3, "y": 8.5, "label": "Actual (2026)"},
+        }
+        svg = svg_charts.render_chart_svg(chart)
+        # Nice ticks on X axis: should NOT show ugly -29 or 6.7 / 42.4, should include clean 0 and 50 or 100
+        self.assertNotIn(">6.7<", svg)
+        self.assertNotIn(">42.4<", svg)
+        self.assertIn(">0<", svg)
+        # Highlighted point label must appear
+        self.assertIn("Actual (2026)", svg)
+        # Zero horizontal reference line must be drawn when 0 is in Y range
+        self.assertIn('data-zero-line="y"', svg)
+
+    def test_percent_and_locale_number_formatting_and_tight_y_max(self) -> None:
+        # Percent format (0 -> 0%, 0.5 -> 50%, 1.0 -> 100%, 1.5 -> 150%)
+        pct_chart = {
+            "id": "brecha_pct",
+            "type": "line",
+            "title": "FX Gap",
+            "x": {"type": "date"},
+            "y": {"label": "Brecha", "format": "percent"},
+            "series": [{"name": "Brecha", "points": [["2023-01", 0.0], ["2024-01", 1.5], ["2025-01", 0.2]]}],
+        }
+        svg_pct = svg_charts.render_chart_svg(pct_chart, lang="es")
+        self.assertIn("0%", svg_pct)
+        self.assertIn("150%", svg_pct)
+
+        # Locale es: dot thousands, tight Y max (max 50,000 must NOT stretch to 60,000)
+        res_chart = {
+            "id": "reserves_tight",
+            "type": "line",
+            "title": "Reservas",
+            "x": {"type": "date"},
+            "y": {"label": "USD M", "format": "thousands"},
+            "series": [{"name": "Reservas", "points": [["2020-01", 20000], ["2021-01", 49500], ["2022-01", 35000]]}],
+        }
+        svg_res = svg_charts.render_chart_svg(res_chart, lang="es")
+        self.assertIn("50.000", svg_res)
+        self.assertNotIn("60.000", svg_res)
+
+    def test_fan_chart_localized_three_layer_legend_and_no_median_markers(self) -> None:
+        chart = {
+            "id": "proj_fan_es",
+            "type": "fan",
+            "title": "Proyección TC 2027",
+            "x": {"type": "date"},
+            "y": {"label": "ARS / USD"},
+            "quantiles": {
+                "p10": [["2026-12", 1450], ["2027-06", 1520], ["2027-12", 1600]],
+                "p25": [["2026-12", 1500], ["2027-06", 1650], ["2027-12", 1800]],
+                "p50": [["2026-12", 1550], ["2027-06", 1800], ["2027-12", 2050]],
+                "p75": [["2026-12", 1620], ["2027-06", 1980], ["2027-12", 2350]],
+                "p90": [["2026-12", 1700], ["2027-06", 2200], ["2027-12", 2800]],
+            },
+        }
+        svg = svg_charts.render_chart_svg(chart, lang="es")
+        self.assertIn("Mediana (P50)", svg)
+        self.assertNotIn("Median (P50)", svg)
+        self.assertIn("P25–P75", svg)
+        self.assertIn("P10–P90", svg)
+        # Smooth fan median must NOT have point markers
+        self.assertEqual(svg.count("<circle"), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

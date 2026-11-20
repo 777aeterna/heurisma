@@ -200,11 +200,12 @@ One two three four five six
             (appendix / "analysis.py").write_text("print('ok')\n", encoding="utf-8")
             (appendix / "output.txt").write_text("ok\n", encoding="utf-8")
             (appendix / "sources.csv").write_text(
-                "claim_id,source_title,url,tier,accessed_date,data_as_of\n1,Study,https://example.org,Tier 1,2026-11-20,2025-12\n",
+                "claim_id,source_title,url,tier,accessed_date,data_as_of\nC1,Study,https://example.org,Tier 1,2026-11-20,2025-12\n",
                 encoding="utf-8",
             )
+            cited_valid = VALID_REPORT.replace("Pure PHA films mineralize", "Pure PHA films mineralize [@C1]")
 
-            with_backtick_fixed = VALID_REPORT + """
+            with_backtick_fixed = cited_valid + """
 ### Reviewer #2 Disposition
 | Flaw # | Reviewer Critique | Action | Evidence / Artifact |
 | :- | :- | :- | :- |
@@ -212,7 +213,7 @@ One two three four five six
 """
             self.assertEqual(validate_report.validate_report(with_backtick_fixed, level=3, report_dir=root), [])
 
-            with_deferred_no_log = VALID_REPORT + """
+            with_deferred_no_log = cited_valid + """
 ### Reviewer #2 Disposition
 | Flaw # | Reviewer Critique | Action | Evidence / Artifact |
 | :- | :- | :- | :- |
@@ -222,7 +223,8 @@ One two three four five six
             self.assertTrue(any("data_attempts" in e.lower() or "attempt" in e.lower() for e in errs_missing_log), msg=errs_missing_log)
 
             (appendix / "data_attempts.csv").write_text(
-                "target,source,method,outcome\ncustoms,https://api.example.org,GET,HTTP 403\n",
+                "target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used\n"
+                "customs,Customs API,https://api.example.org,failed,HTTP 403,limitation\n",
                 encoding="utf-8",
             )
             self.assertEqual(validate_report.validate_report(with_deferred_no_log, level=3, report_dir=root), [])
@@ -257,11 +259,173 @@ One two three four five six
             valid_file.write_text(VALID_REPORT, encoding="utf-8")
             invalid_file.write_text("# Incomplete Report\nNo sections here.\n", encoding="utf-8")
 
-            res_ok = subprocess.run([sys.executable, str(script_path), str(valid_file)], capture_output=True, text=True)
+            res_ok = subprocess.run([sys.executable, "-B", str(script_path), str(valid_file)], capture_output=True, text=True)
             self.assertEqual(res_ok.returncode, 0, msg=res_ok.stderr)
 
-            res_bad = subprocess.run([sys.executable, str(script_path), str(invalid_file)], capture_output=True, text=True)
+            res_bad = subprocess.run([sys.executable, "-B", str(script_path), str(invalid_file)], capture_output=True, text=True)
             self.assertEqual(res_bad.returncode, 1)
+
+    def test_level2_fails_without_fig_markers_or_unknown_fig_id(self) -> None:
+        import json
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            appendix = root / "appendix"
+            appendix.mkdir()
+            (appendix / "analysis.py").write_text("print('ok')\n", encoding="utf-8")
+            (appendix / "output.txt").write_text("ok 60\n", encoding="utf-8")
+            (appendix / "sources.csv").write_text(
+                "claim_id,source_title,url,tier,accessed_date,data_as_of\n"
+                "C1,Primary Study,https://example.org/c1,Tier 1,2026-11-20,2026-11\n",
+                encoding="utf-8",
+            )
+            (appendix / "charts.json").write_text(
+                json.dumps([{"id": "fig_main", "type": "bar", "title": "Main", "series": [{"label": "A", "value": 1}]}]),
+                encoding="utf-8",
+            )
+            report_with_cite = VALID_REPORT.replace(
+                "Pure PHA films mineralize",
+                "Pure PHA films mineralize [@C1]",
+            )
+            # Missing {{fig:...}} when charts.json exists -> MUST fail
+            errs_no_fig = validate_report.validate_report(report_with_cite, level=2, report_dir=root)
+            self.assertTrue(any("fig" in e.lower() for e in errs_no_fig), msg=errs_no_fig)
+
+            # Unknown {{fig:does_not_exist}} -> MUST fail
+            report_bad_fig = report_with_cite.replace("## 5. Counter-Evidence", "{{fig:does_not_exist}}\n\n## 5. Counter-Evidence")
+            errs_bad_fig = validate_report.validate_report(report_bad_fig, level=2, report_dir=root)
+            self.assertTrue(any("does_not_exist" in e for e in errs_bad_fig), msg=errs_bad_fig)
+
+            # Valid {{fig:fig_main}} -> MUST pass
+            report_ok = report_with_cite.replace("## 5. Counter-Evidence", "{{fig:fig_main}}\n\n## 5. Counter-Evidence")
+            errs_ok = validate_report.validate_report(report_ok, level=2, report_dir=root)
+            self.assertEqual(errs_ok, [], msg=errs_ok)
+
+    def test_level2_fails_without_intext_citations_or_unknown_claim_id(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            appendix = root / "appendix"
+            appendix.mkdir()
+            (appendix / "analysis.py").write_text("print('ok')\n", encoding="utf-8")
+            (appendix / "output.txt").write_text("ok 60\n", encoding="utf-8")
+            (appendix / "sources.csv").write_text(
+                "claim_id,source_title,url,tier,accessed_date,data_as_of\n"
+                "C1,Primary Study,https://example.org/c1,Tier 1,2026-11-20,2026-11\n",
+                encoding="utf-8",
+            )
+            # No citations in Section 4 -> MUST fail at Level 2
+            errs_no_cite = validate_report.validate_report(VALID_REPORT, level=2, report_dir=root)
+            self.assertTrue(any("citation" in e.lower() or "cite" in e.lower() for e in errs_no_cite), msg=errs_no_cite)
+
+            # Unknown [@C99] -> MUST fail
+            bad_cite = VALID_REPORT.replace("Pure PHA films mineralize", "Pure PHA films mineralize [@C99]")
+            errs_bad_cite = validate_report.validate_report(bad_cite, level=2, report_dir=root)
+            self.assertTrue(any("C99" in e for e in errs_bad_cite), msg=errs_bad_cite)
+
+    def test_html_spanish_report_fails_if_english_chrome_leaks(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            html_file = Path(tmpdir) / "report_es.html"
+            leaked_html = (
+                '<!DOCTYPE html><html lang="en"><body>'
+                '<div class="abstract-label">Abstract</div>'
+                "<h2>1. Resumen ejecutivo</h2>"
+                "<h2>2. Encuadre e hipótesis</h2>"
+                "<h2>3. Metodología y estándares de evidencia</h2>"
+                "<h2>4. Hallazgos</h2>"
+                '<div class="fig-title"><strong>Figure 1.</strong> Serie</div>'
+                "<figcaption><em>Note:</em> Nota</figcaption>"
+                "<h2>5. Contraevidencia y explicaciones alternativas</h2>"
+                "<h2>6. Matriz de afirmaciones y evidencia</h2>"
+                "<h2>7. Limitaciones y preguntas abiertas</h2>"
+                "</body></html>"
+            )
+            html_file.write_text(leaked_html, encoding="utf-8")
+            errs = validate_report.validate_html(html_file)
+            self.assertTrue(any("english" in e.lower() or "spanish" in e.lower() or "lang" in e.lower() for e in errs), msg=errs)
+
+    def test_html_warns_on_unconverted_latex(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            html_file = Path(tmpdir) / "report_latex.html"
+            html_with_latex = (
+                '<!DOCTYPE html><html lang="en"><body>'
+                "<h2>1. Executive Summary</h2>"
+                "<p>Price is $1.563 and band is $1,200–$1,400, testing $H_0$ vs $H_1$.</p>"
+                "<h2>2. Framing &amp; Hypotheses</h2>"
+                "<h2>3. Methodology &amp; Evidence Standards</h2>"
+                "<h2>4. Findings</h2>"
+                "<h2>5. Counter-Evidence &amp; Alternative Explanations</h2>"
+                "<h2>6. Claim-Evidence Matrix</h2>"
+                "<h2>7. Limitations &amp; Open Questions</h2>"
+                "</body></html>"
+            )
+            html_file.write_text(html_with_latex, encoding="utf-8")
+            errs, warnings = validate_report.validate_html_full(html_file)
+            self.assertEqual(errs, [], msg=errs)
+            self.assertTrue(any("latex" in w.lower() for w in warnings), msg=warnings)
+
+    def test_provenance_checks_file_uri_hash_orphan_data_and_attempts_columns(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            appendix = root / "appendix"
+            data_dir = appendix / "data"
+            data_dir.mkdir(parents=True)
+            (appendix / "analysis.py").write_text("print('ok')\n", encoding="utf-8")
+            (appendix / "output.txt").write_text("ok 60\n", encoding="utf-8")
+            local_csv = data_dir / "local_series.csv"
+            local_csv.write_text("a,b\n1,2\n", encoding="utf-8")
+            # Orphan data file not registered anywhere
+            (data_dir / "dummy.json").write_text("{}", encoding="utf-8")
+
+            report_with_cite = VALID_REPORT.replace("Pure PHA films mineralize", "Pure PHA films mineralize [@C1]")
+
+            # 1) file:// without sha256 -> ERROR
+            (appendix / "sources.csv").write_text(
+                "claim_id,source_title,url,tier,accessed_date,data_as_of\n"
+                f"C1,Local Copy,{local_csv.resolve().as_uri()},Tier 2,2026-11-20,2026-11\n",
+                encoding="utf-8",
+            )
+            errs, _ = validate_report.validate_report_full(report_with_cite, level=2, report_dir=root)
+            self.assertTrue(any("sha256" in e.lower() for e in errs), msg=errs)
+
+            # 2) file:// WITH sha256 -> passes sources check, but orphan dummy.json -> WARNING
+            (appendix / "sources.csv").write_text(
+                "claim_id,source_title,url,tier,accessed_date,data_as_of\n"
+                f"C1,Local Copy (sha256 abc123def456),{local_csv.resolve().as_uri()},Tier 2,2026-11-20,2026-11\n",
+                encoding="utf-8",
+            )
+            errs2, warns2 = validate_report.validate_report_full(report_with_cite, level=2, report_dir=root)
+            self.assertEqual(errs2, [], msg=errs2)
+            self.assertTrue(any("dummy.json" in w for w in warns2), msg=warns2)
+
+            # 3) data_attempts.csv without canonical columns -> ERROR
+            (appendix / "data_attempts.csv").write_text(
+                "target,source,method,outcome\ncustoms,https://api.example.org,GET,HTTP 403\n",
+                encoding="utf-8",
+            )
+            errs3, _ = validate_report.validate_report_full(report_with_cite, level=2, report_dir=root)
+            self.assertTrue(any("data_attempts.csv" in e and "column" in e.lower() for e in errs3), msg=errs3)
+
+    def test_hygiene_warns_on_pycache_and_zero_byte_files_in_appendix(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            appendix = root / "appendix"
+            pycache = appendix / "__pycache__"
+            pycache.mkdir(parents=True)
+            (appendix / "analysis.py").write_text("print('ok')\n", encoding="utf-8")
+            (appendix / "output.txt").write_text("ok 60\n", encoding="utf-8")
+            (appendix / "sources.csv").write_text(
+                "claim_id,source_title,url,tier,accessed_date,data_as_of\n"
+                "C1,Study,https://example.org/c1,Tier 1,2026-11-20,2026-11\n",
+                encoding="utf-8",
+            )
+            (pycache / "analysis.cpython-312.pyc").write_bytes(b"\x00\x00")
+            (appendix / "empty_log.txt").write_text("", encoding="utf-8")
+
+            report_with_cite = VALID_REPORT.replace("Pure PHA films mineralize", "Pure PHA films mineralize [@C1]")
+            errs, warns = validate_report.validate_report_full(report_with_cite, level=2, report_dir=root)
+            self.assertEqual(errs, [], msg=errs)
+            self.assertTrue(any("__pycache__" in w or ".pyc" in w for w in warns), msg=warns)
+            self.assertTrue(any("0-byte" in w.lower() or "empty_log.txt" in w for w in warns), msg=warns)
 
 
 if __name__ == "__main__":

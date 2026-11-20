@@ -1,4 +1,4 @@
-# Calibrated Scientific Writing, Single-Language Templates & `charts.json` v2 Guide
+# Calibrated Scientific Writing, Citations, Single-Language Templates & `charts.json` v2 Guide
 
 Part of **Heurisma** (loaded during **Stage 5 & Stage 6** before finalizing `report.md` and rendering the working-paper `report.html`).
 
@@ -10,30 +10,44 @@ Every major claim in Section 1, Section 4, and **every row** of Section 6 (`Clai
 
 | English Tag | Spanish Tag | Meaning | Minimum Evidence Required | Strictly Forbidden For |
 | :--- | :--- | :--- | :--- | :--- |
-| **`[Strong]`** | **`[Fuerte]`** | High epistemic confidence; robust against confounders | Formal deductive proof; meta-analysis of human RCTs; replicated Tier 1 measurements; conservation laws | **Any Tier 3 or press/blog/roadmap source** (`validate_report.py` rejects this), single studies, or unconditional future forecasts |
-| **`[Moderate]`** | **`[Moderada]`** | Credible empirical support within bounded conditions | Well-designed single RCT, quasi-experimental causal study (DiD/IV/RDD), audited primary institutional series (Tier 1/2) | Press releases, small unadjusted samples ($n < 30$), uncalibrated extrapolations |
+| **`[Strong]`** | **`[Fuerte]`** | High epistemic confidence; robust against confounders | Formal deductive proof; meta-analysis of human RCTs; replicated Tier 1 measurements; conservation laws | **Any Tier 3, press/blog/roadmap, or unknown-origin local source** (`validate_report.py` rejects press/Tier 3), single studies, or unconditional future forecasts |
+| **`[Moderate]`** | **`[Moderada]`** | Credible empirical support within bounded conditions | Well-designed single RCT, quasi-experimental causal study (DiD/IV/RDD), audited primary institutional series (Tier 1/2) | Press releases, small unadjusted samples (n < 30), uncalibrated extrapolations |
 | **`[Preliminary]`** | **`[Preliminar]`** | Suggestive or context-limited evidence requiring replication | Small-sample empirical data, single observational cohort, high-frequency proxy bridging a lagging series | Definitive policy mandates or unverified claims introduced by a reviewer |
 | **`[Speculative]`** | **`[Especulativa]`** | Unverified projection, mechanism hypothesis, or scenario | Corporate roadmap dates, animal/prototype mechanism extrapolated to scale, multi-month point/regime forecast | Presenting as established fact or probable baseline without flagging failure risk |
 
 ---
 
-## 2. Working-Paper Prose & Abstract Rules
+## 2. Working-Paper Prose, Citation & Abstract Rules
 
 1. **Abstract-Style Verdict (Max 3 Sentences, Max 5 Numbers):**
    - `Calibrated Verdict` / `Veredicto calibrado` in Section 1 acts as the paper's **Abstract**: state the direct answer, its calibration tag, and the core mechanism in **at most 3 sentences and at most 5 numbers**.
+   - `render_report.py` promotes the verdict into the HTML Abstract box and does not repeat it as the first bullet of §1. To write a separate abstract instead, add `> **Abstract:** …` / `> **Resumen:** …` directly under the title block.
    - Never pack 15 numbers into a dense wall of text in Section 1; put detailed metrics in Section 4 booktabs tables and `{{fig:id}}` figures.
-   - Do not over-quantify illustrative scenario probabilities (e.g., if scenario weights are illustrative rather than structurally estimated, present scenario levels cleanly without fake 4-decimal precision on combined percentiles).
-2. **Inline Figure Placement (`{{fig:chart_id}}`):**
+   - Do not over-quantify illustrative scenario probabilities (if scenario weights are illustrative rather than structurally estimated, present scenario levels cleanly without fake 4-decimal precision on combined percentiles).
+2. **Linked In-Text Citations (`[@claim_id]`):**
+   - Cite with `[@C1]`, or several at once with `[@C1; @C4]`. Each id must be a `claim_id` in `appendix/sources.csv`.
+   - Place the citation right after the claim it supports, before the calibration tag: `Real appreciation reached 38% [@C2] `[Moderate]`.`
+   - The renderer numbers citations by **first appearance** (`[1]`, `[2]`, …), links each to `#ref-n`, and orders the References list the same way; uncited sources are appended after the cited ones.
+   - **Validator (Level 2+):** fails if Section 4 has no citations or if a `[@id]` is missing from `sources.csv`; warns for every `sources.csv` row that is never cited. Cite every row or remove the ones you did not use.
+3. **Math Without LaTeX:**
+   - Write symbols in Unicode: `H₀`, `H₁`, `ρ`, `Δ`, `≤`, `≥`, `±`, `×`, `≈`, `σ`, `μ`, `x²`. The working paper has no LaTeX engine.
+   - The renderer converts residual inline math (`$H_0$` → H<sub>0</sub>, `$x^2$` → x<sup>2</sup>, `$\Delta$` → Δ) as a safety net and never touches currency (`$1.563`, `$1,200–$1,400`), but the validator warns on any LaTeX left in the HTML.
+4. **Key Numbers from `appendix/numbers.json` (optional):**
+   - Write `{{num:key}}` instead of retyping a computed value; the renderer substitutes it from `appendix/numbers.json`. Without placeholders, the validator warns when a verdict number is absent from `appendix/output.txt`.
+5. **Inline Figure Placement (`{{fig:chart_id}}`):**
    - Place `{{fig:chart_id}}` on its own line in Section 4 or Section 5 immediately after the paragraph that discusses that figure.
-   - `render_report.py` replaces `{{fig:chart_id}}` with a numbered `<figure>` (`Figure 1. Title`, publication SVG, `Note: caption`, `Source: ...`, and a collapsible data table).
-3. **Zero Code / Zero Bloat in `report.md`:**
-   - Never embed scripts or raw console outputs inside `report.md`. Keep `report.md` focused purely on scientific argument, tables, and `{{fig:id}}` figures.
+   - `render_report.py` replaces it with a numbered `<figure>` (`Figure 1.` / `Figura 1.`, publication SVG, `Note:` / `Nota:`, `Source:` / `Fuente:`, and a collapsible data table).
+   - **Validator (Level 2+):** fails if `charts.json` exists but `report.md` has no `{{fig:…}}` marker or uses an id absent from `charts.json`; warns for charts never placed (they fall into "Additional Figures").
+6. **Nested Lists:** Indent sub-bullets by 2 or 4 spaces under their parent bullet (e.g., `Key Takeaways`, `Hypotheses`); the renderer emits a nested list.
+7. **Zero Code / Zero Bloat in `report.md`:**
+   - Never embed scripts or raw console outputs inside `report.md`. Keep it focused on scientific argument, tables, citations, and `{{fig:id}}` figures.
+8. **Commands:** run every script with `python3 -B` in instructions, `appendix/README.md`, and examples.
 
 ---
 
 ## 3. Strict Single-Language Consistency (100% Spanish Template)
 
-When the user requests a report in Spanish, **do not mix English labels or English table headers into the text**. Use this 100% Spanish contract (accepted natively by `validate_report.py` and `render_report.py`):
+When the user requests a report in Spanish, **do not mix English labels or English table headers into the text**. The renderer auto-detects Spanish from the headings below and localizes all HTML chrome (`<html lang="es">`, `Figura`, `Nota:`, `Fuente:`, `Resumen`, `Referencias`, `Mediana (P50)`); the validator fails a Spanish HTML that leaks English chrome. Write chart titles, captions, series names, and annotation labels in Spanish too.
 
 ```markdown
 # [Título descriptivo del documento de trabajo]
@@ -43,22 +57,23 @@ When the user requests a report in Spanish, **do not mix English labels or Engli
 ## 1. Resumen ejecutivo
 - **Veredicto calibrado:** [Máximo 3 oraciones y máximo 5 cifras respondiendo la pregunta con etiquetas `[Fuerte]` / `[Moderada]` / `[Preliminar]` / `[Especulativa]`.]
 - **Qué cambiaría esta conclusión:** [Umbral empírico u observación concreta que revertiría el veredicto.]
-- **Conclusiones clave:** [2 a 4 viñetas concisas separando lo que se sostiene bajo escrutinio de lo incierto.]
+- **Conclusiones clave:**
+  - [2 a 4 sub-viñetas concisas separando lo que se sostiene bajo escrutinio de lo incierto.]
 
 ## 2. Encuadre e hipótesis
 - **Disciplinas científicas y nivel:** [Ramas + acoplamiento interdisciplinario]
 - **Pregunta de investigación:** [Pregunta neutral y operacionalizada con unidades y horizonte]
 - **Hipótesis:**
-  - $H_0$: [Hipótesis nula / línea base / artefacto]
-  - $H_1$: [Hipótesis alternativa]
-- **Criterios de refutación:** [Condiciones empíricas o lógicas exactas que refutan $H_1$ y $H_0$]
+  - H₀: [Hipótesis nula / línea base / artefacto]
+  - H₁: [Hipótesis alternativa]
+- **Criterios de refutación:** [Condiciones empíricas o lógicas exactas que refutan H₁ y H₀]
 
 ## 3. Metodología y estándares de evidencia
 - **Jerarquía de evidencia del dominio:** [Estándares Tier 1 vs. Tier 2 vs. Tier 3]
-- **Procedencia analítica y de datos:** [Resumen del método, enlaces a `appendix/fetch_data.py`, `appendix/analysis.py`, `appendix/output.txt` y `appendix/sources.csv`, más la tabla de **Intentos de datos** si falló alguna fuente primaria]
+- **Procedencia analítica y de datos:** [Resumen del método, enlaces a `appendix/fetch_data.py`, `appendix/analysis.py`, `appendix/output.txt` y `appendix/sources.csv`, más la tabla de **Intentos de datos** (escalones en línea y locales) si falló alguna fuente primaria o se usó un archivo local]
 
 ## 4. Hallazgos
-[Análisis estructurado por hipótesis o eje/régimen, con tablas sobrias y marcadores `{{fig:id_grafico}}` en el lugar exacto donde se analiza cada figura.]
+[Análisis estructurado por hipótesis o eje/régimen, con tablas sobrias, citas `[@C1]` tras cada afirmación respaldada y marcadores `{{fig:id_grafico}}` en el lugar exacto donde se analiza cada figura.]
 
 ## 5. Contraevidencia y explicaciones alternativas
 [Mejor evidencia en contra, límites de régimen, confusores y —en Nivel 3— la tabla **Disposición del Revisor #2** con encabezados en español (`| Falla # | Crítica del revisor | Acción | Evidencia / Artefacto |`).]
@@ -66,11 +81,11 @@ When the user requests a report in Spanish, **do not mix English labels or Engli
 ## 6. Matriz de afirmaciones y evidencia
 | Afirmación | Disciplina / Eje | Evidencia y Tier (Fecha de datos) | Confianza | Falsador clave / Condición |
 | :- | :- | :- | :- | :- |
-| [Afirmación 1] | [Rama] | [Fuente primaria, Tier 1/2/3, YYYY-MM] | `[Fuerte]` / `[Moderada]` / `[Preliminar]` / `[Especulativa]` | [Falsador] |
-| [Afirmación 2] | [Rama] | [Fuente primaria, Tier 1/2/3, YYYY-MM] | `[Fuerte]` / `[Moderada]` / `[Preliminar]` / `[Especulativa]` | [Falsador] |
+| [Afirmación 1] | [Rama] | [Fuente primaria [@C1], Tier 1/2/3, YYYY-MM] | `[Fuerte]` / `[Moderada]` / `[Preliminar]` / `[Especulativa]` | [Falsador] |
+| [Afirmación 2] | [Rama] | [Fuente primaria [@C2], Tier 1/2/3, YYYY-MM] | `[Fuerte]` / `[Moderada]` / `[Preliminar]` / `[Especulativa]` | [Falsador] |
 
 ## 7. Limitaciones y preguntas abiertas
-- **Limitaciones metodológicas y de datos verificadas:** [Solo limitaciones respaldadas por intentos registrados en la Sección 3 / `appendix/data_attempts.csv`]
+- **Limitaciones metodológicas y de datos verificadas:** [Solo limitaciones respaldadas por intentos en línea y búsquedas locales registrados en la Sección 3 / `appendix/data_attempts.csv`]
 - **Próximos pasos y experimentos sugeridos:** [Pruebas o mediciones concretas para resolver la incertidumbre restante]
 ```
 
@@ -79,6 +94,14 @@ When the user requests a report in Spanish, **do not mix English labels or Engli
 ## 4. `charts.json` v2 Schema (Publication SVG Engine)
 
 Emit `charts.json` directly from `appendix/analysis.py` as a JSON array of chart objects. Supported types: `"line"`, `"bar"`, `"fan"`, `"scatter"`.
+
+Authoring rules:
+- **Annotation labels name the event**, not a phase number: `"Band 1,000–1,400"`, `"Step devaluation"`, `"Elections"` — never `"Phase 3"`. Keep them ≤16 characters (longer labels are truncated with `…`). The engine sorts annotations, staggers close ones over up to 3 rows, and flips labels near the right edge.
+- **Axis formats:** `"y": {"format": "percent"}` for fractions (0.5 → 50%), `"thousands"` for large levels, `"currency"` for money. Thousands/decimal separators follow the report language (Spanish: `50.000`, `1,5`).
+- **Scatter:** numeric X gets clean ticks automatically; a dashed `y = 0` line is drawn when 0 is in range; mark the current observation with `"highlight": {"x": …, "y": …, "label": "…"}`.
+- **Fan:** the legend shows the median plus both bands (P25–P75, P10–P90) in the report language; the median line has no point markers.
+- **Reference lines** get a white halo so their labels stay legible over the series.
+- Write every title, caption, series name, and label in the report's language.
 
 ```json
 [
@@ -89,7 +112,7 @@ Emit `charts.json` directly from `appendix/analysis.py` as a JSON array of chart
     "caption": "Spot rate remained within the band, touching the upper bound in Sep 2025.",
     "source": "Central Bank API v4 (series 5); band reconstructed from policy rule.",
     "x": {"type": "date", "label": ""},
-    "y": {"label": "Local Currency / USD", "scale": "linear"},
+    "y": {"label": "Local Currency / USD", "scale": "linear", "format": "thousands"},
     "series": [
       {"name": "Spot Rate", "points": [["2023-12", 808.5], ["2024-06", 912.0], ["2025-09", 1395.0], ["2026-10", 1480.0]]}
     ],
@@ -101,9 +124,33 @@ Emit `charts.json` directly from `appendix/analysis.py` as a JSON array of chart
       }
     ],
     "annotations": [
-      {"x": "2023-12", "label": "Step Devaluation"},
-      {"x": "2025-04", "label": "Band Regime"}
+      {"x": "2023-12", "label": "Step devaluation"},
+      {"x": "2025-04", "label": "Band 1,000–1,400"}
     ]
+  },
+  {
+    "id": "fx_gap",
+    "type": "line",
+    "title": "Parallel-Market Gap (2019–2026)",
+    "caption": "Gap stored as a fraction in analysis.py and displayed as a percentage.",
+    "source": "Own calculations from Central Bank and market quotes.",
+    "x": {"type": "date"},
+    "y": {"label": "Gap", "format": "percent"},
+    "series": [
+      {"name": "Gap", "points": [["2019-09", 0.12], ["2023-10", 1.65], ["2025-04", 0.03], ["2026-10", 0.05]]}
+    ],
+    "reference_lines": [{"name": "Zero gap", "value": 0.0}]
+  },
+  {
+    "id": "rate_vs_fx",
+    "type": "scatter",
+    "title": "Real Policy Rate vs. 12-Month Depreciation by Quarter",
+    "caption": "Highlighted point marks the latest quarter.",
+    "source": "Own calculations in appendix/analysis.py.",
+    "x": {"label": "Real policy rate (%)"},
+    "y": {"label": "12-month depreciation (%)"},
+    "series": [{"name": "Quarters", "points": [[-29.0, 140.0], [-5.2, 48.0], [3.1, 21.0], [6.7, 18.5]]}],
+    "highlight": {"x": 6.7, "y": 18.5, "label": "2026-Q3"}
   },
   {
     "id": "proj_fan",
