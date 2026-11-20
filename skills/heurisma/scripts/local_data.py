@@ -4,7 +4,11 @@
 Usage:
   python3 -B local_data.py inventory [dir ...]
   python3 -B local_data.py preview <file> [--n 10] [--sheet NAME]
-  python3 -B local_data.py register <file> --sources appendix/sources.csv --tier "Tier 1" --title "..." [--claim C1] [--as-of YYYY-MM-DD]
+  python3 -B local_data.py register <file> --sources appendix/sources.csv --tier "Tier 1" --title "..." [--claim L1] [--as-of YYYY-MM-DD] [--lang en|es]
+  python3 -B local_data.py import <file> --into appendix/data --sources appendix/sources.csv --tier "Tier 1" --title "..." [--lang en|es]
+
+`import` copies the file into appendix/data/, registers the COPY (relative file:// URI + SHA-256) and logs the rung
+in appendix/data_attempts.csv in one step. Set HEURISMA_OFFLINE=1 to force the local-data rung (no network).
 
 Without explicit directories, inventory searches $HEURISMA_DATA_DIR, ./datos, ./data, and ./appendix/data.
 """
@@ -18,12 +22,14 @@ import io
 import json
 import os
 import re
+import shutil
 import sys
 import xml.etree.ElementTree as ET
 import zipfile
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 DEFAULT_ROOTS: tuple[str, ...] = ("datos", "data", "appendix/data")
 DATA_EXT: dict[str, str] = {
@@ -249,6 +255,8 @@ def preview(path: str | Path, n: int = 10, sheet: str | None = None) -> str:
     out = [f"{p}  [{kind}, {p.stat().st_size:,} bytes, sha256 {sha12(p)}]"]
     if kind == "csv":
         rows = read_csv(p)
+        if not rows:
+            raise ValueError(f"{p}: file is empty or has no data rows")
         delim, dec = _sniff_csv(p.read_bytes()[:20000].decode("utf-8", "replace"))
         out.append(f"rows={len(rows)} delimiter={delim!r} decimal_comma={dec}")
         out.append(f"columns={list(rows[0]) if rows else []}")
@@ -258,7 +266,10 @@ def preview(path: str | Path, n: int = 10, sheet: str | None = None) -> str:
         out.append(f"sheets={sheets}  (showing: {sheet or sheets[0]})")
         out.extend(" | ".join("" if v is None else str(v) for v in r)[:200] for r in rows)
     elif kind == "json":
-        js = read_json(p)
+        try:
+            js = read_json(p)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"{p}: invalid JSON ({exc})") from exc
         if isinstance(js, list):
             out.append(f"list of {len(js)} items")
             out.extend(json.dumps(x, ensure_ascii=False)[:200] for x in js[:n])
@@ -277,6 +288,100 @@ def preview(path: str | Path, n: int = 10, sheet: str | None = None) -> str:
 
 
 # ---------------------------------------------------------------- provenance
+ATTEMPT_COLS: tuple[str, ...] = (
+    "target_series",
+    "source_tried",
+    "query_or_endpoint",
+    "outcome",
+    "failure_reason",
+    "fallback_used",
+    "attempted_utc",
+)
+SOURCE_COLS: tuple[str, ...] = ("claim_id", "source_title", "url", "tier", "accessed_date", "data_as_of")
+_LOCAL_LABEL: dict[str, str] = {"en": "local file", "es": "archivo local"}
+
+
+def offline_enabled() -> bool:
+    """True when HEURISMA_OFFLINE is set to 1/true/yes/on: skip the network and force the local-data rung."""
+    return os.environ.get("HEURISMA_OFFLINE", "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _read_rows(csv_path: Path) -> list[dict[str, str]]:
+    if not csv_path.is_file():
+        return []
+    with csv_path.open(encoding="utf-8", newline="") as fh:
+        return list(csv.DictReader(fh))
+
+
+def utc_now() -> str:
+    """ISO-8601 UTC timestamp (second precision) for ``data_attempts.csv`` ``attempted_utc``."""
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _append_row(csv_path: Path, columns: tuple[str, ...], row: dict[str, str]) -> None:
+    """Append ``row``. An existing file missing some of ``columns`` (e.g. a v0.5 ``data_attempts.csv`` without
+    ``attempted_utc``) is widened first: its old rows get an empty value, so they read as undated/inherited."""
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    is_new = not csv_path.exists() or csv_path.stat().st_size == 0
+    if not is_new:
+        with csv_path.open(encoding="utf-8-sig", newline="") as fh:
+            reader = csv.DictReader(fh)
+            header = [c.strip() for c in (reader.fieldnames or [])]
+            old_rows = list(reader)
+        missing = [c for c in columns if c not in header]
+        if missing:
+            header += missing
+            with csv_path.open("w", newline="", encoding="utf-8") as fh:
+                writer = csv.DictWriter(fh, fieldnames=header, extrasaction="ignore", restval="")
+                writer.writeheader()
+                writer.writerows(old_rows)
+        fieldnames = header
+    else:
+        fieldnames = list(columns)
+    with csv_path.open("a", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=fieldnames, extrasaction="ignore", restval="")
+        if is_new:
+            writer.writeheader()
+        writer.writerow(row)
+
+
+def next_local_id(sources_csv: str | Path) -> str:
+    """Return the next free local claim id (L1, L2, ...) for appendix/sources.csv."""
+    used = [
+        int(m.group(1))
+        for r in _read_rows(Path(sources_csv))
+        if (m := re.fullmatch(r"L(\d+)", (r.get("claim_id") or "").strip()))
+    ]
+    return f"L{max(used, default=0) + 1}"
+
+
+def log_offline_attempt(
+    attempts_csv: str | Path, source: str, reason: str, target: str = "", endpoint: str = ""
+) -> None:
+    """Record a skipped online rung (HEURISMA_OFFLINE=1) in the canonical data_attempts.csv."""
+    _append_row(
+        Path(attempts_csv),
+        ATTEMPT_COLS,
+        {
+            "target_series": target,
+            "source_tried": source,
+            "query_or_endpoint": endpoint,
+            "outcome": "offline mode",
+            "failure_reason": reason,
+            "fallback_used": "",
+            "attempted_utc": utc_now(),
+        },
+    )
+
+
+def _find_registered(sources_csv: Path, url: str, sha: str) -> dict[str, str] | None:
+    legacy = "file://" + url if not url.startswith(("file:", "http:", "https:")) else url  # v0.5 rows
+    for r in _read_rows(sources_csv):
+        if (r.get("url") or "").strip() in (url, legacy) or sha in (r.get("source_title") or "") or sha in (r.get("sha256") or ""):
+            return r
+    return None
+
+
 def register_local(
     path: str | Path,
     sources_csv: str | Path,
@@ -284,25 +389,87 @@ def register_local(
     title: str,
     claim_id: str = "",
     data_as_of: str = "",
+    lang: str = "en",
+    relative_to: str | Path | None = None,
 ) -> dict[str, str]:
-    """Append a local file provenance row to sources.csv with file:// URI, sha256_12, and access date."""
+    """Append a local-file provenance row to sources.csv (file:// URI + SHA-256) and return it.
+
+    - ``claim_id`` empty -> next free ``L<n>`` so the source can be cited as ``[@L1]``.
+    - Registering the same file again (same URI or same SHA-256) returns the existing row, never a duplicate.
+    - ``relative_to`` stores a scheme-less project-relative path (``appendix/data/x.csv``) for files inside that
+      folder; ``file:///abs/path`` is kept only for files outside it (a ``file://appendix/...`` URI would read
+      ``appendix`` as a host name).
+    - ``lang`` (``en``/``es``) localizes the "(local file, sha256 ...)" suffix.
+    """
     p = Path(path).resolve()
+    sha = sha12(p)
+    if relative_to is not None:
+        rel = Path(os.path.relpath(p, Path(relative_to).resolve())).as_posix()
+        url = quote(rel) if not rel.startswith("../") else p.as_uri()
+    else:
+        url = p.as_uri()
+    sp = Path(sources_csv)
+    existing = _find_registered(sp, url, sha)
+    if existing is not None:
+        return dict(existing)
+    label = _LOCAL_LABEL.get(lang, _LOCAL_LABEL["en"])
     row = {
-        "claim_id": claim_id,
-        "source_title": f"{title} (local file, sha256 {sha12(p)})",
-        "url": p.as_uri(),
+        "claim_id": claim_id or next_local_id(sp),
+        "source_title": f"{title} ({label}, sha256 {sha})",
+        "url": url,
         "tier": tier,
         "accessed_date": date.today().isoformat(),
         "data_as_of": data_as_of,
     }
+    _append_row(sp, SOURCE_COLS, row)
+    return row
+
+
+def import_local(
+    path: str | Path,
+    into: str | Path,
+    sources_csv: str | Path,
+    tier: str,
+    title: str,
+    lang: str = "en",
+    claim_id: str = "",
+    data_as_of: str = "",
+) -> dict[str, str]:
+    """Copy a user file into ``into`` (appendix/data), register the COPY, and log the rung in data_attempts.csv.
+
+    Idempotent: importing the same file again adds no rows. Raises ValueError if a different file of the
+    same name already sits in ``into`` (nothing is overwritten).
+    """
+    src = Path(path).resolve()
+    dest_dir = Path(into)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest = (dest_dir / src.name).resolve()
+    if dest.exists() and dest != src and sha12(dest) != sha12(src):
+        raise ValueError(f"{dest} already exists with different content; rename the source file or remove the old copy")
+    if not dest.exists():
+        shutil.copy2(src, dest)
     sp = Path(sources_csv)
-    sp.parent.mkdir(parents=True, exist_ok=True)
-    is_new = not sp.exists()
-    with sp.open("a", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=list(row))
-        if is_new:
-            writer.writeheader()
-        writer.writerow(row)
+    report_root = sp.resolve().parent.parent
+    sha = sha12(dest)
+    rel_url = quote(Path(os.path.relpath(dest, report_root)).as_posix())
+    already = _find_registered(sp, rel_url, sha) is not None
+    row = register_local(
+        dest, sp, tier, title, claim_id=claim_id, data_as_of=data_as_of, lang=lang, relative_to=report_root
+    )
+    if not already:
+        _append_row(
+            sp.parent / "data_attempts.csv",
+            ATTEMPT_COLS,
+            {
+                "target_series": title,
+                "source_tried": f"{_LOCAL_LABEL.get(lang, _LOCAL_LABEL['en'])} ({src.name})",
+                "query_or_endpoint": rel_url,
+                "outcome": "used",
+                "failure_reason": "",
+                "fallback_used": f"local:{rel_url} sha256:{sha}",
+                "attempted_utc": utc_now(),
+            },
+        )
     return row
 
 
@@ -323,20 +490,42 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--sources", required=True, help="Path to appendix/sources.csv.")
     c.add_argument("--tier", default="Tier 3", help="Evidence tier (default: Tier 3).")
     c.add_argument("--title", required=True, help="Human-readable source title.")
-    c.add_argument("--claim", default="", help="Optional claim_id (e.g., C1).")
+    c.add_argument("--claim", default="", help="Optional claim_id (default: next free L<n>).")
     c.add_argument("--as-of", default="", help="Optional data_as_of date.")
+    c.add_argument("--lang", choices=("en", "es"), default="en", help="Language of the registered title suffix.")
+
+    d = sub.add_parser("import", help="Copy a file into appendix/data/, register the copy and log the rung in one step.")
+    d.add_argument("path", help="Path to the user's local file.")
+    d.add_argument("--into", default="appendix/data", help="Destination directory (default: appendix/data).")
+    d.add_argument("--sources", required=True, help="Path to appendix/sources.csv.")
+    d.add_argument("--tier", default="Tier 3", help="Evidence tier (default: Tier 3; unknown origin is never Tier 1).")
+    d.add_argument("--title", required=True, help="Human-readable source title.")
+    d.add_argument("--claim", default="", help="Optional claim_id (default: next free L<n>).")
+    d.add_argument("--as-of", default="", help="Optional data_as_of date.")
+    d.add_argument("--lang", choices=("en", "es"), default="en", help="Language of the registered title suffix.")
 
     args = ap.parse_args(argv)
-    if args.cmd == "inventory":
-        rows = inventory(args.roots)
-        if not rows:
-            print("No local data files found in:", args.roots or list(DEFAULT_ROOTS))
-        for r in rows:
-            print(f"{r['kind']:<10} {r['bytes']:>12,}  {r['modified']}  {r['sha256_12']}  {r['path']}")
-    elif args.cmd == "preview":
-        print(preview(args.path, args.n, args.sheet))
-    else:
-        print(register_local(args.path, args.sources, args.tier, args.title, args.claim, args.as_of))
+    try:
+        if args.cmd == "inventory":
+            rows = inventory(args.roots)
+            if not rows:
+                print("No local data files found in:", args.roots or list(DEFAULT_ROOTS))
+            for r in rows:
+                print(f"{r['kind']:<10} {r['bytes']:>12,}  {r['modified']}  {r['sha256_12']}  {r['path']}")
+        elif args.cmd == "preview":
+            print(preview(args.path, args.n, args.sheet))
+        elif args.cmd == "register":
+            print(register_local(args.path, args.sources, args.tier, args.title, args.claim, args.as_of, lang=args.lang))
+        else:
+            print(
+                import_local(
+                    args.path, args.into, args.sources, args.tier, args.title,
+                    lang=args.lang, claim_id=args.claim, data_as_of=args.as_of,
+                )
+            )
+    except (ValueError, OSError) as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
     return 0
 
 

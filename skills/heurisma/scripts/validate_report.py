@@ -105,6 +105,8 @@ LOW_TIER_SOURCE_RE = re.compile(
 
 FENCED_CODE_RE = re.compile(r"^```.*?^```[ \t]*$", flags=re.MULTILINE | re.DOTALL)
 FIG_MARKER_RE = re.compile(r"\{\{fig:([A-Za-z0-9_-]+)\}\}")
+NUM_MARKER_RE = re.compile(r"\{\{num:([A-Za-z0-9_.-]+)\}\}")
+LEFTOVER_BRACES_RE = re.compile(r"\{\{[^{}\n]{1,80}\}\}")
 CITE_GROUP_RE = re.compile(r"\[(@[A-Za-z0-9_.-]+(?:\s*[;,]\s*@[A-Za-z0-9_.-]+)*)\]")
 NUMERIC_CITE_RE = re.compile(r"\[[0-9]+\]")
 UNCONVERTED_LATEX_RE = re.compile(r"(?<!\\)\$(?!\s)(?!\d[\d.,]*(?:\s|$|[^\\_^=a-zA-Z]))([^$\n]+?)(?<!\s)\$")
@@ -172,11 +174,42 @@ def _extract_citation_ids(text: str) -> list[str]:
     return ids
 
 
+def _find_charts_json(report_dir: Path, appendix_dir: Path, explicit: Path | None = None) -> Path | None:
+    """Locate charts.json: explicit path, then <report_dir>/charts.json, then <appendix>/charts.json."""
+    if explicit is not None:
+        return explicit if explicit.is_file() else None
+    for candidate in (report_dir / "charts.json", appendix_dir / "charts.json"):
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+HARDCODED_NUM_RE = re.compile(r"(?<![\w.@#{:-])(\d+[.,]\d+|\d{3,})(?![\w{])")
+MIN_TYPED_NUMBERS = 5  # below this many retyped numbers the coverage warning stays quiet
+MIN_MARKER_SHARE = 0.30
+GATE_FILES: tuple[str, ...] = ("source_verifier", "reviewer", "qa")
+DATE_RE = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
+
+
+def _resolve_run_since(explicit: str | None, markdown_text: str) -> str:
+    """Run start (YYYY-MM-DD): the explicit value, else the first ISO date in the report's first 20 lines."""
+    if explicit:
+        m = DATE_RE.search(explicit)
+        return m.group(1) if m else ""
+    for line in markdown_text.splitlines()[:20]:
+        m = DATE_RE.search(line)
+        if m:
+            return m.group(1)
+    return ""
+
+
 def validate_report_full(
     markdown_text: str,
     *,
     level: int | None = None,
     report_dir: Path | None = None,
+    charts_path: Path | None = None,
+    run_since: str | None = None,
 ) -> tuple[list[str], list[str]]:
     """Return (errors, warnings) for a Heurisma markdown report."""
     errors: list[str] = []
@@ -245,6 +278,12 @@ def validate_report_full(
         and len((row.get("source_title") or "").strip()) >= 4
     ]
 
+    kind_by_id = {
+        (row.get("claim_id") or "").strip(): (row.get("kind") or "").strip().lower()
+        for row in sources_rows
+        if (row.get("claim_id") or "").strip()
+    }
+
     # 5. Validate Claim-Evidence Matrix structure, column count, >=2 rows, per-row tags, and Strong+Tier3/press ban
     if "Claim-Evidence Matrix" in section_positions:
         matrix_block = _extract_section_slice(clean_text, section_positions, "Claim-Evidence Matrix")
@@ -280,6 +319,13 @@ def validate_report_full(
                         f"Claim-Evidence Matrix row {row_idx} is missing a canonical confidence tag "
                         f"([Strong], [Moderate], [Preliminary], or [Speculative])."
                     )
+                if level == 3 and any(st in row for st in STRONG_TAGS):
+                    row_ids = _extract_citation_ids(row)
+                    if row_ids and all(kind_by_id.get(cid) == "own-computation" for cid in row_ids):
+                        warnings.append(
+                            f"Claim-Evidence Matrix row {row_idx} is [Strong] but its only evidence is own-computation "
+                            f"({', '.join(row_ids)}); own computations are not independent evidence."
+                        )
                 if any(st in row for st in STRONG_TAGS):
                     row_lower = row.lower()
                     is_low_tier = bool(LOW_TIER_SOURCE_RE.search(row)) or any(
@@ -305,27 +351,56 @@ def validate_report_full(
             if not (appendix_dir / "sources.csv").is_file():
                 errors.append(f"Level {level} report requires 'appendix/sources.csv' logging sources and access dates.")
 
-            # V1: {{fig:id}} <-> charts.json consistency
-            charts_json = appendix_dir / "charts.json"
-            if charts_json.is_file():
+            # V1: {{fig:id}} <-> charts.json consistency (W1: charts.json lives in the report root)
+            charts_json = _find_charts_json(report_dir, appendix_dir, charts_path)
+            if charts_json is None:
+                where = charts_path if charts_path is not None else f"{report_dir / 'charts.json'} or {appendix_dir / 'charts.json'}"
+                errors.append(f"Level {level} report requires charts.json: charts.json not found ({where}).")
+            else:
                 try:
                     charts_data = json.loads(charts_json.read_text(encoding="utf-8"))
                 except (OSError, json.JSONDecodeError) as exc:
-                    errors.append(f"Invalid JSON in appendix/charts.json: {exc}")
+                    errors.append(f"Invalid JSON in {charts_json}: {exc}")
                     charts_data = []
                 if isinstance(charts_data, list) and charts_data:
+                    try:
+                        from svg_charts import chart_warnings
+                    except ImportError:  # validator run in isolation from svg_charts.py
+                        chart_warnings = None  # type: ignore[assignment]
+                    if chart_warnings is not None:
+                        for ch in charts_data:
+                            if isinstance(ch, dict):
+                                warnings.extend(chart_warnings(ch))
                     chart_ids = {str(ch.get("id") or f"fig_{i + 1}") for i, ch in enumerate(charts_data)}
                     placed_figs = FIG_MARKER_RE.findall(clean_text)
                     if not placed_figs:
                         errors.append(
-                            "Level >= 2 report with appendix/charts.json must place figures inline using {{fig:id}} markers."
+                            f"Level >= 2 report with {charts_json.name} must place figures inline using {{{{fig:id}}}} markers."
                         )
                     for fid in placed_figs:
                         if fid not in chart_ids:
-                            errors.append(f"Unknown figure marker '{{{{fig:{fid}}}}}' not found in appendix/charts.json.")
+                            errors.append(f"Unknown figure marker '{{{{fig:{fid}}}}}' not found in {charts_json.name}.")
                     for cid in sorted(chart_ids - set(placed_figs)):
                         warnings.append(
-                            f"Chart '{cid}' in appendix/charts.json is not placed inline via {{{{fig:{cid}}}}} (will render in Additional Figures)."
+                            f"Chart '{cid}' in {charts_json.name} is not placed inline via {{{{fig:{cid}}}}} (will render in Additional Figures)."
+                        )
+
+            # W2: every {{num:key}} marker must resolve against appendix/numbers.json
+            used_num_keys = sorted(set(NUM_MARKER_RE.findall(clean_text)))
+            if used_num_keys:
+                known_keys: set[str] = set()
+                numbers_json = appendix_dir / "numbers.json"
+                if numbers_json.is_file():
+                    try:
+                        loaded_nums = json.loads(numbers_json.read_text(encoding="utf-8"))
+                        if isinstance(loaded_nums, dict):
+                            known_keys = {str(k) for k in loaded_nums}
+                    except (OSError, json.JSONDecodeError) as exc:
+                        errors.append(f"Invalid JSON in appendix/numbers.json: {exc}")
+                for key in used_num_keys:
+                    if key not in known_keys:
+                        errors.append(
+                            f"Unresolved marker '{{{{num:{key}}}}}': key '{key}' not found in appendix/numbers.json."
                         )
 
             # V2: In-text citations [@id] <-> sources.csv
@@ -342,12 +417,14 @@ def validate_report_full(
                 for cid in sorted(set(all_cited_ids) - valid_claim_ids):
                     errors.append(f"In-text citation '[@{cid}]' does not match any claim_id in appendix/sources.csv.")
                 for uncited in sorted(valid_claim_ids - set(all_cited_ids)):
-                    warnings.append(f"Source '{uncited}' in appendix/sources.csv is never cited in the report text.")
+                    msg = f"Source '{uncited}' in appendix/sources.csv is never cited in the report text."
+                    (errors if level >= 3 else warnings).append(msg)
 
                 # V5a: file:// rows in sources.csv must include a sha256 hash
                 for row_idx, row in enumerate(sources_rows, start=1):
                     url = (row.get("url") or "").strip()
-                    if url.startswith("file://"):
+                    is_own = (row.get("kind") or "").strip().lower() == "own-computation"
+                    if url and not is_own and (url.startswith("file://") or "://" not in url):  # file:// or scheme-less local path
                         title = row.get("source_title") or ""
                         sha_col = (row.get("sha256") or "").strip()
                         has_hash = bool(SHA_HEX_RE.search(sha_col)) or (
@@ -390,6 +467,93 @@ def validate_report_full(
                 except OSError as exc:
                     errors.append(f"Unable to read appendix/data_attempts.csv: {exc}")
 
+            # F2: an own computation (the report's own code) can never be Tier 1 evidence
+            for row in sources_rows:
+                if (row.get("kind") or "").strip().lower() == "own-computation" and re.search(
+                    r"\bTier\s*1\b", row.get("tier") or "", re.IGNORECASE
+                ):
+                    errors.append(
+                        f"Source '{(row.get('claim_id') or '?').strip()}' has kind=own-computation but tier Tier 1; "
+                        f"the report's own computation is not independent evidence (use Tier 2/3 or a different kind)."
+                    )
+
+            # F1: source described as retrieved/full text although data_attempts.csv logs a failed attempt for its URL
+            if attempts_csv.is_file():
+                try:
+                    with attempts_csv.open(encoding="utf-8", newline="") as fh:
+                        attempt_rows = list(csv.DictReader(fh))
+                except OSError:
+                    attempt_rows = []
+                ok_outcomes = {"used", "ok", "success", "succeeded", "retrieved"}
+                for row in sources_rows:
+                    surl = (row.get("url") or "").strip()
+                    stitle = (row.get("source_title") or "").lower()
+                    if not surl or not re.search(r"full[\s-]?text|open[\s-]access|retrieved", stitle):
+                        continue
+                    for arow in attempt_rows:
+                        outcome = (arow.get("outcome") or "").strip().lower()
+                        touches = surl in (arow.get("query_or_endpoint") or "") or surl in (arow.get("source_tried") or "")
+                        if touches and outcome and outcome not in ok_outcomes:
+                            warnings.append(
+                                f"Source '{(row.get('claim_id') or '?').strip()}' is described as full text/retrieved but "
+                                f"appendix/data_attempts.csv logs a failed attempt for the same URL ({surl}): "
+                                f"'{arow.get('outcome')}'."
+                            )
+                            break
+
+            # P2: every subagent gate leaves a trace in appendix/gates/ (a manual record when no subagents exist)
+            gates_dir = appendix_dir / "gates"
+            gate_sink = errors if level == 3 else warnings
+            for gate in GATE_FILES:
+                if gate == "reviewer" and level != 3:  # Reviewer #2 is dispatched at Level 3 only
+                    continue
+                gpath = gates_dir / f"{gate}.md"
+                gtext = gpath.read_text(encoding="utf-8", errors="replace") if gpath.is_file() else ""
+                if not gtext.strip():
+                    gate_sink.append(
+                        f"appendix/gates/{gate}.md is missing or empty; save the {gate.replace('_', '-')} gate output "
+                        f"(or the manual checks that replaced it) there."
+                    )
+                elif gate == "qa" and not re.search(r"^QA:\s*PASS\b", gtext, re.MULTILINE):
+                    if "gates/qa.md" not in markdown_text:
+                        gate_sink.append(
+                            "appendix/gates/qa.md has no 'QA: PASS' line; fix the failed checks, or name each accepted "
+                            "FAIL with its justification in the report (cite appendix/gates/qa.md in Section 7)."
+                        )
+
+            # P1: a limitation cannot rest on attempts inherited from an earlier run (needs attempted_utc column)
+            if attempts_csv.is_file():
+                try:
+                    with attempts_csv.open(encoding="utf-8-sig", newline="") as fh:
+                        att_reader = csv.DictReader(fh)
+                        att_cols = [c.strip() for c in (att_reader.fieldnames or [])]
+                        att_rows = list(att_reader)
+                except OSError:
+                    att_cols, att_rows = [], []
+                since = _resolve_run_since(run_since, markdown_text)
+                if "attempted_utc" in att_cols and since:
+                    ok_out = {"used", "ok", "success", "succeeded", "retrieved"}
+                    fresh_targets: set[str] = set()
+                    stale_targets: dict[str, str] = {}
+                    for arow in att_rows:
+                        outcome = (arow.get("outcome") or "").strip().lower()
+                        if not outcome or outcome in ok_out:
+                            continue
+                        target = (arow.get("target_series") or arow.get("source_tried") or "?").strip()
+                        stamp = (arow.get("attempted_utc") or "").strip()[:10]
+                        if stamp and stamp >= since:
+                            fresh_targets.add(target)
+                        else:
+                            stale_targets.setdefault(target, stamp or "no date")
+                    for target, stamp in sorted(stale_targets.items()):
+                        if target in fresh_targets:
+                            continue
+                        msg = (
+                            f"Data attempt for '{target}' in appendix/data_attempts.csv is inherited from an earlier run "
+                            f"({stamp} < run start {since}); re-run the rung in this session before relying on the limitation."
+                        )
+                        (errors if level == 3 else warnings).append(msg)
+
             # V6: Hygiene warnings (__pycache__, .pyc, 0-byte files)
             pycache_found = False
             for fp in sorted(appendix_dir.rglob("*")):
@@ -418,6 +582,24 @@ def validate_report_full(
                         warnings.append(
                             f"Calibrated Verdict number(s) not found literally in appendix/output.txt: {', '.join(missing_nums[:5])}."
                         )
+
+            # P3: figures that come from output.txt should come through {{num:key}} (numbers.json), not be retyped
+            if output_txt.is_file():
+                findings = _extract_section_slice(clean_text, section_positions, "Findings")
+                findings = re.sub(r"^#{1,6}\s.*$|\[@[^\]]+\]|\{\{[^}]+\}\}", "", findings, flags=re.MULTILINE)
+                out_txt = output_txt.read_text(encoding="utf-8", errors="replace")
+                typed = {
+                    t
+                    for t in HARDCODED_NUM_RE.findall(findings)
+                    if t in out_txt and not re.fullmatch(r"(?:19|20)\d\d", t)
+                }
+                used = len(NUM_MARKER_RE.findall(markdown_text))
+                if len(typed) >= MIN_TYPED_NUMBERS and used / (used + len(typed)) < MIN_MARKER_SHARE:
+                    warnings.append(
+                        f"numbers.json coverage is low: {len(typed)} number(s) in Section 4 appear in appendix/output.txt "
+                        f"but only {used} {{{{num:key}}}} marker(s) are used (e.g. {', '.join(sorted(typed)[:3])}); "
+                        f"write them as {{{{num:key}}}} so the text follows the analysis."
+                    )
 
     # 7. Level 3 Reviewer #2 Disposition Table & Deferred -> Data Attempts cross-check
     if level == 3:
@@ -468,9 +650,13 @@ def validate_report(
     *,
     level: int | None = None,
     report_dir: Path | None = None,
+    charts_path: Path | None = None,
+    run_since: str | None = None,
 ) -> list[str]:
     """Return a list of validation error strings for a Heurisma markdown report (empty list = valid)."""
-    errors, _ = validate_report_full(markdown_text, level=level, report_dir=report_dir)
+    errors, _ = validate_report_full(
+        markdown_text, level=level, report_dir=report_dir, charts_path=charts_path, run_since=run_since
+    )
     return errors
 
 
@@ -503,6 +689,17 @@ def validate_html_full(html_path: Path) -> tuple[list[str], list[str]]:
                 f"Spanish HTML report leaks untranslated English chrome: {', '.join(leaked)}."
             )
 
+    # W2: unresolved {{...}} markers left in visible HTML (strip <style>, <script>, <pre>, <code> first)
+    visible_for_braces = re.sub(
+        r"<(?:style|script|pre|code)\b[^>]*>.*?</(?:style|script|pre|code)>", " ", html_text, flags=re.DOTALL | re.IGNORECASE
+    )
+    leftovers = LEFTOVER_BRACES_RE.findall(visible_for_braces)
+    if leftovers:
+        errors.append(
+            f"Rendered HTML contains unresolved marker(s) {', '.join(sorted(set(leftovers))[:4])}; "
+            f"fix the key or figure id and re-render."
+        )
+
     # V4: Unconverted LaTeX warning (strip <style>, <script>, <pre>, <code> before scanning)
     visible = re.sub(r"<(?:style|script|pre|code)\b[^>]*>.*?</(?:style|script|pre|code)>", " ", html_text, flags=re.DOTALL | re.IGNORECASE)
     latex_hits = UNCONVERTED_LATEX_RE.findall(visible)
@@ -517,6 +714,49 @@ def validate_html(html_path: Path) -> list[str]:
     """Verify that a rendered HTML deliverable exists, preserves all 7 sections, and respects language purity."""
     errors, _ = validate_html_full(html_path)
     return errors
+
+
+SOURCE_HASH_RE = re.compile(r"<!--\s*heurisma-sources:\s*sha256:([0-9a-f]{12})\s*-->")
+
+
+def _load_render_module():
+    """Import render_report.py by explicit path so it also works under ``python3 -I`` (no script dir on sys.path)."""
+    import importlib.util
+
+    path = Path(__file__).resolve().parent / "render_report.py"
+    spec = importlib.util.spec_from_file_location("_heurisma_render_report", path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"cannot load {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def check_html_freshness(html_path: Path, report_path: Path, charts_path: Path | None = None) -> list[str]:
+    """Warn when the rendered HTML predates a change to the report, charts.json, numbers.json or appendix/ (W3)."""
+    if not html_path.is_file():
+        return []
+    try:
+        compute_source_hash = _load_render_module().compute_source_hash
+    except Exception as exc:  # never skip the freshness check silently
+        return [f"freshness check skipped: could not load render_report.py ({exc})."]
+    html_text = html_path.read_text(encoding="utf-8", errors="replace")
+    m = SOURCE_HASH_RE.search(html_text)
+    if not m:
+        return [
+            f"HTML '{html_path.name}' has no source hash (rendered before v0.5.0); "
+            f"re-render with render_report.py so staleness can be detected."
+        ]
+    report_dir = report_path.parent
+    appendix_dir = report_dir / "appendix"
+    charts = _find_charts_json(report_dir, appendix_dir, charts_path)
+    current = compute_source_hash(report_path, charts, None, appendix_dir if appendix_dir.is_dir() else None)
+    if current != m.group(1):
+        return [
+            f"HTML '{html_path.name}' is stale (out of date): sources hash {current} != embedded {m.group(1)}; "
+            f"re-run render_report.py."
+        ]
+    return []
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -538,6 +778,19 @@ def main(argv: list[str] | None = None) -> int:
         help="Optional path to rendered report.html to verify alongside the Markdown report.",
     )
     parser.add_argument(
+        "--charts",
+        type=Path,
+        default=None,
+        help="Optional explicit path to charts.json (default: <report dir>/charts.json, then appendix/charts.json).",
+    )
+    parser.add_argument(
+        "--run-since",
+        default=None,
+        metavar="YYYY-MM-DD",
+        help="Start date of this run; data_attempts.csv failures older than it count as inherited "
+        "(default: first ISO date in the report's first 20 lines).",
+    )
+    parser.add_argument(
         "--strict",
         action="store_true",
         help="Treat validation warnings as hard errors (exit code 1).",
@@ -549,11 +802,14 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     content = args.report_path.read_text(encoding="utf-8")
-    errors, warnings = validate_report_full(content, level=args.level, report_dir=args.report_path.parent)
+    errors, warnings = validate_report_full(
+        content, level=args.level, report_dir=args.report_path.parent, charts_path=args.charts, run_since=args.run_since
+    )
     if args.html is not None:
         html_errors, html_warnings = validate_html_full(args.html)
         errors.extend(html_errors)
         warnings.extend(html_warnings)
+        warnings.extend(check_html_freshness(args.html, args.report_path, args.charts))
 
     if warnings:
         print(f"Heurisma report warnings ({len(warnings)}):", file=sys.stderr)

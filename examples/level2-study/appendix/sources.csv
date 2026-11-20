@@ -1,3 +1,3 @@
-claim_id,source_title,url,tier,accessed_date,data_as_of
-C1,Internal 12-team pair-programming CSV (user-supplied),internal://user-supplied-csv,Tier 2,2026-11-20,2026-11
-C2,Reproducible Python sensitivity & bootstrap script,appendix/analysis.py,Tier 1,2026-11-20,2026-11
+claim_id,source_title,url,tier,accessed_date,data_as_of,kind
+C1,Internal 12-team pair-programming CSV (user-supplied),internal://user-supplied-csv,Tier 2,2026-11-20,2026-11,data
+C2,Own computation: sensitivity & bootstrap script (appendix/analysis.py),appendix/analysis.py,Tier 2,2026-11-20,2026-11,own-computation

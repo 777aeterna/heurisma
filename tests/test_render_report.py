@@ -278,5 +278,193 @@ La productividad sectorial puede elevar el tipo de cambio de equilibrio (`[Preli
             self.assertIn("-0.7742", rendered)
 
 
+    # ---- v0.5.0 Phase 1: W3 source hash -------------------------------------------------------
+    def _render_cli(self, root: Path, extra: list[str] | None = None) -> Path:
+        out_path = root / "report.html"
+        res = subprocess.run(
+            [sys.executable, "-B", str(SCRIPTS_DIR / "render_report.py"), str(root / "report.md"), "--out", str(out_path),
+             "--charts", str(root / "charts.json"), "--appendix", str(root / "appendix")] + (extra or []),
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(res.returncode, 0, msg=res.stderr)
+        return out_path
+
+    def _seed_report_dir(self, root: Path) -> None:
+        (root / "appendix").mkdir()
+        (root / "appendix" / "README.md").write_text("original readme\n", encoding="utf-8")
+        (root / "report.md").write_text(SAMPLE_MD, encoding="utf-8")
+        (root / "charts.json").write_text(json.dumps(SAMPLE_CHARTS), encoding="utf-8")
+
+    def test_render_embeds_source_hash(self) -> None:
+        import re
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self._seed_report_dir(root)
+            html = self._render_cli(root).read_text(encoding="utf-8")
+            m = re.search(r"<!-- heurisma-sources: sha256:([0-9a-f]{12}) -->", html)
+            self.assertIsNotNone(m, msg="source hash comment missing")
+            h1 = render_report.compute_source_hash(
+                root / "report.md", root / "charts.json", None, root / "appendix"
+            )
+            self.assertEqual(h1, m.group(1))
+            (root / "appendix" / "README.md").write_text("edited readme\n", encoding="utf-8")
+            h2 = render_report.compute_source_hash(
+                root / "report.md", root / "charts.json", None, root / "appendix"
+            )
+            self.assertNotEqual(h1, h2)
+
+    def test_source_hash_ignores_pycache_and_report_html(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self._seed_report_dir(root)
+            h1 = render_report.compute_source_hash(root / "report.md", root / "charts.json", None, root / "appendix")
+            (root / "appendix" / "__pycache__").mkdir()
+            (root / "appendix" / "__pycache__" / "x.pyc").write_bytes(b"\x00")
+            (root / "report.html").write_text("<html></html>", encoding="utf-8")
+            h2 = render_report.compute_source_hash(root / "report.md", root / "charts.json", None, root / "appendix")
+            self.assertEqual(h1, h2)
+
+
+    # ---- v0.5.0 Phase 2: X1 headings, X2/X3 notation, X4/X5 local paths ------------------------
+    def test_h4_h5_headings_render(self) -> None:
+        md = SAMPLE_MD.replace("## 4. Findings", "## 4. Findings\n\n#### 4.1.1 By regime\n\n##### Detail level\n\nText.", 1)
+        rendered = render_report.render_html(md, charts=SAMPLE_CHARTS)
+        self.assertIn("<h4>4.1.1 By regime</h4>", rendered)
+        self.assertIn("<h5>Detail level</h5>", rendered)
+        self.assertNotIn("#### 4.1.1", rendered)
+        self.assertNotIn("##### Detail", rendered)
+
+    def test_scientific_notation_positive_cases(self) -> None:
+        f = render_report._apply_scientific_notation
+        self.assertEqual(f("N^(\u22121/2)"), "N<sup>\u22121/2</sup>")
+        self.assertEqual(f("amplitude^0.50"), "amplitude<sup>0.50</sup>")
+        self.assertEqual(f("x^-2 here"), "x<sup>\u22122</sup> here")
+        self.assertEqual(f("rate 3e-08 per step"), "rate 3\u00d710<sup>\u22128</sup> per step")
+        self.assertEqual(f("1.5e+10 Hz"), "1.5\u00d710<sup>10</sup> Hz")
+
+    def test_scientific_notation_before_sentence_period_and_comma(self) -> None:
+        f = render_report._apply_scientific_notation
+        self.assertEqual(f("p = 3e-08."), "p = 3\u00d710<sup>\u22128</sup>.")
+        self.assertEqual(f("(1.5e-3, 2e-8)."), "(1.5\u00d710<sup>\u22123</sup>, 2\u00d710<sup>\u22128</sup>).")
+        self.assertEqual(f("version 1.2.3e4.5"), "version 1.2.3e4.5")
+
+    def test_unresolved_num_marker_warns_on_stderr_but_still_renders(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            md = Path(tmpdir) / "report.md"
+            md.write_text("# T\n\nValue {{num:no_existe}} here.\n", encoding="utf-8")
+            out = Path(tmpdir) / "report.html"
+            res = subprocess.run(
+                [sys.executable, "-B", str(SCRIPTS_DIR / "render_report.py"), str(md), "--out", str(out)],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(res.returncode, 0, msg=res.stderr)
+            self.assertIn("no_existe", res.stderr)
+            self.assertIn("unresolved", res.stderr.lower())
+
+    def test_marker_text_inside_embedded_appendix_does_not_warn(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "appendix" / "gates").mkdir(parents=True)
+            (root / "appendix" / "gates" / "qa.md").write_text("3 PASS - uses {{num:key}} markers\n", encoding="utf-8")
+            md = root / "report.md"
+            md.write_text("# T\n\nPlain text.\n", encoding="utf-8")
+            res = subprocess.run(
+                [sys.executable, "-B", str(SCRIPTS_DIR / "render_report.py"), str(md), "--out", str(root / "r.html"),
+                 "--appendix", str(root / "appendix")],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(res.returncode, 0, msg=res.stderr)
+            self.assertNotIn("unresolved", res.stderr.lower())
+
+    def test_scientific_notation_leaves_paths_urls_code_and_ids_intact(self) -> None:
+        f = render_report._apply_scientific_notation
+        for untouched in ("a^b/c.py", "see 2026-12 and 3e", "sha 12e5ab99 id", "v1e-x"):
+            self.assertEqual(f(untouched), untouched)
+        rendered = render_report.render_html(
+            SAMPLE_MD.replace("## 4. Findings", "## 4. Findings\n\nCode `x^2` and [link](https://example.org/a^2) and https://example.org/b^3 end.", 1),
+            charts=SAMPLE_CHARTS,
+        )
+        self.assertIn("<code>x^2</code>", rendered)
+        self.assertIn("https://example.org/a^2", rendered)
+        self.assertIn("https://example.org/b^3", rendered)
+        self.assertNotIn("a<sup>2</sup>", rendered)
+
+    def test_num_marker_uses_typographic_minus(self) -> None:
+        md = SAMPLE_MD.replace("## 4. Findings", "## 4. Findings\n\nGap {{num:gap}}, r = {{num:r}}, span {{num:span}}.", 1)
+        rendered = render_report.render_html(
+            md, charts=SAMPLE_CHARTS, numbers={"gap": "-16,6%", "r": "-0,40", "span": "2026-12"}
+        )
+        self.assertIn("\u221216,6%", rendered)
+        self.assertIn("r = \u22120,40", rendered)
+        self.assertIn("2026-12", rendered)
+
+    def _local_sources_dir(self, root: Path, title: str) -> Path:
+        appendix = root / "appendix"
+        appendix.mkdir()
+        (appendix / "sources.csv").write_text(
+            "claim_id,source_title,url,tier,accessed_date,data_as_of\n"
+            f'C1,"{title}",file:///home/alice/studies/fx/a3500.csv,Tier 2,2026-11-20,2026-11\n',
+            encoding="utf-8",
+        )
+        return appendix
+
+    def test_references_hide_absolute_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            appendix = self._local_sources_dir(Path(tmpdir), "Serie propia (local file, sha256 abc123def456)")
+            rendered = render_report.render_html(SAMPLE_MD, charts=SAMPLE_CHARTS, appendix_dir=appendix)
+            self.assertNotIn("/home/", rendered)
+            self.assertIn("a3500.csv", rendered)
+            self.assertIn("abc123def456", rendered)
+
+    def test_references_handle_schemeless_relative_local_url(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            appendix = Path(tmpdir) / "appendix"
+            appendix.mkdir()
+            (appendix / "sources.csv").write_text(
+                "claim_id,source_title,url,tier,accessed_date,data_as_of\n"
+                'C1,"Serie propia (local file, sha256 abc123def456)",appendix/data/a%20b.csv,Tier 2,2026-11-20,2026-11\n',
+                encoding="utf-8",
+            )
+            rendered = render_report.render_html(SAMPLE_MD, charts=SAMPLE_CHARTS, appendix_dir=appendix)
+            refs = rendered.split('<section class="references">', 1)[1].split("</section>", 1)[0]
+            self.assertIn("<code>a b.csv</code>", refs)
+            self.assertIn("abc123def456", refs)
+            self.assertNotIn("appendix/data", refs)
+
+    def test_gate_traces_are_embedded_in_appendices(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            appendix = Path(tmpdir) / "appendix"
+            (appendix / "gates").mkdir(parents=True)
+            (appendix / "gates" / "qa.md").write_text("QA: PASS\n1 PASS - validator clean\n", encoding="utf-8")
+            rendered = render_report.render_html(SAMPLE_MD, charts=SAMPLE_CHARTS, appendix_dir=appendix)
+            self.assertIn("<code>appendix/gates/qa.md</code>", rendered)
+            self.assertIn("QA: PASS", rendered)
+            self.assertNotIn("external artifact", rendered.split('class="appendices"', 1)[1].lower())
+
+    def test_local_copy_label_localized_es(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            appendix = self._local_sources_dir(Path(tmpdir), "Serie propia (local file, sha256 abc123def456)")
+            rendered = render_report.render_html(SAMPLE_MD, charts=SAMPLE_CHARTS, appendix_dir=appendix, lang="es")
+            refs = rendered.split('<section class="references">', 1)[1].split("</section>", 1)[0]
+            self.assertIn("archivo local", refs)
+            self.assertNotIn("local file", refs)
+            self.assertIn("abc123def456", refs)
+
+
+    def test_numeric_table_cells_use_typographic_minus(self) -> None:
+        md = SAMPLE_MD.replace(
+            "## 4. Findings",
+            "## 4. Findings\n\n| Group | Delta |\n| :- | -: |\n| A | -0.74% |\n| B | 2026-12 |",
+            1,
+        )
+        rendered = render_report.render_html(md, charts=SAMPLE_CHARTS)
+        self.assertIn('<td class="num">\u22120.74%</td>', rendered)
+        self.assertIn("<td>2026-12</td>", rendered)
+
+
 if __name__ == "__main__":
     unittest.main()

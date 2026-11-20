@@ -30,8 +30,8 @@ Select the depth level during Stage 0 based on the complexity and stakes of the 
 | :--- | :--- | :--- | :--- |
 | **Level 0 — Light Mode** | Short single-claim check or quick factual question where a 7-section paper is disproportionate | `SKILL.md` only | Compact 3-part inline response (*Calibrated Verdict + Evidence & Tier + Key Falsifier/Limitation*) |
 | **Level 1 — Rigorous Inquiry** | Conceptual, literature, technical, or policy investigation without raw dataset computation | [references/disciplines.md](references/disciplines.md), [references/scientific-writing.md](references/scientific-writing.md), [references/example-report.md](references/example-report.md) | Clean `report.md` (7 sections) + working-paper `report.html` |
-| **Level 2 — Empirical / Data Study** | User supplies data (files, folders, attachments), local data is found in Stage 0, public datasets exist, or quantitative statistics/charts must be computed | Level 1 + [references/data-protocol.md](references/data-protocol.md) (+ [references/forecasting.md](references/forecasting.md) if projecting future outcomes) | Clean `report.md` (with `{{fig:id}}` markers and `[@C1]` citations) + working-paper `report.html` + `charts.json` + `appendix/{fetch_data.py,analysis.py,output.txt,sources.csv,data_attempts.csv,README.md}` (+ optional `appendix/numbers.json`) |
-| **Level 3 — Deep Multi-Disciplinary** | Crosses 3+ branches, contested evidence, macroeconomic/policy forecasting, or high decision stakes | All above + [references/adversarial-review.md](references/adversarial-review.md) | Level 2 deliverables + independent **Reviewer #2** subagent critique & closed Disposition Table |
+| **Level 2 — Empirical / Data Study** | User supplies data (files, folders, attachments), local data is found in Stage 0, public datasets exist, or quantitative statistics/charts must be computed | Level 1 + [references/data-protocol.md](references/data-protocol.md) (+ [references/forecasting.md](references/forecasting.md) if projecting future outcomes) | Clean `report.md` (with `{{fig:id}}` markers and `[@C1]` citations) + working-paper `report.html` + `charts.json` + `appendix/{fetch_data.py,analysis.py,output.txt,numbers.json,sources.csv,data_attempts.csv,README.md}` + `appendix/gates/{source_verifier,qa}.md` (+ `reviewer.md` at Level 3) |
+| **Level 3 — Deep Multi-Disciplinary** | Crosses 3+ branches, contested evidence, macroeconomic/policy forecasting, or high decision stakes | All above + [references/adversarial-review.md](references/adversarial-review.md) | Level 2 deliverables + independent **Reviewer #2** critique ([references/agents/reviewer.md](references/agents/reviewer.md)) & closed Disposition Table |
 
 ---
 
@@ -49,7 +49,8 @@ Before running a single web search, fetching data, or drafting findings:
    python3 -B <skill-dir>/scripts/local_data.py inventory <path> ...   # plus any file/folder the user mentioned
    ```
    List the local files found (kind, size, SHA-256 prefix) in your response. If the topic is data-heavy and nothing was found, ask the user once whether they have their own files before you rely on online sources only.
-6. Select **Level 0**, **Level 1**, **Level 2**, or **Level 3**.
+6. **Detect an earlier run.** If the working folder or `datos/` already holds a `report.md`, `data_attempts.csv`, `sources.csv` or an `appendix/` from a previous inquiry, say so in your response and in Section 3 ("this run starts from …"). Treat its data files as **local data** (rung 3, import and register them) and its failures and limitations as **unverified in this session**: every failed rung you intend to rely on is re-run in Stage 2 before it supports a limitation (see the inherited-attempts rule there).
+7. Select **Level 0**, **Level 1**, **Level 2**, or **Level 3**.
 
 ### Stage 1: Problem Framing & Falsifiable Hypotheses
 Translate the user's prompt (even if leading or biased) into:
@@ -67,13 +68,18 @@ Gather evidence ranked by the discipline's hierarchy (`Tier 1 > Tier 2 > Tier 3`
 | :- | :- | :- |
 | **1. Online primary** | Query the primary institutional API, statistical agency, or peer-reviewed dataset (Tier 1/2) via `appendix/fetch_data.py` | `download_log.csv` on success; `data_attempts.csv` row on failure |
 | **2. Online alternatives** | Mirrors, alternate formats (XLSX vs. CSV vs. JSON), archived vintages, or a web search for the exact file | `data_attempts.csv` row per failed alternative |
-| **3. Local data** | User files or prior downloads found in Stage 0: inspect with `local_data.py preview`, **copy** into `appendix/data/`, register with `local_data.py register` | `sources.csv` row with `file://` URL + SHA-256; `fallback_used = local:<path> sha256:<hash>` in the failed rung's `data_attempts.csv` row |
-| **4. Limitation** | Only after rungs 1–3 fail: declare the gap in Section 3 and Section 7 | `data_attempts.csv` rows covering both online and local search |
+| **3. Local data** | User files or prior downloads found in Stage 0: inspect with `local_data.py preview`, then `local_data.py import` (copies into `appendix/data/`, registers the copy, logs the rung) | `sources.csv` row `L<n>` with relative `appendix/data/…` path + SHA-256; `data_attempts.csv` row with `fallback_used = local:<path> sha256:<hash>` |
+| **4. Limitation** | Only after rungs 1–3 fail **in this run**: declare the gap in Section 3 and Section 7 | `data_attempts.csv` rows, dated in this run, covering both online and local search |
 
 - Never use Tier 3 press while an accessible Tier 1/2 series exists.
-- `appendix/fetch_data.py` writes failures **directly** to `appendix/data_attempts.csv` with the canonical columns `target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used` (see [references/data-protocol.md](references/data-protocol.md)).
+- **Rehearse rung 3 offline:** with `HEURISMA_OFFLINE=1` set, `fetch_data.py` skips the network and logs each online rung as `offline mode`, so the report must stand on the local files (`local_data.offline_enabled()`).
+- `appendix/fetch_data.py` writes failures **directly** to `appendix/data_attempts.csv` with the canonical columns `target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used,attempted_utc` (see [references/data-protocol.md](references/data-protocol.md)).
+- **Inherited attempts do not count.** A failure logged by an earlier run (an undated row, or one dated before this run) proves only that it failed *then*. Re-run that rung now and log the new dated row before it supports a limitation, a `Deferred` critique or a downgrade; `validate_report.py` flags failures with no attempt in this run (error at Level 3).
+- **"No such series" needs the whole catalogue.** Before declaring that a provider does not publish a series, search every page of its catalogue with at least three keywords for the concept (including the institutional terms, e.g. `banda`/`techo`/`piso` for a currency band) and its statistics section, logging each search.
 - **Local data tier:** the tier the user declares for the file's origin (e.g., "downloaded from the statistics agency" → Tier 1, annotated "local copy supplied by the user"). Unknown origin → **Tier 3**, and no claim resting only on that file may carry `[Strong]`/`[Fuerte]`.
 - Every file in `appendix/data/` must appear in `download_log.csv` (downloaded) or in `sources.csv` as `file://` (local). Delete scratch or dummy files you do not use.
+- **Fill the `kind` column of `sources.csv` for every row:** `data`, `literature`, `press`, or `own-computation`. If a row points at the report's own code or output (`appendix/*.py`, `output.txt`, "own calculations", "numerical integration"), it is `kind = own-computation` with **Tier 2 at most** — it verifies a derivation, it is never independent Tier 1 evidence about the world (`validate_report.py` errors on `own-computation` + Tier 1).
+- **Register what you actually read.** If only the abstract of a document was retrievable, its `source_title` says `(abstract only)` — never "full text" or "open access" — and the claims it supports stay at `[Preliminary]`/`[Preliminar]` or below.
 
 ### Stage 3: Computational & Data Protocol (Conditional: Level 2+)
 Whenever the inquiry involves raw data, time series, or quantitative claims:
@@ -84,33 +90,37 @@ Whenever the inquiry involves raw data, time series, or quantitative claims:
 ### Stage 4: Adversarial Falsification & Closed Reviewer #2 Loop
 Actively attempt to break your primary conclusion:
 - Test boundary failures, structural regime breaks, confounders, reverse causality, lagging official data gaps, and competing literature.
-- For **Level 3**, read [references/adversarial-review.md](references/adversarial-review.md) and dispatch an independent **Reviewer #2** using your runtime's subagent tool.
+- For **Level 3**, read [references/adversarial-review.md](references/adversarial-review.md) and dispatch an independent **Reviewer #2** with the prompt in [references/agents/reviewer.md](references/agents/reviewer.md) through your runtime's subagent tool (if your runtime has none, run that prompt's six attack categories yourself and record the result the same way). Save its full answer to **`appendix/gates/reviewer.md`**.
 - **Close the Review Loop:**
   1. Include a **Reviewer #2 Disposition Table** in Section 5 covering 100% of critiques (`Fixed`, `Refuted`, or `Deferred`).
   2. **Verify or Exclude Reviewer-Introduced Facts:** Any factual claim, policy mechanism, or number introduced by Reviewer #2 MUST be verified in a Tier 1/2 primary source before inclusion; never leave a reviewer-introduced claim in the report as Tier 3 `[Preliminary]`.
   3. **Tag-downgrade closures need attempts too:** a critique closed as `Fixed`/`Corregida` *by downgrading a tag because data X could not be obtained* counts as a data limitation — it requires `data_attempts.csv` rows for the online **and** local search for X, exactly like `Deferred`.
 
 ### Stage 5: Working-Paper Scientific Writing
+**Source-verification gate (Level 2+, before writing Sections 4 and 6):** dispatch a fresh-context subagent with [references/agents/source-verifier.md](references/agents/source-verifier.md); if your runtime has no subagent tool, run its seven checks yourself. Save its answer (or your record of the checks) to **`appendix/gates/source_verifier.md`**. Apply every fix it returns to `sources.csv`, `data_attempts.csv` and the matrix **before** writing — a matrix cell that says "abstract only" while `sources.csv` still says "full text" is still a contradiction.
+
 Read [references/scientific-writing.md](references/scientific-writing.md) and [references/example-report.md](references/example-report.md).
 - **Single-Language Consistency:** Write 100% of headings, bullet labels, table column headers, figure titles/captions, chart legends, and annotation labels in the user's language (use the exact Spanish template in `references/scientific-writing.md` for Spanish requests).
 - **Abstract-Style Verdict:** Keep `Calibrated Verdict` / `Veredicto calibrado` to **at most 3 sentences and at most 5 numbers**; put detailed numerical breakdowns in Section 4 tables and figures.
 - **Linked In-Text Citations:** Cite sources with `[@C1]` or `[@C1; @C4]`, where each id is a `claim_id` from `appendix/sources.csv`. Every Section 4 finding that rests on a source carries a citation; `render_report.py` numbers them by first appearance and links each to its reference.
 - **Epistemic Calibration Tags:** Tag every major claim and every Claim-Evidence Matrix row with `[Strong]`/`[Fuerte]`, `[Moderate]`/`[Moderada]`, `[Preliminary]`/`[Preliminar]`, or `[Speculative]`/`[Especulativa]`. (`[Strong]`/`[Fuerte]` is strictly forbidden on Tier 3 / press / unknown-origin local sources.)
-- **Optional number placeholders:** write `{{num:key}}` to pull a value from `appendix/numbers.json` at render time instead of copying it by hand.
+- **Number placeholders (Level 2+):** every figure in the Calibrated Verdict, Section 1 and the Section 4 tables that comes from `appendix/output.txt` is written as `{{num:key}}`, exported by `analysis.py` to `appendix/numbers.json` — never retyped. Every key must exist (`validate_report.py --level 2` errors on an unresolved key and warns when most Section 4 figures are typed by hand).
+- **Voice:** impersonal or first-person plural — *"the analysis shows"*, *"only the abstract could be retrieved"*, *"we re-ran the integration"* / *"el análisis muestra"*, *"solo pudo recuperarse el resumen"*, *"repetimos la integración"*.
 
 ### Stage 6: Clean Appendix Hygiene, Working-Paper HTML & Validation
 Before completing the task:
-1. **Clean `appendix/`:** Write a short `appendix/README.md` listing the execution order (`python3 -B fetch_data.py` → `python3 -B analysis.py`), and delete any `__pycache__/`, `.pyc`, empty `0`-byte files, or unregistered files in `appendix/data/`.
+1. **Clean `appendix/`:** Write a short `appendix/README.md` listing the exact commands from the report folder (`python3 -B appendix/fetch_data.py` → `python3 -B appendix/analysis.py`; not `python3 -I`, which cannot import sibling modules) and which data files `fetch_data.py` downloaded in this run versus which were copied from `datos/` or an earlier run; delete any `__pycache__/`, `.pyc`, empty `0`-byte files, or unregistered files in `appendix/data/`.
 2. **Render Working-Paper `report.html`:**
    ```bash
    python3 -B <skill-dir>/scripts/render_report.py report.md --out report.html --charts charts.json --appendix appendix/
    ```
-   *(Language is auto-detected from the section headings; force it with `--lang en|es`. Add `--no-credit` to drop the footer credit. `{{num:key}}` placeholders are filled from `appendix/numbers.json` or `--numbers <file>`. The renderer embeds numbered SVG figures at `{{fig:id}}` markers, links `[@id]` citations to a References list ordered by appearance, converts residual inline math to HTML/Unicode while preserving currency such as `$1,563`, and links—never embeds—`appendix/data/` and binary files.)*
+   *(Language is auto-detected from the section headings; force it with `--lang en|es`. Add `--no-credit` to drop the footer credit. The HTML embeds a hash of its sources (`report.md`, `charts.json`, `appendix/`); re-render after **any** edit, or the validator reports the HTML as stale. `{{num:key}}` placeholders are filled from `appendix/numbers.json` or `--numbers <file>`. The renderer embeds numbered SVG figures at `{{fig:id}}` markers, links `[@id]` citations to a References list ordered by appearance, converts residual inline math to HTML/Unicode while preserving currency such as `$1,563`, and links—never embeds—`appendix/data/` and binary files.)*
 3. **Validate Deliverables:**
    ```bash
-   python3 -B <skill-dir>/scripts/validate_report.py report.md --level <1|2|3> --html report.html
+   python3 -B <skill-dir>/scripts/validate_report.py report.md --level <1|2|3> --html report.html --strict
    ```
-   Fix every reported **error** before presenting the result. Read every **warning** (uncited sources, unplaced charts, orphan data files, unconverted LaTeX, `__pycache__`, 0-byte files, verdict numbers missing from `output.txt`) and fix it or justify it in Section 3/7. Use `--strict` to treat warnings as errors.
+   `charts.json` is found next to `report.md` (or pass `--charts <path>`). Fix every reported **error** before presenting the result. Read every **warning** (uncited sources, unplaced charts, near-identical bars, stale HTML, orphan data files, contradictory provenance, unconverted LaTeX, `__pycache__`, 0-byte files, verdict numbers missing from `output.txt`) and fix it, or justify it in Section 3/7 and drop `--strict`.
+4. **QA gate (Level 2+):** dispatch a fresh-context subagent with [references/agents/qa.md](references/agents/qa.md) (or run its checks yourself without a subagent tool) and save its answer to **`appendix/gates/qa.md`**. Present the report only after `QA: PASS`, or list each remaining `FAIL` to the user and justify it in Section 7 citing `appendix/gates/qa.md`. Then re-render and re-validate: the gate files are part of the appendix, so the validator requires all three (`gates/source_verifier.md`, `gates/reviewer.md`, `gates/qa.md`; error at Level 3, warning at Level 2).
 
 ---
 
@@ -167,11 +177,14 @@ Use the English template below for English inquiries, or the 100% Spanish equiva
 | *"The user's board meets in 10 minutes and demanded a binary YES or NO without caveats."* | Put the crisp ≤3-sentence calibrated verdict in line 1 of `## 1. Executive Summary` and keep all 7 sections concise. Never strip calibration tags or counter-evidence. |
 | *"I'll write the report in Spanish but keep the English labels ('Calibrated Verdict', 'Flaw #', 'Claim') from the template."* | Mixed-language Spanglish degrades paper quality. Use 100% Spanish headings, labels, table headers, chart legends, and tags (`[Fuerte]`, `[Moderada]`, `[Preliminar]`, `[Especulativa]`) from `references/scientific-writing.md`. |
 | *"The central bank API returned 404, so I'll declare a data limitation."* | One failed endpoint is rung 1 of 4. Try mirrors/alternate formats (rung 2) and the local inventory from Stage 0 (rung 3) before declaring a limitation, and log every rung in `data_attempts.csv`. |
-| *"The user's CSV is right there; I'll read it in place from their folder."* | Copy it into `appendix/data/`, register it with `local_data.py register` (`file://` + SHA-256), and read it from `appendix/data/` so the appendix stays self-contained and reproducible. |
+| *"The user's CSV is right there; I'll read it in place from their folder."* | Copy it into `appendix/data/`, import it with `local_data.py import` (relative path + SHA-256), and read it from `appendix/data/` so the appendix stays self-contained and reproducible. |
 | *"Reviewer #2 asked for an alternative series I couldn't find; I'll just downgrade the tag and mark it `Fixed`."* | A tag-downgrade closure is a data limitation in disguise. Log the online and local attempts for that series in `data_attempts.csv` first. |
 | *"Reviewer #2 mentioned an interesting policy detail; I couldn't find the primary document, so I'll include it as Tier 3 `[Preliminary]`."* | Unverified reviewer claims are forbidden. Either verify the fact in a Tier 1/2 primary source or exclude it from the findings and log it in the Disposition Table. |
 | *"I'll hardcode the chart numbers in a separate `build_charts.py` script instead of emitting `charts.json` from `analysis.py`."* | Hand-copied chart numbers drift from `output.txt`. Emit `charts.json` (and optionally `numbers.json`) directly from the computed variables in `appendix/analysis.py`. |
 | *"The References list is auto-generated from `sources.csv`, so I don't need in-text citations."* | An uncited reference list does not tell the reader which claim rests on which source. Cite with `[@C1]` in the text; `validate_report.py --level 2` fails without Section 4 citations. |
+| *"Own RK4 integration [@C4], Tier 1 (computed result, not an external dataset)."* | The report's own code is `kind = own-computation`, Tier 2 at most. It checks a derivation; it is not independent evidence, and an external Tier 1/2 source must carry any `[Strong]` claim about the world. |
+| *"The matrix now says 'abstract only'; I changed nothing in the artifacts."* | `sources.csv` still says "open-access full text", and the References list is built from it. Fix the source row itself (and its tier/tag) — the source-verifier gate exists for exactly this. |
+| *"The previous run's `data_attempts.csv` already shows the band series doesn't exist; no need to search again."* | That row proves the search failed *then*, possibly on the first page of a catalogue. Re-run the rung now (whole catalogue, several keywords) and log it with today's `attempted_utc`; an inherited failure cannot support a limitation. |
 | *"I'll cram 15 numbers into a 6-line Calibrated Verdict paragraph to be thorough."* | A verdict stuffed with 15 numbers buries the conclusion. Keep the verdict to ≤3 sentences and ≤5 numbers; put the rest in Section 4 tables and `{{fig:id}}` figures. |
 
 ## Red Flags — STOP and Correct Before Outputting
@@ -179,6 +192,11 @@ Use the English template below for English inquiries, or the 100% Spanish equiva
 - Searching the web or writing code before completing Stage 0 (including the local inventory) and Stage 1 (H₀ / H₁ inside Section 2).
 - Declaring a data limitation, `Deferred` critique, or tag-downgrade closure without both online and local rows in `data_attempts.csv`.
 - Pairing `[Strong]`/`[Fuerte]` with a `Tier 3`, press/blog/roadmap, or unknown-origin local source.
+- A `sources.csv` row for the report's own code/output without `kind = own-computation`, or tagged Tier 1.
+- A source titled "full text"/"open access" while `data_attempts.csv` says only the abstract was retrievable.
+- Relying on a failure, limitation or `Deferred` row inherited from an earlier run without re-running that rung in this session.
+- Writing Sections 4/6 at Level 2+ without running the source-verifier gate, or presenting the report without the QA gate; leaving `appendix/gates/` without the three gate files.
+- First-person singular in the report (*"I could not read…"*, *"no pude…"*).
 - Section 4 findings without `[@id]` citations, or a `[@id]` that does not exist in `sources.csv`.
 - Mixing English template labels into a Spanish report.
 - Creating charts without `{{fig:id}}` markers in `report.md`, using a `{{fig:id}}` absent from `charts.json`, or passing >30-point time series without the `charts.json` v2 schema.

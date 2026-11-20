@@ -1,8 +1,12 @@
-Dataset integrity: sites=16, total_engineers=590, missing=0
-Pooled PR delta: Hybrid_2d=-0.74% (MAD=3.65pp) vs Office_5d=+1.04% (diff=-1.78pp)
-Senior PR delta: Hybrid_2d=+2.97% vs Office_5d=+0.25% (diff=+2.73pp, 95% boot CI [+2.25pp, +3.20pp])
-Junior PR delta: Hybrid_2d=-4.45% vs Office_5d=+1.82% (diff=-6.28pp, 95% boot CI [-6.78pp, -5.75pp])
-12m Attrition: Hybrid_2d=9.8% vs Office_5d=13.9% (diff=-4.0pp, rel=-29.0%, 95% boot CI [-5.4pp, -2.6pp])
-Senior Attrition: Hybrid_2d=8.1% vs Office_5d=13.4%
-Junior Attrition: Hybrid_2d=11.6% vs Office_5d=14.3%
-Junior mentoring hrs/wk: Hybrid_2d=1.73 vs Office_5d=5.15 (r_all=+0.879, r_junior=+0.999)
+Dataset integrity: sites=16, total_engineers=590, missing=0, sites per cell=4
+Exact tests: 70 relabelings per subgroup, 4,900 stratified; smallest attainable two-sided p: subgroup 0.0286
+PR delta: Senior Hybrid=+2.97% Office=+0.25% diff=+2.73 pp exact p=0.0286
+PR delta: Junior Hybrid=-4.45% Office=+1.82% diff=-6.28 pp exact p=0.0286
+PR delta: pooled diff=-1.78 pp (stratified exact p=0.1804); interaction junior-senior=-9.00 pp exact p=0.0004
+Attrition (unweighted site means): Hybrid=9.8% Office=13.9%; engineer-weighted: Hybrid=9.6% Office=13.8% (rel=-30.1%)
+Attrition: Senior Hybrid=8.1% Office=13.4% diff=-5.28 pp (rel=-39.5%) exact p=0.0286
+Attrition: Junior Hybrid=11.6% Office=14.3% diff=-2.75 pp (rel=-19.2%) exact p=0.0286
+Attrition: pooled diff=-4.01 pp stratified exact p=0.0004; interaction junior-senior=+2.53 pp exact p=0.2959
+Mentoring hrs/wk: Senior Hybrid=4.12 Office=4.45; Junior Hybrid=1.73 Office=5.15
+Within-arm r(mentoring, PR delta), n=4 each: Senior Hybrid=+0.988 Senior Office=+0.683 Junior Hybrid=+0.991 Junior Office=+0.993
+Junior pooled r (confounded with policy arm, not a mechanism test)=+0.999

@@ -1,5 +1,5 @@
-claim_id,source_title,url,tier,accessed_date,data_as_of
-C1,"Multi-site engineering hybrid RCT dataset — local copy supplied by the user (local file, sha256 9a7419cd6056)",file://appendix/data/hybrid_rct_sites.csv,Tier 2,2026-11-20,2026-10
-C2,"Bloom, N., Han, R., & Liang, J. (2024). Hybrid working from home improves retention without damaging performance. Nature, 630, 920–925",https://doi.org/10.1038/s41586-024-07500-2,Tier 1,2026-11-20,2024-06
-C3,"Emanuel, N., Harrington, E., & Pallais, A. (2023). The Power of Proximity to Coworkers: Training for Tomorrow or Productivity Today? NBER Working Paper 31880",https://www.nber.org/papers/w31880,Tier 1,2026-11-20,2023-11
-C4,"Reproducible subgroup & bootstrap audit script (appendix/analysis.py)",appendix/analysis.py,Tier 1,2026-11-20,2026-11
+claim_id,source_title,url,tier,accessed_date,data_as_of,kind
+C1,"Multi-site engineering CSV — copy supplied by the user; origin and allocation undocumented (local file, sha256 9a7419cd6056)",appendix/data/hybrid_rct_sites.csv,Tier 3,2026-11-20,2026-10,data
+C2,"Bloom, N., Han, R., & Liang, J. (2024). Hybrid working from home improves retention without damaging performance. Nature, 630, 920–925 (open-access full text read via Europe PMC PMC11208135)",https://doi.org/10.1038/s41586-024-07500-2,Tier 1,2026-11-20,2024-06,literature
+C3,"Emanuel, N., Harrington, E., & Pallais, A. The Power of Proximity to Coworkers. NBER Working Paper 31880 (2023); published in Quarterly Journal of Economics 141(3), 2026 (NBER page and abstract read; full text not read)",https://www.nber.org/papers/w31880,Tier 1,2026-11-20,2026-06,literature
+C4,"Own computation: exact permutation audit (appendix/analysis.py)",appendix/analysis.py,Tier 2,2026-11-20,2026-11,own-computation

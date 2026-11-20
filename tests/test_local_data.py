@@ -203,5 +203,235 @@ class TestLocalData(unittest.TestCase):
             self.assertIn("series.csv", res.stdout)
 
 
+    # ---- v0.5.0 Phase 3: L1-L5 --------------------------------------------------------------
+    def _read_csv_rows(self, path: Path) -> list[dict[str, str]]:
+        with path.open(encoding="utf-8", newline="") as fh:
+            return list(csv.DictReader(fh))
+
+    def test_register_assigns_sequential_local_ids_when_claim_is_empty(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "a.csv").write_text("a,b\n1,2\n", encoding="utf-8")
+            (root / "b.csv").write_text("a,b\n3,4\n", encoding="utf-8")
+            src = root / "sources.csv"
+            r1 = local_data.register_local(root / "a.csv", src, tier="Tier 2", title="A")
+            r2 = local_data.register_local(root / "b.csv", src, tier="Tier 2", title="B")
+            self.assertEqual((r1["claim_id"], r2["claim_id"]), ("L1", "L2"))
+            self.assertEqual(local_data.next_local_id(src), "L3")
+            self.assertEqual(local_data.next_local_id(root / "missing.csv"), "L1")
+
+    def test_register_dedupes_same_file_by_path_and_by_hash(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "a.csv").write_text("a,b\n1,2\n", encoding="utf-8")
+            (root / "copy_of_a.csv").write_text("a,b\n1,2\n", encoding="utf-8")
+            src = root / "sources.csv"
+            first = local_data.register_local(root / "a.csv", src, tier="Tier 2", title="A")
+            again = local_data.register_local(root / "a.csv", src, tier="Tier 2", title="A")
+            same_hash = local_data.register_local(root / "copy_of_a.csv", src, tier="Tier 2", title="A copy")
+            self.assertEqual(len(self._read_csv_rows(src)), 1)
+            self.assertEqual(again["claim_id"], first["claim_id"])
+            self.assertEqual(same_hash["claim_id"], first["claim_id"])
+
+    def test_register_title_localized_and_relative_url(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "data").mkdir()
+            f = root / "data" / "serie propia.csv"
+            f.write_text("a,b\n1,2\n", encoding="utf-8")
+            row = local_data.register_local(
+                f, root / "sources.csv", tier="Tier 2", title="Serie", lang="es", relative_to=root
+            )
+            self.assertIn("archivo local", row["source_title"])
+            self.assertNotIn("local file", row["source_title"])
+            self.assertEqual(row["url"], "data/serie%20propia.csv")
+            self.assertFalse(row["url"].startswith("file:"))
+            self.assertNotIn(str(root), row["url"])
+
+    def test_register_dedupes_against_legacy_file_uri_row(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "data").mkdir()
+            f = root / "data" / "a.csv"
+            f.write_text("a\n1\n", encoding="utf-8")
+            sp = root / "sources.csv"
+            sp.write_text(
+                "claim_id,source_title,url,tier,accessed_date,data_as_of\n"
+                "L1,Old,file://data/a.csv,Tier 2,2026-11-20,\n",
+                encoding="utf-8",
+            )
+            row = local_data.register_local(f, sp, tier="Tier 2", title="A", relative_to=root)
+            self.assertEqual(row["claim_id"], "L1")
+            self.assertEqual(len(self._read_csv_rows(sp)), 1)
+
+    def test_register_inside_report_root_never_stores_absolute_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "appendix").mkdir()
+            f = root / "appendix" / "a.csv"
+            f.write_text("a\n1\n", encoding="utf-8")
+            row = local_data.register_local(f, root / "appendix" / "sources.csv", tier="Tier 2", title="A", relative_to=root)
+            self.assertNotIn(str(root), row["url"])
+            self.assertEqual(row["url"], "appendix/a.csv")
+
+    def test_legacy_six_column_attempts_file_is_widened_not_corrupted(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            att = root / "data_attempts.csv"
+            att.write_text(
+                "target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used\nold,x,y,failed,z,\n",
+                encoding="utf-8",
+            )
+            local_data.log_offline_attempt(att, "BCRA", "offline mode", target="band")
+            rows = self._read_csv_rows(att)
+            self.assertEqual(len(rows), 2)
+            self.assertEqual(rows[0]["attempted_utc"], "")  # inherited row: no date -> counts as inherited
+            self.assertEqual(rows[0]["failure_reason"], "z")
+            self.assertEqual(rows[1]["target_series"], "band")
+            self.assertRegex(rows[1]["attempted_utc"], r"^\d{4}-")
+
+    def test_offline_attempt_is_timestamped_in_new_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            att = Path(tmpdir) / "data_attempts.csv"
+            local_data.log_offline_attempt(att, "BCRA", "offline mode", target="band")
+            rows = self._read_csv_rows(att)
+            self.assertRegex(rows[0]["attempted_utc"], r"^\d{4}-\d{2}-\d{2}T")
+
+    def test_preview_cli_reports_bad_json_and_empty_csv_without_traceback(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "mal.json").write_text("{not json", encoding="utf-8")
+            (root / "vacio.csv").write_text("", encoding="utf-8")
+            for name in ("mal.json", "vacio.csv"):
+                res = subprocess.run(
+                    [sys.executable, "-B", str(SCRIPTS_DIR / "local_data.py"), "preview", str(root / name)],
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual(res.returncode, 1, msg=res.stdout + res.stderr)
+                self.assertNotIn("Traceback", res.stderr)
+                self.assertIn(name, res.stderr)
+
+    def test_import_local_copies_registers_relative_and_logs_attempt(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "datos").mkdir()
+            src_file = root / "datos" / "mi serie.csv"
+            src_file.write_bytes("\ufefffecha;valor\n2026-01-01;1,5\n".encode("utf-8"))
+            appendix = root / "appendix"
+            row = local_data.import_local(
+                src_file, appendix / "data", appendix / "sources.csv", tier="Tier 2", title="Mi serie", lang="es"
+            )
+            copy = appendix / "data" / "mi serie.csv"
+            self.assertTrue(copy.is_file())
+            self.assertEqual(copy.read_bytes(), src_file.read_bytes())
+            self.assertEqual(row["claim_id"], "L1")
+            self.assertEqual(row["url"], "appendix/data/mi%20serie.csv")
+            sources = self._read_csv_rows(appendix / "sources.csv")
+            self.assertEqual(len(sources), 1)
+            self.assertIn(local_data.sha12(copy), sources[0]["source_title"])
+            attempts = self._read_csv_rows(appendix / "data_attempts.csv")
+            self.assertEqual(
+                list(attempts[0]),
+                ["target_series", "source_tried", "query_or_endpoint", "outcome", "failure_reason", "fallback_used",
+                 "attempted_utc"],
+            )
+            self.assertRegex(attempts[0]["attempted_utc"], r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+            self.assertEqual(
+                attempts[0]["fallback_used"],
+                f"local:appendix/data/mi%20serie.csv sha256:{local_data.sha12(copy)}",
+            )
+            # idempotent: importing again adds nothing
+            local_data.import_local(
+                src_file, appendix / "data", appendix / "sources.csv", tier="Tier 2", title="Mi serie", lang="es"
+            )
+            self.assertEqual(len(self._read_csv_rows(appendix / "sources.csv")), 1)
+            self.assertEqual(len(self._read_csv_rows(appendix / "data_attempts.csv")), 1)
+
+    def test_import_cli_and_conflicting_destination(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            f = root / "x.csv"
+            f.write_text("a,b\n1,2\n", encoding="utf-8")
+            appendix = root / "appendix"
+            cmd = [
+                sys.executable, "-B", str(SCRIPTS_DIR / "local_data.py"), "import", str(f),
+                "--into", str(appendix / "data"), "--sources", str(appendix / "sources.csv"),
+                "--tier", "Tier 1", "--title", "X series",
+            ]
+            res = subprocess.run(cmd, capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0, msg=res.stderr)
+            self.assertTrue((appendix / "data" / "x.csv").is_file())
+            # same name, different content -> readable error, exit 1, nothing overwritten
+            other = root / "other" / "x.csv"
+            other.parent.mkdir()
+            other.write_text("a,b\n9,9\n", encoding="utf-8")
+            res2 = subprocess.run(cmd[:4] + [str(other)] + cmd[5:], capture_output=True, text=True)
+            self.assertEqual(res2.returncode, 1)
+            self.assertNotIn("Traceback", res2.stderr)
+            self.assertEqual((appendix / "data" / "x.csv").read_text(encoding="utf-8"), "a,b\n1,2\n")
+
+    def test_offline_enabled_reads_env_and_logs_offline_attempt(self) -> None:
+        import os
+        from unittest import mock
+
+        with mock.patch.dict(os.environ, {"HEURISMA_OFFLINE": "1"}):
+            self.assertTrue(local_data.offline_enabled())
+        with mock.patch.dict(os.environ, {"HEURISMA_OFFLINE": "0"}):
+            self.assertFalse(local_data.offline_enabled())
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertFalse(local_data.offline_enabled())
+        with tempfile.TemporaryDirectory() as tmpdir:
+            log = Path(tmpdir) / "appendix" / "data_attempts.csv"
+            local_data.log_offline_attempt(log, "BCRA API", "network disabled by HEURISMA_OFFLINE=1", target="A3500", endpoint="GET https://api.example.org/a3500")
+            rows = self._read_csv_rows(log)
+            self.assertEqual(rows[0]["outcome"], "offline mode")
+            self.assertEqual(rows[0]["source_tried"], "BCRA API")
+            self.assertEqual(rows[0]["fallback_used"], "")
+
+    def test_offline_run_uses_local_csv_and_validates(self) -> None:
+        import importlib.util
+        import os
+        from unittest import mock
+
+        spec = importlib.util.spec_from_file_location("tvr", Path(__file__).with_name("test_validate_report.py"))
+        tvr = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(tvr)
+
+        with tempfile.TemporaryDirectory() as tmpdir, mock.patch.dict(os.environ, {"HEURISMA_OFFLINE": "1"}):
+            root = Path(tmpdir)
+            (root / "datos").mkdir()
+            (root / "datos" / "a3500.csv").write_text("fecha;valor\n2026-01-01;1459,42\n", encoding="utf-8")
+            appendix = root / "appendix"
+            appendix.mkdir()
+            (appendix / "analysis.py").write_text("print('ok')\n", encoding="utf-8")
+            tvr._seed_gates(root)
+            (appendix / "output.txt").write_text("0.35 60\n", encoding="utf-8")
+            self.assertTrue(local_data.offline_enabled())
+            local_data.log_offline_attempt(
+                appendix / "data_attempts.csv", "BCRA API", "offline", target="A3500", endpoint="GET https://api.example.org"
+            )
+            row = local_data.import_local(
+                root / "datos" / "a3500.csv", appendix / "data", appendix / "sources.csv", tier="Tier 2", title="A3500 local"
+            )
+            marker = tvr._seed_charts(root)
+            report = tvr._with_fig(
+                tvr.VALID_REPORT.replace("Pure PHA films mineralize", f"Pure PHA films mineralize [@{row['claim_id']}]"), marker
+            )
+            (root / "report.md").write_text(report, encoding="utf-8")
+            out = root / "report.html"
+            cmd_r = [sys.executable, "-B", str(SCRIPTS_DIR / "render_report.py"), str(root / "report.md"), "--out", str(out),
+                     "--charts", str(root / "charts.json"), "--appendix", str(appendix)]
+            self.assertEqual(subprocess.run(cmd_r, capture_output=True, text=True).returncode, 0)
+            res = subprocess.run(
+                [sys.executable, "-B", str(SCRIPTS_DIR / "validate_report.py"), str(root / "report.md"),
+                 "--level", "2", "--html", str(out), "--strict"],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(res.returncode, 0, msg=res.stderr + res.stdout)
+            self.assertNotIn("/tmp/", out.read_text(encoding="utf-8").replace("/tmp/claude", ""))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -80,6 +80,30 @@ Los ensayos europeos con infraestructura de retorno y depositos lograron mas del
 """
 
 
+def _seed_gates(root: Path, qa: str = "QA: PASS\n1 PASS - validator clean\n") -> None:
+    """Write the three appendix/gates/ traces (required at Level >= 2 since v0.6.0)."""
+    gates = root / "appendix" / "gates"
+    gates.mkdir(parents=True, exist_ok=True)
+    (gates / "source_verifier.md").write_text("Source verifier: sources checked\n", encoding="utf-8")
+    (gates / "reviewer.md").write_text("Reviewer #2: critiques recorded\n", encoding="utf-8")
+    (gates / "qa.md").write_text(qa, encoding="utf-8")
+
+
+def _seed_charts(root: Path) -> str:
+    """Write a minimal root charts.json and return the {{fig:}} marker line that places it."""
+    import json
+
+    (root / "charts.json").write_text(
+        json.dumps([{"id": "fig_main", "type": "bar", "title": "Main", "series": [{"label": "A", "value": 1}]}]),
+        encoding="utf-8",
+    )
+    return "{{fig:fig_main}}"
+
+
+def _with_fig(report: str, marker: str) -> str:
+    return report.replace("## 5. Counter-Evidence", marker + "\n\n## 5. Counter-Evidence", 1)
+
+
 class TestValidateReport(unittest.TestCase):
     def test_valid_report_passes(self) -> None:
         errors = validate_report.validate_report(VALID_REPORT)
@@ -203,7 +227,9 @@ One two three four five six
                 "claim_id,source_title,url,tier,accessed_date,data_as_of\nC1,Study,https://example.org,Tier 1,2026-11-20,2025-12\n",
                 encoding="utf-8",
             )
-            cited_valid = VALID_REPORT.replace("Pure PHA films mineralize", "Pure PHA films mineralize [@C1]")
+            cited_valid = _with_fig(
+                VALID_REPORT.replace("Pure PHA films mineralize", "Pure PHA films mineralize [@C1]"), _seed_charts(root)
+            )
 
             with_backtick_fixed = cited_valid + """
 ### Reviewer #2 Disposition
@@ -211,6 +237,7 @@ One two three four five six
 | :- | :- | :- | :- |
 | 1 | Cold water kinetics missing | `Fixed` | Added Q10 sensitivity in appendix/analysis.py |
 """
+            _seed_gates(root)
             self.assertEqual(validate_report.validate_report(with_backtick_fixed, level=3, report_dir=root), [])
 
             with_deferred_no_log = cited_valid + """
@@ -376,7 +403,9 @@ One two three four five six
             # Orphan data file not registered anywhere
             (data_dir / "dummy.json").write_text("{}", encoding="utf-8")
 
-            report_with_cite = VALID_REPORT.replace("Pure PHA films mineralize", "Pure PHA films mineralize [@C1]")
+            report_with_cite = _with_fig(
+                VALID_REPORT.replace("Pure PHA films mineralize", "Pure PHA films mineralize [@C1]"), _seed_charts(root)
+            )
 
             # 1) file:// without sha256 -> ERROR
             (appendix / "sources.csv").write_text(
@@ -421,11 +450,432 @@ One two three four five six
             (pycache / "analysis.cpython-312.pyc").write_bytes(b"\x00\x00")
             (appendix / "empty_log.txt").write_text("", encoding="utf-8")
 
-            report_with_cite = VALID_REPORT.replace("Pure PHA films mineralize", "Pure PHA films mineralize [@C1]")
+            report_with_cite = _with_fig(
+                VALID_REPORT.replace("Pure PHA films mineralize", "Pure PHA films mineralize [@C1]"), _seed_charts(root)
+            )
             errs, warns = validate_report.validate_report_full(report_with_cite, level=2, report_dir=root)
             self.assertEqual(errs, [], msg=errs)
             self.assertTrue(any("__pycache__" in w or ".pyc" in w for w in warns), msg=warns)
             self.assertTrue(any("0-byte" in w.lower() or "empty_log.txt" in w for w in warns), msg=warns)
+
+
+    # ---- v0.5.0 Phase 1: W1 charts.json location -------------------------------------------------
+    def _l2_dir(self, root: Path, charts_where: str | None = "root", n_charts: int = 2) -> Path:
+        import json
+
+        appendix = root / "appendix"
+        appendix.mkdir()
+        (appendix / "analysis.py").write_text("print('ok')\n", encoding="utf-8")
+        (appendix / "output.txt").write_text("ok 60\n", encoding="utf-8")
+        (appendix / "sources.csv").write_text(
+            "claim_id,source_title,url,tier,accessed_date,data_as_of\n"
+            "C1,Primary Study,https://example.org/c1,Tier 1,2026-11-20,2026-11\n",
+            encoding="utf-8",
+        )
+        charts = [
+            {"id": f"fig_{i}", "type": "bar", "title": f"T{i}", "series": [{"label": "A", "value": 1}]}
+            for i in range(1, n_charts + 1)
+        ]
+        if charts_where == "root":
+            (root / "charts.json").write_text(json.dumps(charts), encoding="utf-8")
+        elif charts_where == "appendix":
+            (appendix / "charts.json").write_text(json.dumps(charts), encoding="utf-8")
+        return root
+
+    def _cited(self, markers: str = "") -> str:
+        return VALID_REPORT.replace("Pure PHA films mineralize", "Pure PHA films mineralize [@C1]").replace(
+            "## 5. Counter-Evidence", markers + "\n\n## 5. Counter-Evidence"
+        )
+
+    def test_missing_fig_markers_fail_when_charts_json_in_report_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root")
+            errs = validate_report.validate_report(self._cited(), level=2, report_dir=root)
+            self.assertTrue(any("must place figures inline" in e for e in errs), msg=errs)
+
+    def test_one_unplaced_chart_warns_with_exact_id(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root")
+            errs, warns = validate_report.validate_report_full(
+                self._cited("{{fig:fig_1}}"), level=2, report_dir=root
+            )
+            self.assertEqual(errs, [], msg=errs)
+            self.assertTrue(any("fig_2" in w for w in warns), msg=warns)
+
+    def test_level2_without_any_charts_json_errors(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), None)
+            errs = validate_report.validate_report(self._cited(), level=2, report_dir=root)
+            self.assertTrue(any("charts.json not found" in e for e in errs), msg=errs)
+
+    def test_charts_json_in_appendix_is_still_found(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "appendix")
+            errs = validate_report.validate_report(self._cited(), level=2, report_dir=root)
+            self.assertTrue(any("must place figures inline" in e for e in errs), msg=errs)
+
+    def test_charts_flag_overrides_search(self) -> None:
+        import json
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), None)
+            custom = root / "custom_charts.json"
+            custom.write_text(
+                json.dumps([{"id": "only", "type": "bar", "title": "x", "series": [{"label": "A", "value": 1}]}]),
+                encoding="utf-8",
+            )
+            errs = validate_report.validate_report(
+                self._cited("{{fig:only}}"), level=2, report_dir=root, charts_path=custom
+            )
+            self.assertEqual(errs, [], msg=errs)
+
+
+    # ---- v0.5.0 Phase 1: W2 unresolved markers, W4 uncited sources at level 3 --------------------
+    def test_unresolved_num_marker_is_error(self) -> None:
+        import json
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            (root / "appendix" / "numbers.json").write_text(json.dumps({"known": "42"}), encoding="utf-8")
+            report = self._cited("{{fig:fig_1}}").replace(
+                "Pure PHA films", "Value {{num:known}} and {{num:no_existe}} pure PHA films", 1
+            )
+            errs = validate_report.validate_report(report, level=2, report_dir=root)
+            self.assertTrue(any("no_existe" in e for e in errs), msg=errs)
+            self.assertFalse(any("'known'" in e or "num:known" in e for e in errs), msg=errs)
+
+    def test_num_marker_without_numbers_json_is_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            report = self._cited("{{fig:fig_1}}").replace("Pure PHA films", "Value {{num:x}} pure PHA films", 1)
+            errs = validate_report.validate_report(report, level=2, report_dir=root)
+            self.assertTrue(any("num:x" in e or "'x'" in e for e in errs), msg=errs)
+
+    def test_html_with_leftover_braces_is_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            html = Path(tmpdir) / "report.html"
+            html.write_text(
+                "<html lang=\"en\"><body><h2>1. Executive Summary</h2><h2>2. Framing &amp; Hypotheses</h2>"
+                "<h2>3. Methodology &amp; Evidence Standards</h2><h2>4. Findings</h2>"
+                "<h2>5. Counter-Evidence &amp; Alternative Explanations</h2><h2>6. Claim-Evidence Matrix</h2>"
+                "<h2>7. Limitations &amp; Open Questions</h2><p>Value {{num:missing}}</p></body></html>",
+                encoding="utf-8",
+            )
+            errs, _ = validate_report.validate_html_full(html)
+            self.assertTrue(any("{{" in e for e in errs), msg=errs)
+
+    def test_uncited_source_is_error_at_level3_warning_at_level2(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            with (root / "appendix" / "sources.csv").open("a", encoding="utf-8") as fh:
+                fh.write("C2,Second Study,https://example.org/c2,Tier 1,2026-11-20,2026-11\n")
+            r2 = self._cited("{{fig:fig_1}}")
+            errs2, warns2 = validate_report.validate_report_full(r2, level=2, report_dir=root)
+            self.assertFalse(any("C2" in e for e in errs2), msg=errs2)
+            self.assertTrue(any("C2" in w for w in warns2), msg=warns2)
+
+            r3 = r2 + """
+### Reviewer #2 Disposition
+| Flaw # | Reviewer Critique | Action | Evidence / Artifact |
+| :- | :- | :- | :- |
+| 1 | Cold water kinetics missing | `Fixed` | Added Q10 sensitivity in appendix/analysis.py |
+"""
+            errs3 = validate_report.validate_report(r3, level=3, report_dir=root)
+            self.assertTrue(any("C2" in e and "never cited" in e for e in errs3), msg=errs3)
+
+
+    # ---- v0.5.0 Phase 1: W3 stale HTML ---------------------------------------------------------
+    def _render_for_validation(self, root: Path) -> Path:
+        import subprocess as sp
+
+        root_report = root / "report.md"
+        root_report.write_text(self._cited("{{fig:fig_1}}"), encoding="utf-8")
+        out = root / "report.html"
+        res = sp.run(
+            [sys.executable, "-B", str(SCRIPTS_DIR / "render_report.py"), str(root_report), "--out", str(out),
+             "--charts", str(root / "charts.json"), "--appendix", str(root / "appendix")],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(res.returncode, 0, msg=res.stderr)
+        return out
+
+    def test_validator_warns_when_readme_changed_after_render(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            (root / "appendix" / "README.md").write_text("v1\n", encoding="utf-8")
+            html = self._render_for_validation(root)
+            fresh = validate_report.check_html_freshness(html, root / "report.md")
+            self.assertEqual(fresh, [], msg=fresh)
+            (root / "appendix" / "README.md").write_text("v2 edited after render\n", encoding="utf-8")
+            stale = validate_report.check_html_freshness(html, root / "report.md")
+            self.assertTrue(any("stale" in w.lower() or "out of date" in w.lower() for w in stale), msg=stale)
+
+    def test_freshness_check_runs_under_isolated_mode(self) -> None:
+        import subprocess as sp
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            (root / "appendix" / "README.md").write_text("v1\n", encoding="utf-8")
+            html = self._render_for_validation(root)
+            (root / "appendix" / "README.md").write_text("v2 edited after render\n", encoding="utf-8")
+            res = sp.run(
+                [sys.executable, "-I", "-B", str(SCRIPTS_DIR / "validate_report.py"), str(root / "report.md"),
+                 "--level", "2", "--html", str(html)],
+                capture_output=True,
+                text=True,
+            )
+            out = (res.stdout + res.stderr).lower()
+            self.assertTrue("stale" in out or "out of date" in out, msg=out)
+
+    def test_schemeless_local_source_requires_sha256(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            sources = root / "appendix" / "sources.csv"
+            sources.write_text(
+                "claim_id,source_title,url,tier,accessed_date,data_as_of\n"
+                "C1,Local table,appendix/data/x.csv,Tier 2,2026-11-20,2026-11\n",
+                encoding="utf-8",
+            )
+            errs = validate_report.validate_report(self._cited("{{fig:fig_1}}"), level=2, report_dir=root)
+            self.assertTrue(any("SHA-256" in e for e in errs), msg=errs)
+
+    def test_validator_silent_on_html_without_hash(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            (root / "report.md").write_text(self._cited("{{fig:fig_1}}"), encoding="utf-8")
+            html = root / "report.html"
+            html.write_text("<html><body>legacy v0.4 html</body></html>", encoding="utf-8")
+            warns = validate_report.check_html_freshness(html, root / "report.md")
+            self.assertEqual(len(warns), 1, msg=warns)
+            self.assertIn("no source hash", warns[0].lower())
+
+
+    # ---- v0.6.0 Phase B: P1 inherited attempts (attempted_utc) ----------------------------------
+    _ATT_HEAD = "target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used,attempted_utc\n"
+
+    def _l3_text(self) -> str:
+        return self._cited("{{fig:fig_1}}") + """
+### Reviewer #2 Disposition
+| Flaw # | Reviewer Critique | Action | Evidence / Artifact |
+| :- | :- | :- | :- |
+| 1 | Band series missing | `Deferred` | Logged in appendix/data_attempts.csv |
+"""
+
+    def test_inherited_failed_attempt_is_error_at_level3_warning_at_level2(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            (root / "appendix" / "data_attempts.csv").write_text(
+                self._ATT_HEAD + "band,BCRA catalog,https://x.org,failed,not found,,2026-11-19T16:29:00Z\n",
+                encoding="utf-8",
+            )
+            errs3, _ = validate_report.validate_report_full(
+                self._l3_text(), level=3, report_dir=root, run_since="2026-11-20"
+            )
+            self.assertTrue(any("inherited" in e.lower() and "band" in e for e in errs3), msg=errs3)
+            errs2, warns2 = validate_report.validate_report_full(
+                self._cited("{{fig:fig_1}}"), level=2, report_dir=root, run_since="2026-11-20"
+            )
+            self.assertFalse(any("inherited" in e.lower() for e in errs2), msg=errs2)
+            self.assertTrue(any("inherited" in w.lower() and "band" in w for w in warns2), msg=warns2)
+
+    def test_fresh_retry_clears_inherited_attempt(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            (root / "appendix" / "data_attempts.csv").write_text(
+                self._ATT_HEAD
+                + "band,BCRA catalog,https://x.org,failed,not found,,2026-11-19T16:29:00Z\n"
+                + "band,BCRA catalog (paged),https://x.org,failed,not found,,2026-11-20T10:00:00Z\n",
+                encoding="utf-8",
+            )
+            errs3, warns3 = validate_report.validate_report_full(
+                self._l3_text(), level=3, report_dir=root, run_since="2026-11-20"
+            )
+            self.assertFalse(any("inherited" in x.lower() for x in errs3 + warns3), msg=errs3 + warns3)
+
+    def test_attempts_without_attempted_utc_column_are_not_checked(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            (root / "appendix" / "data_attempts.csv").write_text(
+                "target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used\n"
+                "band,BCRA,https://x.org,failed,not found,\n",
+                encoding="utf-8",
+            )
+            errs3, warns3 = validate_report.validate_report_full(
+                self._l3_text(), level=3, report_dir=root, run_since="2026-11-20"
+            )
+            self.assertFalse(any("inherited" in x.lower() for x in errs3 + warns3), msg=errs3 + warns3)
+
+    def test_run_since_defaults_to_report_header_date(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            (root / "appendix" / "data_attempts.csv").write_text(
+                self._ATT_HEAD + "band,BCRA,https://x.org,failed,not found,,2026-01-05\n", encoding="utf-8"
+            )
+            text = "**Date:** 2026-11-20\n\n" + self._cited("{{fig:fig_1}}")
+            _, warns = validate_report.validate_report_full(text, level=2, report_dir=root)
+            self.assertTrue(any("inherited" in w.lower() for w in warns), msg=warns)
+
+    # ---- v0.6.0 Phase B: P2 subagent gate traces ----------------------------------------------
+    def _write_gates(self, root: Path, qa: str = "QA: PASS\n1 PASS - validator clean\n") -> None:
+        _seed_gates(root, qa)
+
+    def test_missing_gates_warn_at_level2_and_error_at_level3(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            errs2, warns2 = validate_report.validate_report_full(self._cited("{{fig:fig_1}}"), level=2, report_dir=root)
+            self.assertFalse(any("gates" in e for e in errs2), msg=errs2)
+            for name in ("source_verifier", "qa"):
+                self.assertTrue(any(f"gates/{name}.md" in w for w in warns2), msg=warns2)
+            self.assertFalse(any("gates/reviewer.md" in w for w in warns2), msg=warns2)  # Reviewer #2 is Level 3 only
+            errs3, _ = validate_report.validate_report_full(self._l3_text(), level=3, report_dir=root)
+            for name in ("source_verifier", "reviewer", "qa"):
+                self.assertTrue(any(f"gates/{name}.md" in e for e in errs3), msg=errs3)
+
+    def test_all_gates_present_with_qa_pass_is_clean(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            self._write_gates(root)
+            errs, warns = validate_report.validate_report_full(self._cited("{{fig:fig_1}}"), level=2, report_dir=root)
+            self.assertFalse(any("gates" in x for x in errs + warns), msg=errs + warns)
+
+    def test_qa_gate_without_pass_line_is_flagged_unless_accepted_in_report(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            self._write_gates(root, qa="QA: FAIL (1 checks failed)\n4 FAIL - reproducibility drift\n")
+            errs3, _ = validate_report.validate_report_full(self._l3_text(), level=3, report_dir=root)
+            self.assertTrue(any("QA: PASS" in e for e in errs3), msg=errs3)
+            accepted = self._l3_text() + "\nAccepted QA FAIL (see appendix/gates/qa.md): drift is cosmetic.\n"
+            errs3b, warns3b = validate_report.validate_report_full(accepted, level=3, report_dir=root)
+            self.assertFalse(any("QA: PASS" in x for x in errs3b + warns3b), msg=errs3b + warns3b)
+
+    def test_empty_gate_file_counts_as_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            self._write_gates(root)
+            (root / "appendix" / "gates" / "source_verifier.md").write_text("  \n", encoding="utf-8")
+            _, warns = validate_report.validate_report_full(self._cited("{{fig:fig_1}}"), level=2, report_dir=root)
+            self.assertTrue(any("gates/source_verifier.md" in w for w in warns), msg=warns)
+
+    # ---- v0.6.0 Phase B: P3 numbers.json coverage ----------------------------------------------
+    def _output_with(self, root: Path, numbers: list[str]) -> None:
+        (root / "appendix" / "output.txt").write_text("\n".join(numbers) + "\n", encoding="utf-8")
+
+    def test_hardcoded_output_numbers_without_markers_warn(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            nums = ["12.31", "45.67", "78.90", "23.45", "56.78", "89.01"]
+            self._output_with(root, nums)
+            report = self._cited("{{fig:fig_1}}").replace(
+                "Pure PHA films", "Effects were " + ", ".join(nums) + " pure PHA films", 1
+            )
+            _, warns = validate_report.validate_report_full(report, level=2, report_dir=root)
+            self.assertTrue(any("numbers.json" in w and "{{num:" in w for w in warns), msg=warns)
+
+    def test_markers_covering_most_numbers_do_not_warn(self) -> None:
+        import json
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            nums = ["12.31", "45.67", "78.90", "23.45", "56.78", "89.01"]
+            self._output_with(root, nums)
+            keys = {f"k{i}": n for i, n in enumerate(nums)}
+            (root / "appendix" / "numbers.json").write_text(json.dumps(keys), encoding="utf-8")
+            body = ", ".join(f"{{{{num:k{i}}}}}" for i in range(6))
+            report = self._cited("{{fig:fig_1}}").replace("Pure PHA films", f"Effects were {body} pure PHA films", 1)
+            _, warns = validate_report.validate_report_full(report, level=2, report_dir=root)
+            self.assertFalse(any("numbers.json" in w and "coverage" in w.lower() for w in warns), msg=warns)
+
+    def test_few_hardcoded_numbers_do_not_warn(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            self._output_with(root, ["12.31", "45.67"])
+            report = self._cited("{{fig:fig_1}}").replace("Pure PHA films", "Effects 12.31 and 45.67 pure PHA films", 1)
+            _, warns = validate_report.validate_report_full(report, level=2, report_dir=root)
+            self.assertFalse(any("numbers.json" in w for w in warns), msg=warns)
+
+    # ---- v0.5.0 Phase 3: F1 contradictory provenance, F2 source kind ---------------------------
+    ATTEMPTS_HEADER = "target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used\n"
+    SOURCES_HEADER = "claim_id,source_title,url,tier,accessed_date,data_as_of,kind\n"
+
+    def test_source_described_as_full_text_but_failed_attempt_warns(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            (root / "appendix" / "sources.csv").write_text(
+                self.SOURCES_HEADER + "C1,Moran 1953 (open-access full text),https://example.org/c1,Tier 2,2026-11-20,2026-11,literature\n",
+                encoding="utf-8",
+            )
+            (root / "appendix" / "data_attempts.csv").write_text(
+                self.ATTEMPTS_HEADER + "C1 paper,Publisher,GET https://example.org/c1,CAPTCHA,full text not retrievable,limitation\n",
+                encoding="utf-8",
+            )
+            errs, warns = validate_report.validate_report_full(self._cited("{{fig:fig_1}}"), level=2, report_dir=root)
+            self.assertEqual(errs, [], msg=errs)
+            self.assertTrue(any("C1" in w and "failed attempt" in w for w in warns), msg=warns)
+
+    def test_successful_attempt_does_not_trigger_contradiction_warning(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            (root / "appendix" / "sources.csv").write_text(
+                self.SOURCES_HEADER + "C1,Paper (full text),https://example.org/c1,Tier 2,2026-11-20,2026-11,literature\n",
+                encoding="utf-8",
+            )
+            (root / "appendix" / "data_attempts.csv").write_text(
+                self.ATTEMPTS_HEADER + "C1 paper,Publisher,GET https://example.org/c1,used,,\n",
+                encoding="utf-8",
+            )
+            _, warns = validate_report.validate_report_full(self._cited("{{fig:fig_1}}"), level=2, report_dir=root)
+            self.assertFalse(any("failed attempt" in w for w in warns), msg=warns)
+
+    def test_own_computation_cannot_be_tier1_and_missing_kind_is_unchanged(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            errs0 = validate_report.validate_report(self._cited("{{fig:fig_1}}"), level=2, report_dir=root)
+            self.assertEqual(errs0, [], msg=errs0)  # legacy sources.csv without a kind column
+            (root / "appendix" / "sources.csv").write_text(
+                self.SOURCES_HEADER + "C1,analysis.py,appendix/analysis.py,Tier 1,2026-11-20,2026-11,own-computation\n",
+                encoding="utf-8",
+            )
+            errs = validate_report.validate_report(self._cited("{{fig:fig_1}}"), level=2, report_dir=root)
+            self.assertTrue(any("own-computation" in e and "Tier 1" in e for e in errs), msg=errs)
+
+    def test_strong_claim_backed_only_by_own_computation_warns_at_level3(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            (root / "appendix" / "sources.csv").write_text(
+                self.SOURCES_HEADER + "C1,analysis.py,appendix/analysis.py,Tier 2,2026-11-20,2026-11,own-computation\n",
+                encoding="utf-8",
+            )
+            report = self._cited("{{fig:fig_1}}").replace(
+                "Peer-reviewed field & lab meta-analyses (Tier 1)", "Own simulation [@C1] (Tier 2)", 1
+            )
+            disp = """
+### Reviewer #2 Disposition
+| Flaw # | Reviewer Critique | Action | Evidence / Artifact |
+| :- | :- | :- | :- |
+| 1 | Cold water kinetics missing | `Fixed` | Added Q10 sensitivity in appendix/analysis.py |
+"""
+            _seed_gates(root)
+            _, warns2 = validate_report.validate_report_full(report, level=2, report_dir=root)
+            self.assertFalse(any("own-computation" in w for w in warns2), msg=warns2)
+            errs3, warns3 = validate_report.validate_report_full(report + disp, level=3, report_dir=root)
+            self.assertEqual(errs3, [], msg=errs3)
+            self.assertTrue(any("own-computation" in w and "[Strong]" in w for w in warns3), msg=warns3)
+
+
+    def test_validator_surfaces_chart_design_warnings(self) -> None:
+        import json
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            (root / "charts.json").write_text(
+                json.dumps([{"id": "fig_1", "type": "bar", "title": "T",
+                             "series": [{"label": "A", "value": 0.717}, {"label": "B", "value": 0.7171}]}]),
+                encoding="utf-8",
+            )
+            errs, warns = validate_report.validate_report_full(self._cited("{{fig:fig_1}}"), level=2, report_dir=root)
+            self.assertEqual(errs, [], msg=errs)
+            self.assertTrue(any("fig_1" in w and "near-identical" in w for w in warns), msg=warns)
 
 
 if __name__ == "__main__":

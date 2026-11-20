@@ -1,3 +1,4 @@
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -149,6 +150,34 @@ class TestSvgCharts(unittest.TestCase):
         svg = svg_charts.render_chart_svg(chart)
         self.assertIn("Media 1997-2026", svg)
         self.assertIn("paint-order", svg)
+        # R2: a semi-transparent white box sits right behind the label so the series never shows through it
+        m = re.search(r'<rect[^>]*class="ref-label-bg"[^>]*fill="#ffffff"[^>]*fill-opacity="0\.\d+"[^>]*/>\s*<text[^>]*>Media 1997-2026</text>', svg)
+        self.assertIsNotNone(m, msg=svg[-800:])
+
+    def test_last_data_marker_when_series_ends_before_axis_end(self) -> None:
+        chart = {
+            "id": "last_data",
+            "type": "line",
+            "title": "FX with projection band",
+            "x": {"type": "date", "last_label": True},
+            "y": {"label": "ARS/USD"},
+            "series": [{"name": "Spot", "points": [["2026-01", 1400], ["2026-06", 1500], ["2026-11", 1450]]}],
+            "bands": [{"name": "P10-P90", "lower": [["2026-11", 1450], ["2027-12", 1600]],
+                       "upper": [["2026-11", 1450], ["2027-12", 2400]]}],
+        }
+        es = svg_charts.render_chart_svg(chart, lang="es")
+        self.assertIn("Último dato: 2026-11", es)
+        self.assertIn('data-last-data="x"', es)
+        en = svg_charts.render_chart_svg(chart, lang="en")
+        self.assertIn("Last data: 2026-11", en)
+        chart["x"]["last_label"] = "Nov 13, 2026"
+        self.assertIn("Last data: Nov 13, 2026", svg_charts.render_chart_svg(chart))
+        # off by default, and silent when the series reaches the end of the axis
+        chart["x"].pop("last_label")
+        self.assertNotIn("data-last-data", svg_charts.render_chart_svg(chart))
+        chart["x"]["last_label"] = True
+        chart.pop("bands")
+        self.assertNotIn("data-last-data", svg_charts.render_chart_svg(chart))
 
     def test_scatter_uses_nice_x_ticks_zero_line_and_highlight_point(self) -> None:
         chart = {
@@ -219,6 +248,146 @@ class TestSvgCharts(unittest.TestCase):
         self.assertIn("P10–P90", svg)
         # Smooth fan median must NOT have point markers
         self.assertEqual(svg.count("<circle"), 0)
+
+
+    # ---- v0.5.0 Phase 4: G1 long category labels, G2 near-identical bars, G3 x.max ---------------
+    CAT_RE = r'<text class="cat-label" data-group="(\d+)" x="([\d.]+)" y="([\d.]+)"[^>]*>([^<]*)</text>'
+    BAR_RE = r'<rect class="bar" data-value="([^"]+)" x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"'
+
+    def _bar(self, labels: list[str], values: list[float], **extra: object) -> dict:
+        chart = {
+            "id": "b",
+            "type": "bar",
+            "title": "Bars",
+            "series": [{"label": lb, "value": v} for lb, v in zip(labels, values)],
+        }
+        chart.update(extra)
+        return chart
+
+    def test_wrap_label_greedy_and_never_splits_words(self) -> None:
+        self.assertEqual(svg_charts._wrap_label("Consenso REM: estabilizaci\u00f3n real", 14),
+                         ["Consenso REM:", "estabilizaci\u00f3n", "real"])
+        self.assertEqual(svg_charts._wrap_label("short", 14), ["short"])
+        self.assertEqual(svg_charts._wrap_label("a" * 20, 14), ["a" * 20])  # overlong word kept whole
+
+    def test_long_category_labels_wrap_without_overlap(self) -> None:
+        import re
+
+        labels = ["Consenso REM: estabilizaci\u00f3n real", "Escenario base: apreciaci\u00f3n", "Ruptura: salto cambiario",
+                  "Banda: techo oficial", "Mercado: futuros", "Contraste hist\u00f3rico"]
+        svg = svg_charts.render_chart_svg(self._bar(labels, [1, 2, 3, 4, 5, 6]), lang="es")
+        self.assertIn('data-bar-layout="vertical"', svg)
+        items = [(float(x), float(y), t) for _, x, y, t in re.findall(self.CAT_RE, svg)]
+        self.assertGreaterEqual(len(items), len(labels))
+        by_y: dict[float, list[tuple[float, str]]] = {}
+        for x, y, t in items:
+            by_y.setdefault(y, []).append((x, t))
+        for row in by_y.values():
+            row.sort()
+            for (x1, t1), (x2, t2) in zip(row, row[1:]):
+                self.assertGreaterEqual(x2 - 3.1 * len(t2), x1 + 3.1 * len(t1), msg=f"{t1!r} overlaps {t2!r}")
+        self.assertNotIn("\u2026", svg)  # nothing truncated
+
+    def test_labels_that_do_not_fit_wrapped_switch_to_horizontal_bars(self) -> None:
+        import re
+
+        labels = [f"Continuaci\u00f3n de 2026: apreciaci\u00f3n real {i}" for i in range(1, 9)]
+        values = [10.0, 20.0, 40.0, 15.0, 5.0, 30.0, 25.0, 35.0]
+        svg = svg_charts.render_chart_svg(self._bar(labels, values), lang="es")
+        self.assertIn('data-bar-layout="horizontal"', svg)
+        bars = {float(v): float(w) for v, _, _, w, _ in re.findall(self.BAR_RE, svg)}
+        self.assertAlmostEqual(bars[20.0] / bars[10.0], 2.0, places=1)
+        self.assertAlmostEqual(bars[40.0] / bars[10.0], 4.0, places=1)
+        self.assertIn("Continuaci\u00f3n", svg)
+        self.assertNotIn("\u2026", svg)
+
+    def test_baseline_truncates_axis_with_visible_warning(self) -> None:
+        import re
+
+        chart = self._bar(["A", "B"], [0.717, 0.760], y={"baseline": 0.70})
+        svg_en = svg_charts.render_chart_svg(chart, lang="en")
+        self.assertIn("Truncated axis", svg_en)
+        self.assertIn("Eje truncado", svg_charts.render_chart_svg(chart, lang="es"))
+        hs = {float(v): float(h) for v, _, _, _, h in re.findall(self.BAR_RE, svg_en)}
+        self.assertGreater(hs[0.76] / hs[0.717], 2.0)  # from zero it would be ~1.06
+
+    def test_diff_plots_relative_difference_vs_first_bar(self) -> None:
+        svg = svg_charts.render_chart_svg(self._bar(["Base", "Variant"], [0.717, 0.760], diff=True), lang="en")
+        self.assertIn("6.0%", svg)
+        self.assertIn("Difference vs. Base", svg)
+        grouped = {
+            "id": "g", "type": "bar", "title": "G", "diff": True, "groups": ["G1", "G2"],
+            "series": [{"name": "Ref", "values": [100.0, 200.0]}, {"name": "Alt", "values": [110.0, 190.0]}],
+        }
+        svg_g = svg_charts.render_chart_svg(grouped, lang="en")
+        self.assertIn("10%", svg_g)
+        self.assertIn("\u22125%", svg_g.replace("-5%", "\u22125%"))
+
+    def test_chart_warnings_flag_near_identical_bars_only_without_baseline_or_diff(self) -> None:
+        near = self._bar(["A", "B"], [0.717, 0.7172])
+        self.assertTrue(any("near-identical" in w for w in svg_charts.chart_warnings(near)))
+        self.assertEqual(svg_charts.chart_warnings(self._bar(["A", "B"], [0.717, 0.7172], y={"baseline": 0.7})), [])
+        self.assertEqual(svg_charts.chart_warnings(self._bar(["A", "B"], [0.717, 0.7172], diff=True)), [])
+        self.assertEqual(svg_charts.chart_warnings(self._bar(["A", "B"], [1.0, 2.0])), [])
+        self.assertEqual(svg_charts.chart_warnings({"type": "line", "series": []}), [])
+        grouped = {"type": "bar", "groups": ["G1", "G2"],
+                   "series": [{"name": "A", "values": [1.0, 5.0]}, {"name": "B", "values": [1.001, 9.0]}]}
+        self.assertTrue(any("near-identical" in w for w in svg_charts.chart_warnings(grouped)))
+
+    def test_x_max_trims_empty_right_gap_on_date_axis(self) -> None:
+        import re
+
+        pts = [[f"2026-{m:02d}", 1400.0 + m * 10] for m in range(1, 11)] + [["2026-11-19", 1562.99]]
+        base = {
+            "id": "fx", "type": "line", "title": "FX", "x": {"type": "date"},
+            "series": [{"name": "A3500", "points": pts}],
+            "bands": [{"name": "Band", "lower": [["2026-01", 1000.0], ["2026-12-31", 1100.0]],
+                       "upper": [["2026-01", 1900.0], ["2026-12-31", 2000.0]]}],
+        }
+
+        def last_x(chart: dict) -> float:
+            svg = svg_charts.render_chart_svg(chart)
+            poly = re.search(r'<polyline fill="none" stroke="#0072B2"[^>]*points="([^"]+)"', svg).group(1)
+            return float(poly.split()[-1].split(",")[0])
+
+        self.assertLess(last_x(base), 640.0)  # gap on the right (band runs to December)
+        trimmed = dict(base, x={"type": "date", "max": "2026-11-19"})
+        self.assertGreater(last_x(trimmed), 653.0)  # right plot edge = 680 - 26
+
+    def test_scatter_acceptance_round_ticks_zero_line_highlight_and_percent_axis(self) -> None:
+        chart = {
+            "id": "sc", "type": "scatter", "title": "Gap vs level",
+            "x": {"label": "Level"}, "y": {"label": "Gap", "format": "percent"},
+            "series": [{"name": "Obs", "points": [[0.13, -0.08], [0.27, 0.02], [0.41, 0.06], [0.58, -0.03], [0.87, 0.11]]}],
+            "highlight": {"x": 0.58, "y": -0.03, "label": "Now"},
+        }
+        svg = svg_charts.render_chart_svg(chart, lang="es")
+        self.assertIn('data-zero-line="y"', svg)
+        self.assertIn("#D55E00", svg)
+        self.assertIn("Now", svg)
+        self.assertIn("%", svg)
+        for round_tick in (">0,2<", ">0,4<", ">0,6<", ">0,8<"):
+            self.assertIn(round_tick, svg)
+
+
+    def test_truncated_axis_warning_sits_below_plot_not_over_value_labels(self) -> None:
+        import re
+
+        svg = svg_charts.render_chart_svg(self._bar(["A", "B"], [0.717, 0.760], y={"baseline": 0.70}), lang="en")
+        m = re.search(r'<text class="axis-warning" x="[\d.]+" y="([\d.]+)"', svg)
+        height = float(re.search(r'viewBox="0 0 680 ([\d.]+)"', svg).group(1))
+        cats = [float(y) for _, _, y, _ in re.findall(self.CAT_RE, svg)]
+        self.assertGreater(float(m.group(1)), max(cats))  # below category labels
+        self.assertLessEqual(float(m.group(1)), height)
+
+    def test_negative_bar_value_labels_do_not_collide_with_category_labels(self) -> None:
+        import re
+
+        svg = svg_charts.render_chart_svg(self._bar(["G1", "G2"], [0.10, -0.05], y={"format": "percent"}), lang="en")
+        cat_y = min(float(y) for _, _, y, _ in re.findall(self.CAT_RE, svg))
+        m = re.search(r'<text x="[\d.]+" y="([\d.]+)" text-anchor="middle" font-size="10"[^>]*>-5%</text>', svg)
+        self.assertIsNotNone(m, msg="negative value label missing")
+        self.assertLess(float(m.group(1)), cat_y - 8.0)  # label sits clear above the category row
 
 
 if __name__ == "__main__":

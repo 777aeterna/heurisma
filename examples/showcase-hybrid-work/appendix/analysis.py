@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
-"""Reproducible Level 2 hybrid-work subgroup & mentoring audit emitting output.txt, charts.json v2, and numbers.json."""
+"""Reproducible Level 2 hybrid-work audit: exact stratified permutation tests on 16 sites (4 vs 4 per seniority cell).
+
+With only four sites per cell a bootstrap is unreliable (35 distinct resample means per arm), so every test here is an
+exact permutation test that enumerates all assignments: 70 per subgroup, 4,900 for stratified pooled/interaction tests.
+Run from the report folder: python3 -B appendix/analysis.py --charts-out charts.json --numbers-out appendix/numbers.json
+"""
 
 from __future__ import annotations
 
 import argparse
 import json
 import math
-import random
 import statistics
 import sys
+from itertools import combinations, product
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,11 +21,7 @@ SCRIPTS_DIR = ROOT.parents[1] / "skills" / "heurisma" / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 from local_data import read_table  # noqa: E402
 
-
-def median_abs_deviation(vals: list[float]) -> tuple[float, float]:
-    med = statistics.median(vals)
-    mad = statistics.median([abs(v - med) for v in vals])
-    return mad, 1.4826 * mad
+EPS = 1e-12
 
 
 def pearson_r(xs: list[float], ys: list[float]) -> float:
@@ -30,137 +31,197 @@ def pearson_r(xs: list[float], ys: list[float]) -> float:
     return num / den if den else 0.0
 
 
-def bootstrap_diff_ci(a: list[float], b: list[float], n_boot: int = 2000, seed: int = 42) -> tuple[float, float]:
-    rng = random.Random(seed)
-    na, nb = len(a), len(b)
-    draws = []
-    for _ in range(n_boot):
-        ma = statistics.fmean(a[rng.randrange(na)] for _ in range(na))
-        mb = statistics.fmean(b[rng.randrange(nb)] for _ in range(nb))
-        draws.append(ma - mb)
-    draws.sort()
-    return draws[int(0.025 * n_boot)], draws[int(0.975 * n_boot)]
+def split_diffs(a: list[float], b: list[float]) -> tuple[float, list[float]]:
+    """Observed mean(a)-mean(b) and the same difference for every way of relabeling len(a) of the pooled sites as 'a'."""
+    vals = a + b
+    n, total = len(a), sum(vals)
+    obs = statistics.fmean(a) - statistics.fmean(b)
+    diffs = []
+    for idx in combinations(range(len(vals)), n):
+        sa = sum(vals[i] for i in idx)
+        diffs.append(sa / n - (total - sa) / (len(vals) - n))
+    return obs, diffs
 
 
-def summarize(rows: list[dict], key: str) -> dict[str, float]:
-    vals = [float(r[key]) for r in rows]
-    mad, madn = median_abs_deviation(vals)
-    return {
-        "n": len(vals),
-        "mean": statistics.fmean(vals),
-        "median": statistics.median(vals),
-        "sd": statistics.stdev(vals) if len(vals) > 1 else 0.0,
-        "mad": mad,
-        "madn": madn,
-    }
+def p_two_sided(obs: float, null: list[float]) -> float:
+    return sum(1 for d in null if abs(d) >= abs(obs) - EPS) / len(null)
+
+
+def weighted_mean(rows: list[dict], key: str) -> float:
+    w = sum(int(r["n_engineers"]) for r in rows)
+    return sum(float(r[key]) * int(r["n_engineers"]) for r in rows) / w
+
+
+def cell(rows: list[dict], seniority: str, policy: str) -> list[dict]:
+    return [r for r in rows if r["seniority"] == seniority and r["policy_group"] == policy]
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Analyze local hybrid_rct_sites.csv and emit charts.json + numbers.json.")
+    parser = argparse.ArgumentParser(description="Analyze hybrid_rct_sites.csv and emit charts.json + numbers.json.")
     parser.add_argument("--charts-out", type=Path, default=None, help="Output path for charts.json v2.")
     parser.add_argument("--numbers-out", type=Path, default=None, help="Output path for appendix/numbers.json.")
     args = parser.parse_args()
 
     rows = read_table(ROOT / "appendix" / "data" / "hybrid_rct_sites.csv")
     total_eng = sum(int(r["n_engineers"]) for r in rows)
+    sh, so = cell(rows, "Senior", "Hybrid_2d"), cell(rows, "Senior", "Office_5d")
+    jh, jo = cell(rows, "Junior", "Hybrid_2d"), cell(rows, "Junior", "Office_5d")
+    hyb, off = sh + jh, so + jo
 
-    hyb = [r for r in rows if r["policy_group"] == "Hybrid_2d"]
-    off = [r for r in rows if r["policy_group"] == "Office_5d"]
-    sen_h = [r for r in hyb if r["seniority"] == "Senior"]
-    sen_o = [r for r in off if r["seniority"] == "Senior"]
-    jun_h = [r for r in hyb if r["seniority"] == "Junior"]
-    jun_o = [r for r in off if r["seniority"] == "Junior"]
+    def col(rs: list[dict], key: str) -> list[float]:
+        return [float(r[key]) for r in rs]
 
-    # Output delta (PRs merged %)
-    s_all_h, s_all_o = summarize(hyb, "prs_merged_delta_pct"), summarize(off, "prs_merged_delta_pct")
-    s_sen_h, s_sen_o = summarize(sen_h, "prs_merged_delta_pct"), summarize(sen_o, "prs_merged_delta_pct")
-    s_jun_h, s_jun_o = summarize(jun_h, "prs_merged_delta_pct"), summarize(jun_o, "prs_merged_delta_pct")
+    results: dict[str, float] = {}
+    for key, label in (("prs_merged_delta_pct", "pr"), ("attrition_12m_pct", "attr")):
+        d_s, null_s = split_diffs(col(sh, key), col(so, key))
+        d_j, null_j = split_diffs(col(jh, key), col(jo, key))
+        null_pool = [(x + y) / 2.0 for x, y in product(null_s, null_j)]
+        null_did = [y - x for x, y in product(null_s, null_j)]
+        results.update(
+            {
+                f"{label}_sen_diff": d_s,
+                f"{label}_sen_p": p_two_sided(d_s, null_s),
+                f"{label}_jun_diff": d_j,
+                f"{label}_jun_p": p_two_sided(d_j, null_j),
+                f"{label}_pool_diff": (d_s + d_j) / 2.0,
+                f"{label}_pool_p": p_two_sided((d_s + d_j) / 2.0, null_pool),
+                f"{label}_did": d_j - d_s,
+                f"{label}_did_p": p_two_sided(d_j - d_s, null_did),
+            }
+        )
+    n_sub, n_strat = len(split_diffs(col(sh, "n_engineers"), col(so, "n_engineers"))[1]), 0
+    n_strat = n_sub * n_sub
+    p_floor_sub = 2.0 / n_sub
 
-    # 12m attrition
-    a_all_h, a_all_o = summarize(hyb, "attrition_12m_pct"), summarize(off, "attrition_12m_pct")
-    a_sen_h, a_sen_o = summarize(sen_h, "attrition_12m_pct"), summarize(sen_o, "attrition_12m_pct")
-    a_jun_h, a_jun_o = summarize(jun_h, "attrition_12m_pct"), summarize(jun_o, "attrition_12m_pct")
+    # Engineer-weighted attrition (descriptive) and relative drops
+    aw_h, aw_o = weighted_mean(hyb, "attrition_12m_pct"), weighted_mean(off, "attrition_12m_pct")
+    au_h, au_o = statistics.fmean(col(hyb, "attrition_12m_pct")), statistics.fmean(col(off, "attrition_12m_pct"))
+    rel_w = (aw_h - aw_o) / aw_o
+    rel_sen = (statistics.fmean(col(sh, "attrition_12m_pct")) - statistics.fmean(col(so, "attrition_12m_pct"))) / statistics.fmean(col(so, "attrition_12m_pct"))
+    rel_jun = (statistics.fmean(col(jh, "attrition_12m_pct")) - statistics.fmean(col(jo, "attrition_12m_pct"))) / statistics.fmean(col(jo, "attrition_12m_pct"))
 
-    # Mentoring hours/wk
-    m_jun_h = summarize(jun_h, "mentoring_hrs_wk")["mean"]
-    m_jun_o = summarize(jun_o, "mentoring_hrs_wk")["mean"]
+    # Mentoring: means by cell, and within-arm correlations with PR delta (n = 4 each, descriptive only)
+    ment = {name: statistics.fmean(col(rs, "mentoring_hrs_wk")) for name, rs in (("sh", sh), ("so", so), ("jh", jh), ("jo", jo))}
+    r_cell = {
+        name: pearson_r(col(rs, "mentoring_hrs_wk"), col(rs, "prs_merged_delta_pct"))
+        for name, rs in (("sh", sh), ("so", so), ("jh", jh), ("jo", jo))
+    }
+    r_jun_pooled = pearson_r(col(jh + jo, "mentoring_hrs_wk"), col(jh + jo, "prs_merged_delta_pct"))
 
-    # Differences & bootstrap 95% CIs
-    diff_pr_all = s_all_h["mean"] - s_all_o["mean"]
-    diff_pr_sen = s_sen_h["mean"] - s_sen_o["mean"]
-    diff_pr_jun = s_jun_h["mean"] - s_jun_o["mean"]
-    ci_pr_sen = bootstrap_diff_ci([r["prs_merged_delta_pct"] for r in sen_h], [r["prs_merged_delta_pct"] for r in sen_o])
-    ci_pr_jun = bootstrap_diff_ci([r["prs_merged_delta_pct"] for r in jun_h], [r["prs_merged_delta_pct"] for r in jun_o])
+    pr_cell = {name: statistics.fmean(col(rs, "prs_merged_delta_pct")) for name, rs in (("sh", sh), ("so", so), ("jh", jh), ("jo", jo))}
+    at_cell = {name: statistics.fmean(col(rs, "attrition_12m_pct")) for name, rs in (("sh", sh), ("so", so), ("jh", jh), ("jo", jo))}
+    pr_pool_h, pr_pool_o = statistics.fmean(col(hyb, "prs_merged_delta_pct")), statistics.fmean(col(off, "prs_merged_delta_pct"))
 
-    rel_attr_drop = (a_all_h["mean"] - a_all_o["mean"]) / a_all_o["mean"]
-    diff_attr_pp = (a_all_h["mean"] - a_all_o["mean"]) * 100.0
-    ci_attr_all = bootstrap_diff_ci([r["attrition_12m_pct"] for r in hyb], [r["attrition_12m_pct"] for r in off])
-
-    # Mentoring vs PR delta correlation across all 16 sites
-    ment_xs = [float(r["mentoring_hrs_wk"]) for r in rows]
-    pr_ys = [float(r["prs_merged_delta_pct"]) for r in rows]
-    r_ment_pr = pearson_r(ment_xs, pr_ys)
-    r_ment_jun = pearson_r([float(r["mentoring_hrs_wk"]) for r in jun_h + jun_o], [float(r["prs_merged_delta_pct"]) for r in jun_h + jun_o])
-
-    print(f"Dataset integrity: sites={len(rows)}, total_engineers={total_eng}, missing=0")
-    print(f"Pooled PR delta: Hybrid_2d={s_all_h['mean']*100:+.2f}% (MAD={s_all_h['mad']*100:.2f}pp) vs Office_5d={s_all_o['mean']*100:+.2f}% (diff={diff_pr_all*100:+.2f}pp)")
-    print(f"Senior PR delta: Hybrid_2d={s_sen_h['mean']*100:+.2f}% vs Office_5d={s_sen_o['mean']*100:+.2f}% (diff={diff_pr_sen*100:+.2f}pp, 95% boot CI [{ci_pr_sen[0]*100:+.2f}pp, {ci_pr_sen[1]*100:+.2f}pp])")
-    print(f"Junior PR delta: Hybrid_2d={s_jun_h['mean']*100:+.2f}% vs Office_5d={s_jun_o['mean']*100:+.2f}% (diff={diff_pr_jun*100:+.2f}pp, 95% boot CI [{ci_pr_jun[0]*100:+.2f}pp, {ci_pr_jun[1]*100:+.2f}pp])")
-    print(f"12m Attrition: Hybrid_2d={a_all_h['mean']*100:.1f}% vs Office_5d={a_all_o['mean']*100:.1f}% (diff={diff_attr_pp:+.1f}pp, rel={rel_attr_drop*100:+.1f}%, 95% boot CI [{ci_attr_all[0]*100:+.1f}pp, {ci_attr_all[1]*100:+.1f}pp])")
-    print(f"Senior Attrition: Hybrid_2d={a_sen_h['mean']*100:.1f}% vs Office_5d={a_sen_o['mean']*100:.1f}%")
-    print(f"Junior Attrition: Hybrid_2d={a_jun_h['mean']*100:.1f}% vs Office_5d={a_jun_o['mean']*100:.1f}%")
-    print(f"Junior mentoring hrs/wk: Hybrid_2d={m_jun_h:.2f} vs Office_5d={m_jun_o:.2f} (r_all={r_ment_pr:+.3f}, r_junior={r_ment_jun:+.3f})")
+    pct = lambda v: f"{v * 100:+.2f} pp"  # noqa: E731
+    print(f"Dataset integrity: sites={len(rows)}, total_engineers={total_eng}, missing=0, sites per cell=4")
+    print(f"Exact tests: {n_sub} relabelings per subgroup, {n_strat:,} stratified; smallest attainable two-sided p: subgroup {p_floor_sub:.4f}")
+    print(f"PR delta: Senior Hybrid={pr_cell['sh']*100:+.2f}% Office={pr_cell['so']*100:+.2f}% diff={pct(results['pr_sen_diff'])} exact p={results['pr_sen_p']:.4f}")
+    print(f"PR delta: Junior Hybrid={pr_cell['jh']*100:+.2f}% Office={pr_cell['jo']*100:+.2f}% diff={pct(results['pr_jun_diff'])} exact p={results['pr_jun_p']:.4f}")
+    print(f"PR delta: pooled diff={pct(results['pr_pool_diff'])} (stratified exact p={results['pr_pool_p']:.4f}); interaction junior-senior={pct(results['pr_did'])} exact p={results['pr_did_p']:.4f}")
+    print(f"Attrition (unweighted site means): Hybrid={au_h*100:.1f}% Office={au_o*100:.1f}%; engineer-weighted: Hybrid={aw_h*100:.1f}% Office={aw_o*100:.1f}% (rel={rel_w*100:+.1f}%)")
+    print(f"Attrition: Senior Hybrid={at_cell['sh']*100:.1f}% Office={at_cell['so']*100:.1f}% diff={pct(results['attr_sen_diff'])} (rel={rel_sen*100:+.1f}%) exact p={results['attr_sen_p']:.4f}")
+    print(f"Attrition: Junior Hybrid={at_cell['jh']*100:.1f}% Office={at_cell['jo']*100:.1f}% diff={pct(results['attr_jun_diff'])} (rel={rel_jun*100:+.1f}%) exact p={results['attr_jun_p']:.4f}")
+    print(f"Attrition: pooled diff={pct(results['attr_pool_diff'])} stratified exact p={results['attr_pool_p']:.4f}; interaction junior-senior={pct(results['attr_did'])} exact p={results['attr_did_p']:.4f}")
+    print(f"Mentoring hrs/wk: Senior Hybrid={ment['sh']:.2f} Office={ment['so']:.2f}; Junior Hybrid={ment['jh']:.2f} Office={ment['jo']:.2f}")
+    print(f"Within-arm r(mentoring, PR delta), n=4 each: Senior Hybrid={r_cell['sh']:+.3f} Senior Office={r_cell['so']:+.3f} Junior Hybrid={r_cell['jh']:+.3f} Junior Office={r_cell['jo']:+.3f}")
+    print(f"Junior pooled r (confounded with policy arm, not a mechanism test)={r_jun_pooled:+.3f}")
 
     if args.charts_out is not None:
-        worst_jun = min(jun_h, key=lambda r: float(r["prs_merged_delta_pct"]))
+        sub = "Local multi-site CSV (appendix/data/hybrid_rct_sites.csv); own computation in appendix/analysis.py."
         charts_v2 = [
             {
                 "id": "subgroup_output",
                 "type": "bar",
                 "title": "PR Output Change by Seniority and Work Policy (16 Sites)",
-                "caption": "Pooled averages mask opposite subgroup effects: hybrid lifts Senior output (+2.7pp) while reducing Junior output (-6.3pp).",
-                "source": "Local multi-site CSV (appendix/data/hybrid_rct_sites.csv); appendix/analysis.py.",
+                "caption": "Site-level means. With 4 sites per cell the difference is exactly testable but small-sample; see Section 4.2.",
+                "source": sub,
                 "y": {"label": "PRs Merged Delta", "format": "percent"},
                 "groups": ["Pooled (16 sites)", "Senior (8 sites)", "Junior (8 sites)"],
                 "series": [
-                    {"name": "Hybrid (2d WFH)", "values": [round(s_all_h["mean"], 4), round(s_sen_h["mean"], 4), round(s_jun_h["mean"], 4)]},
-                    {"name": "Office (5d)", "values": [round(s_all_o["mean"], 4), round(s_sen_o["mean"], 4), round(s_jun_o["mean"], 4)]},
+                    {"name": "Hybrid (2d WFH)", "values": [round(pr_pool_h, 4), round(pr_cell["sh"], 4), round(pr_cell["jh"], 4)]},
+                    {"name": "Office (5d)", "values": [round(pr_pool_o, 4), round(pr_cell["so"], 4), round(pr_cell["jo"], 4)]},
+                ],
+            },
+            {
+                "id": "attrition_by_seniority",
+                "type": "bar",
+                "title": "12-Month Attrition by Seniority and Work Policy (16 Sites)",
+                "caption": "Hybrid sites have lower attrition in both groups; the reduction is smaller for junior sites (Section 4.1).",
+                "source": sub,
+                "y": {"label": "12-Month Attrition", "format": "percent"},
+                "groups": ["Pooled (16 sites)", "Senior (8 sites)", "Junior (8 sites)"],
+                "series": [
+                    {"name": "Hybrid (2d WFH)", "values": [round(au_h, 4), round(at_cell["sh"], 4), round(at_cell["jh"], 4)]},
+                    {"name": "Office (5d)", "values": [round(au_o, 4), round(at_cell["so"], 4), round(at_cell["jo"], 4)]},
                 ],
             },
             {
                 "id": "mentoring_scatter",
                 "type": "scatter",
                 "title": "Weekly Mentoring Hours vs. PR Output Delta Across Engineering Sites",
-                "caption": "Junior hybrid sites experience a 66% drop in mentoring hours and sit uniformly below zero output change.",
-                "source": "Local multi-site CSV (appendix/data/hybrid_rct_sites.csv); appendix/analysis.py.",
+                "caption": "Points cluster by policy arm, so the pooled slope mostly reflects the policy itself; within each arm n = 4 (Section 4.3).",
+                "source": sub,
                 "x": {"label": "Mentoring Hours / Week"},
                 "y": {"label": "PRs Merged Delta", "format": "percent"},
                 "series": [
-                    {"name": "Senior Sites", "points": [[float(r["mentoring_hrs_wk"]), float(r["prs_merged_delta_pct"])] for r in sen_h + sen_o]},
-                    {"name": "Junior Sites", "points": [[float(r["mentoring_hrs_wk"]), float(r["prs_merged_delta_pct"])] for r in jun_h + jun_o]},
+                    {"name": "Senior Sites", "points": [[float(r["mentoring_hrs_wk"]), float(r["prs_merged_delta_pct"])] for r in sh + so]},
+                    {"name": "Junior Sites", "points": [[float(r["mentoring_hrs_wk"]), float(r["prs_merged_delta_pct"])] for r in jh + jo]},
                 ],
-                "highlight": {
-                    "x": float(worst_jun["mentoring_hrs_wk"]),
-                    "y": float(worst_jun["prs_merged_delta_pct"]),
-                    "label": f"{worst_jun['site_id']} (Junior Hybrid)",
-                },
             },
         ]
         args.charts_out.write_text(json.dumps(charts_v2, indent=2) + "\n", encoding="utf-8")
 
     if args.numbers_out is not None:
+        pp = lambda v: f"{v * 100:+.2f} pp"  # noqa: E731
+        pv = lambda v: f"{v:.4f}"  # noqa: E731
         numbers = {
             "total_sites": len(rows),
             "total_engineers": total_eng,
-            "pooled_pr_diff": f"{diff_pr_all * 100:+.2f} pp",
-            "senior_pr_diff": f"{diff_pr_sen * 100:+.2f} pp",
-            "junior_pr_diff": f"{diff_pr_jun * 100:+.2f} pp",
-            "attr_hyb": f"{a_all_h['mean'] * 100:.1f}%",
-            "attr_off": f"{a_all_o['mean'] * 100:.1f}%",
-            "attr_rel_drop": f"{abs(rel_attr_drop) * 100:.1f}%",
-            "jun_ment_hyb": f"{m_jun_h:.2f}",
-            "jun_ment_off": f"{m_jun_o:.2f}",
-            "r_ment_jun": f"{r_ment_jun:+.3f}",
+            "n_perm_sub": n_sub,
+            "n_perm_strat": f"{n_strat:,}",
+            "p_floor_sub": pv(p_floor_sub),
+            "attr_hyb_u": f"{au_h * 100:.1f}%",
+            "attr_off_u": f"{au_o * 100:.1f}%",
+            "attr_hyb_w": f"{aw_h * 100:.1f}%",
+            "attr_off_w": f"{aw_o * 100:.1f}%",
+            "attr_rel_drop_w": f"{abs(rel_w) * 100:.1f}%",
+            "attr_rel_sen": f"{abs(rel_sen) * 100:.1f}%",
+            "attr_rel_jun": f"{abs(rel_jun) * 100:.1f}%",
+            "attr_pool_diff": pp(results["attr_pool_diff"]),
+            "attr_pool_p": pv(results["attr_pool_p"]),
+            "attr_sen_diff": pp(results["attr_sen_diff"]),
+            "attr_sen_p": pv(results["attr_sen_p"]),
+            "attr_jun_diff": pp(results["attr_jun_diff"]),
+            "attr_jun_p": pv(results["attr_jun_p"]),
+            "attr_did": pp(results["attr_did"]),
+            "attr_did_p": pv(results["attr_did_p"]),
+            "attr_sen_hyb": f"{at_cell['sh'] * 100:.1f}%",
+            "attr_sen_off": f"{at_cell['so'] * 100:.1f}%",
+            "attr_jun_hyb": f"{at_cell['jh'] * 100:.1f}%",
+            "attr_jun_off": f"{at_cell['jo'] * 100:.1f}%",
+            "pr_pool_diff": pp(results["pr_pool_diff"]),
+            "pr_pool_p": pv(results["pr_pool_p"]),
+            "pr_sen_diff": pp(results["pr_sen_diff"]),
+            "pr_sen_p": pv(results["pr_sen_p"]),
+            "pr_jun_diff": pp(results["pr_jun_diff"]),
+            "pr_jun_p": pv(results["pr_jun_p"]),
+            "pr_did": pp(results["pr_did"]),
+            "pr_did_p": pv(results["pr_did_p"]),
+            "pr_sen_hyb": f"{pr_cell['sh'] * 100:+.2f}%",
+            "pr_sen_off": f"{pr_cell['so'] * 100:+.2f}%",
+            "pr_jun_hyb": f"{pr_cell['jh'] * 100:+.2f}%",
+            "pr_jun_off": f"{pr_cell['jo'] * 100:+.2f}%",
+            "pr_pool_hyb": f"{pr_pool_h * 100:+.2f}%",
+            "pr_pool_off": f"{pr_pool_o * 100:+.2f}%",
+            "ment_sen_hyb": f"{ment['sh']:.2f}",
+            "ment_sen_off": f"{ment['so']:.2f}",
+            "ment_jun_hyb": f"{ment['jh']:.2f}",
+            "ment_jun_off": f"{ment['jo']:.2f}",
+            "r_sen_hyb": f"{r_cell['sh']:+.2f}",
+            "r_sen_off": f"{r_cell['so']:+.2f}",
+            "r_jun_hyb": f"{r_cell['jh']:+.2f}",
+            "r_jun_off": f"{r_cell['jo']:+.2f}",
+            "r_jun_pooled": f"{r_jun_pooled:+.2f}",
         }
         args.numbers_out.write_text(json.dumps(numbers, indent=2) + "\n", encoding="utf-8")
 

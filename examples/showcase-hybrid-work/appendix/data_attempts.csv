@@ -1,3 +1,6 @@
 target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used
-Individual-level engineer microdata & code-defect severity,Local data inventory,local_data.py inventory data/,not found,Only site-level aggregates present in hybrid_rct_sites.csv,Used site-level subgroup analysis and capped causal claims at [Moderate]
-Full-remote (5d WFH) comparison arm,Local data inventory + public RCT registry,local_data.py preview + Bloom et al. 2024,not found,Local dataset contains only Hybrid_2d vs Office_5d arms,Capped full-remote extrapolation at [Preliminary]
+"Site allocation protocol, baseline window, mentoring_hrs_wk definition",Local data inventory,local_data.py inventory data/,not found,"Only the CSV is supplied; no data dictionary or protocol",Local file kept at Tier 3; claims from it capped at [Preliminary]
+Individual-level engineer microdata,Online and local,Private organizational data; local_data.py inventory data/,not available,Only the data owner can supply it,"Site-level exact tests only; request listed in Section 7"
+Bloom Han & Liang (2024) full text,Publisher page,GET https://www.nature.com/articles/s41586-024-07500-2,HTTP 303,Redirects to a sign-in page,Open-access copy in Europe PMC (PMC11208135)
+Bloom Han & Liang (2024) full text,Europe PMC,GET https://www.ebi.ac.uk/europepmc/webservices/rest/PMC11208135/fullTextXML,used,,Full text read (Data availability statement not verified)
+Emanuel Harrington & Pallais (2023),NBER page,GET https://www.nber.org/papers/w31880,used,,Abstract read; full text not read

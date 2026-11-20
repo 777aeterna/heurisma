@@ -52,6 +52,9 @@ jobs:
       - name: Run local-data, SVG engine, renderer, and validator unit tests
         run: python3 -B -m unittest discover -s tests -v
 
+      - name: Check Claude Code agent definitions mirror the portable prompts
+        run: python3 -B -m unittest tests.test_agents_sync -v
+
       - name: Smoke-test local_data.py inventory
         run: python3 -B skills/heurisma/scripts/local_data.py inventory examples/level2-study/appendix
 
@@ -78,3 +81,26 @@ jobs:
             --appendix examples/showcase-hybrid-work/appendix
           python3 -B skills/heurisma/scripts/validate_report.py examples/showcase-hybrid-work/report.md \
             --level 2 --html examples/showcase-hybrid-work/report.html --strict
+
+      - name: Offline rehearsal of the local-data rung and privacy check
+        run: |
+          rm -rf /tmp/offline-run && mkdir -p /tmp/offline-run/datos
+          printf 'fecha;valor\n2026-01-01;1459,42\n' > /tmp/offline-run/datos/serie.csv
+          HEURISMA_OFFLINE=1 python3 -B skills/heurisma/scripts/local_data.py import /tmp/offline-run/datos/serie.csv \
+            --into /tmp/offline-run/appendix/data --sources /tmp/offline-run/appendix/sources.csv \
+            --tier "Tier 2" --title "Serie local" --lang es
+          grep -q "local:appendix/data/serie.csv" /tmp/offline-run/appendix/data_attempts.csv
+          if grep -rn "/home/" examples/*/report.html; then echo "absolute path leaked into HTML"; exit 1; fi
+          if grep -q "file://" /tmp/offline-run/appendix/sources.csv; then echo "relative local path stored as file:// URI"; exit 1; fi
+          grep -q "attempted_utc" /tmp/offline-run/appendix/data_attempts.csv
+
+      - name: Validator works in isolated mode and requires gate traces
+        run: |
+          for d in level2-study showcase-hybrid-work; do
+            python3 -I -B skills/heurisma/scripts/validate_report.py examples/$d/report.md \
+              --level 2 --html examples/$d/report.html --strict
+          done
+          rm -rf /tmp/gate-check && cp -r examples/level2-study /tmp/gate-check && rm /tmp/gate-check/appendix/gates/qa.md
+          if python3 -B skills/heurisma/scripts/validate_report.py /tmp/gate-check/report.md --level 2 --strict; then
+            echo "missing appendix/gates/qa.md was not reported"; exit 1
+          fi

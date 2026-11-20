@@ -6,8 +6,8 @@
 - **Calibrated Verdict:** The supplied 12-team dataset does not support claiming that pair programming boosts bug-fix throughput `[Strong]`. The apparent positive correlation (r = {{num:full_r_short}}) is a single-point leverage artifact driven by `T12`, and excluding `T12` reverses the relationship to r = {{num:clean_r_short}} `[Moderate]`.
 - **What Would Change This Conclusion:** Multi-sprint telemetry normalized per developer-hour and weighted by ticket severity across comparable teams showing a replicated positive effect.
 - **Key Takeaways:**
-  - Full-sample Pearson r = {{num:full_r}} diverges sharply from full-sample Spearman ρ = {{num:full_rho}}, exposing extreme leverage from `T12` [@C2] `[Strong]`.
-  - Across typical teams (`T01`–`T11`), both parametric and rank correlations are negative with narrow bootstrap 95% confidence intervals [@C2] `[Moderate]`.
+  - Full-sample Pearson r = {{num:full_r}} diverges sharply from full-sample Spearman ρ = {{num:full_rho}}, exposing extreme leverage from `T12` [@C1; @C2] `[Strong]`.
+  - Across typical teams (`T01`–`T11`), both parametric and rank correlations are negative with narrow bootstrap 95% confidence intervals [@C1; @C2] `[Moderate]`.
   - Uncontrolled confounders (headcount, ticket severity, reverse causality) prevent drawing any causal conclusion from this cross-section [@C1] `[Preliminary]`.
 
 ## 2. Framing & Hypotheses
@@ -40,7 +40,7 @@
 
 {{fig:corr_sens}}
 
-3. **Falsification of H₁:** Full-sample bootstrap CI for Pearson r spans `[-0.89, +1.00]` (crossing zero because draws omitting `T12` flip sign), confirming the positive trend is entirely an outlier artifact [@C2] `[Strong]`.
+3. **Falsification of H₁:** Full-sample bootstrap CI for Pearson r spans `[-0.89, +1.00]` (crossing zero because draws omitting `T12` flip sign), confirming the positive trend is entirely an outlier artifact [@C1; @C2] `[Strong]`.
 
 ## 5. Counter-Evidence & Alternative Explanations
 - **Scale / Aggregation Mismatch (`T12`):** `T12` is consistent with a multi-squad roll-up, a monthly total logged in a weekly column, or bulk automated ticket closure [@C1] `[Preliminary]`.
@@ -49,7 +49,7 @@
 ## 6. Claim-Evidence Matrix
 | Claim | Discipline / Axis | Evidence & Source Tier (As-Of Date) | Confidence Tag | Key Falsifier / Condition |
 | :- | :- | :- | :- | :- |
-| Full-sample r = {{num:full_r}} is a `T12` leverage artifact | Causal Inference | Reproducible Python bootstrap & sensitivity audit [@C2] (`appendix/analysis.py`, Tier 1, 2026-11) | `[Strong]` | Replicated positive slope across independent comparable teams |
+| Full-sample r = {{num:full_r}} is a `T12` leverage artifact | Causal Inference | Supplied CSV [@C1] (Tier 2) analyzed by the own bootstrap & sensitivity audit [@C2] (own computation, `appendix/analysis.py`), 2026-11 | `[Strong]` | Replicated positive slope across independent comparable teams |
 | Among `T01`–`T11`, pairing and bugs fixed correlate negatively (r = {{num:clean_r}}) | Software Engineering | Leave-one-out audit on supplied CSV [@C1] (`appendix/output.txt`, Tier 2, 2026-11) | `[Moderate]` | Normalization by team size or ticket severity |
 | Reverse causality (bug complexity) explains the negative slope | Causal Inference | Structural audit of missing covariates (Tier 3, 2026-11) | `[Speculative]` | Controlled crossover pilot controlling for ticket difficulty |
 

@@ -4,6 +4,49 @@ All notable changes to **Heurisma** will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-11-20 (Inherited Runs, Gate Traces & Numbers as a Rule)
+
+Driven by the audit of a v0.5.0 run. That run started from an earlier run's folder and kept a false "no official daily band series" limitation; it also discarded the official floor value as "inconsistent".
+
+### Added
+- **Inherited attempts no longer count:** `data_attempts.csv` gains `attempted_utc` (ISO UTC, written by `local_data.py` and the `fetch_data.py` template; an older 6-column file is widened, and its old rows stay undated). `validate_report.py` flags a failed series that has no attempt in this run (`--run-since YYYY-MM-DD`, default: first ISO date in the report header): error at Level 3, warning at Level 2. Files without the column are not checked (v0.5 compatibility).
+- **`SKILL.md` Stage 0 detects an earlier run** (`report.md`, `data_attempts.csv`, `appendix/` in the folder or `datos/`) and treats its failures as unverified. A "no such series" claim now needs a logged search over the provider's whole catalogue with several keywords. Checked with three cold subagents under time pressure: all three re-ran rung 1 on the whole catalogue with dated rows. The audited run is the baseline failure.
+- **Gate traces:** each subagent gate saves its answer to `appendix/gates/{source_verifier,reviewer,qa}.md`. A missing or empty file is a warning at Level 2 and an error at Level 3; `reviewer.md` is required at Level 3 only. `qa.md` must contain `QA: PASS`, unless the report cites it in Section 7 to accept a FAIL. The renderer embeds the gate files in the appendices.
+- **`x.last_label`** on line/fan charts: a dotted "Last data: …" / "Último dato: …" marker where observations end before the X axis.
+
+### Changed
+- **`numbers.json` is required, not optional (Level 2+):** verdict, Section 1 and Section 4 table figures taken from `output.txt` must be `{{num:key}}`. The validator warns when five or more Section 4 numbers from `output.txt` are retyped and placeholders cover less than 30 % of them.
+- **Local paths:** `import`/`register` store project-relative paths without a scheme (`appendix/data/x.csv`); `file:///…` is used only for files outside the report folder. v0.5 rows (`file://appendix/...`, which named `appendix` as a host) are still read and deduplicated.
+- **Appendix README** must say which files `fetch_data.py` downloaded in this run and which were copied from `datos/` or an earlier run.
+- **Reference-line labels** sit on a semi-transparent white box, so the series no longer runs through them.
+- **Examples:** both examples carry `appendix/gates/` as **manual maintainer records**; no subagent output was saved for them. The showcase's source-verification record lists 3 open provenance problems, and its QA record has one accepted FAIL (the verdict quotes the external trial's quit rates). The showcase's local CSV row uses the relative path.
+
+### Fixed
+- The stale-HTML check no longer turns itself off silently under `python3 -I`: it loads `render_report.py` by path and warns if it cannot.
+- `render_report.py` warns on stderr for each unresolved `{{num:key}}` in the report body.
+- `3e-08` at the end of a sentence (`3e-08.`) is now typeset as 3×10⁻⁸.
+
+## [0.5.0] - Not released separately, shipped in 0.6.0 (Silent-Failure Gates, Provenance & Subagents)
+
+Driven by an external cold-run audit of v0.4.0 (two reports, fourteen figures) and a Reviewer #2 pass over the showcase.
+
+### Added
+- **`local_data.py import`:** copies a user file into `appendix/data/`, registers the **copy** (next free `L<n>`, project-relative `file://` URI, SHA-256, deduplicated by path and hash) and logs the rung in `data_attempts.csv`, in one step. `register` gained `--lang en|es`; `preview` reports bad JSON / empty CSV without a traceback.
+- **`HEURISMA_OFFLINE=1`:** `local_data.offline_enabled()` / `log_offline_attempt()` and an `offline()` guard in the `fetch_data.py` template, to rehearse the local-data rung with the network off.
+- **Source `kind` column** (`data`, `literature`, `press`, `own-computation`): `own-computation` + Tier 1 is an error; at Level 3 a `[Strong]` row backed only by own computations warns. A source titled "full text/open access" with a failed attempt for the same URL warns.
+- **Stale-HTML detection:** `render_report.py` embeds `<!-- heurisma-sources: sha256:… -->`; the validator warns when `report.md`, `charts.json` or `appendix/` changed after rendering (or the HTML has no hash).
+- **Chart engine:** wrapped category labels with automatic horizontal bars, `y.baseline` (visible "Truncated axis" notice), `diff: true` (relative difference), `x.min`/`x.max`, and a `near-identical bars` design warning.
+- **Renderer:** `####`/`#####` headings, superscripts and scientific notation (`N^(−1/2)`, `3e-08`), typographic minus, localized local-file references that never show absolute paths.
+- **Three optional subagents:** `heurisma-reviewer` (Opus), `heurisma-source-verifier` and `heurisma-qa` (Sonnet) as portable prompts (`skills/heurisma/references/agents/`) and Claude Code definitions (`agents/`), kept in sync by `tests/test_agents_sync.py`.
+
+### Changed
+- **Validator gates that failed silently now fail:** `charts.json` is found next to `report.md` (`--charts` overrides; missing at Level ≥ 2 is an error), an unresolved `{{num:key}}` or `{{…}}` left in the HTML is an error, and an uncited source is an error at Level 3.
+- **`SKILL.md`:** source-verification gate before writing Sections 4/6, QA gate before presenting, `kind` column, "(abstract only)" titles, impersonal/plural voice, and `python3 -B appendix/analysis.py` (never `-I`). Measured with cold-start subagents: own code registered as Tier 1 fell from 3/3 to 0/3, the "full text" mislabel from 3/3 to 0/3, first-person prose from 1/3 to 0/3. Two audit findings (hypotheses decided inside Monte Carlo noise; a single deflator in a regime table) did **not** reproduce in 9 micro-tests and were deliberately left without a rule.
+- **Examples:** both examples now register `analysis.py` as `own-computation` (Tier 2). The `showcase-hybrid-work` was rebuilt: the CSV is registered as unknown-origin Tier 3 (it never showed random allocation), every claim from it is capped at `[Preliminary]`, bootstrap intervals on 4 sites per arm were replaced by exact permutation tests (stratified, interaction tested directly), attrition is engineer-weighted, the proximity study is cited as a published difference-in-differences study (not an RCT) and the trial was read in full from its open-access copy.
+
+### Fixed
+- Negative-value labels in bar charts no longer collide with category labels (present since v0.4.0).
+
 ## [0.4.0] - 2026-11-20 (Local Data, Linked Citations & Full i18n)
 
 ### Added

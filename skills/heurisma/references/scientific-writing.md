@@ -28,20 +28,23 @@ Every major claim in Section 1, Section 4, and **every row** of Section 6 (`Clai
    - Cite with `[@C1]`, or several at once with `[@C1; @C4]`. Each id must be a `claim_id` in `appendix/sources.csv`.
    - Place the citation right after the claim it supports, before the calibration tag: `Real appreciation reached 38% [@C2] `[Moderate]`.`
    - The renderer numbers citations by **first appearance** (`[1]`, `[2]`, …), links each to `#ref-n`, and orders the References list the same way; uncited sources are appended after the cited ones.
-   - **Validator (Level 2+):** fails if Section 4 has no citations or if a `[@id]` is missing from `sources.csv`; warns for every `sources.csv` row that is never cited. Cite every row or remove the ones you did not use.
+   - **Validator (Level 2+):** fails if Section 4 has no citations or if a `[@id]` is missing from `sources.csv`; warns for every `sources.csv` row that is never cited (**fails** at Level 3). Cite every row or remove the ones you did not use.
 3. **Math Without LaTeX:**
    - Write symbols in Unicode: `H₀`, `H₁`, `ρ`, `Δ`, `≤`, `≥`, `±`, `×`, `≈`, `σ`, `μ`, `x²`. The working paper has no LaTeX engine.
    - The renderer converts residual inline math (`$H_0$` → H<sub>0</sub>, `$x^2$` → x<sup>2</sup>, `$\Delta$` → Δ) as a safety net and never touches currency (`$1.563`, `$1,200–$1,400`), but the validator warns on any LaTeX left in the HTML.
-4. **Key Numbers from `appendix/numbers.json` (optional):**
-   - Write `{{num:key}}` instead of retyping a computed value; the renderer substitutes it from `appendix/numbers.json`. Without placeholders, the validator warns when a verdict number is absent from `appendix/output.txt`.
+4. **Key Numbers from `appendix/numbers.json` (Level 2+):**
+   - Every figure in the Calibrated Verdict, Section 1 and the Section 4 tables that comes from `appendix/output.txt` is written as `{{num:key}}`, never retyped: a retyped number silently goes stale when the analysis changes. The validator warns when five or more Section 4 figures from `output.txt` are typed by hand and placeholders cover less than 30 % of them.
+   - Write `{{num:key}}` instead of retyping a computed value; the renderer substitutes it from `appendix/numbers.json` and prints negative values with a typographic minus (`−16,6 %`). An unknown key is a validator **error**, and any `{{…}}` left in the HTML is an error. Without placeholders, the validator warns when a verdict number is absent from `appendix/output.txt`.
 5. **Inline Figure Placement (`{{fig:chart_id}}`):**
    - Place `{{fig:chart_id}}` on its own line in Section 4 or Section 5 immediately after the paragraph that discusses that figure.
    - `render_report.py` replaces it with a numbered `<figure>` (`Figure 1.` / `Figura 1.`, publication SVG, `Note:` / `Nota:`, `Source:` / `Fuente:`, and a collapsible data table).
-   - **Validator (Level 2+):** fails if `charts.json` exists but `report.md` has no `{{fig:…}}` marker or uses an id absent from `charts.json`; warns for charts never placed (they fall into "Additional Figures").
-6. **Nested Lists:** Indent sub-bullets by 2 or 4 spaces under their parent bullet (e.g., `Key Takeaways`, `Hypotheses`); the renderer emits a nested list.
+   - **Validator (Level 2+):** looks for `charts.json` next to `report.md` (then in `appendix/`, or `--charts <path>`); fails if it is missing, if `report.md` has no `{{fig:…}}` marker, or if a marker uses an id absent from `charts.json`; warns for charts never placed (they fall into "Additional Figures").
+6. **Nested Lists & Sub-Headings:** Indent sub-bullets by 2 or 4 spaces under their parent bullet (e.g., `Key Takeaways`, `Hypotheses`); the renderer emits a nested list. Sub-sections may go down to `####` / `#####` (e.g. `#### 4.1.1 By regime`). Exponents and scientific notation render as superscripts when written as `N^(−1/2)`, `x^2` or `3e-08`.
 7. **Zero Code / Zero Bloat in `report.md`:**
    - Never embed scripts or raw console outputs inside `report.md`. Keep it focused on scientific argument, tables, citations, and `{{fig:id}}` figures.
 8. **Commands:** run every script with `python3 -B` in instructions, `appendix/README.md`, and examples.
+9. **Voice:** write in the impersonal or first-person plural voice — *"the analysis shows"*, *"only the abstract could be retrieved"*, *"we re-ran the integration with half the step"*; in Spanish, *"el análisis muestra"*, *"solo pudo recuperarse el resumen"*, *"repetimos la integración con la mitad del paso"*. This applies to every section, including Limitations.
+10. **Re-render after every edit:** the HTML carries a hash of `report.md`, `charts.json` and `appendix/`; the validator reports a stale HTML when any of them changed after rendering.
 
 ---
 
@@ -101,6 +104,10 @@ Authoring rules:
 - **Scatter:** numeric X gets clean ticks automatically; a dashed `y = 0` line is drawn when 0 is in range; mark the current observation with `"highlight": {"x": …, "y": …, "label": "…"}`.
 - **Fan:** the legend shows the median plus both bands (P25–P75, P10–P90) in the report language; the median line has no point markers.
 - **Reference lines** get a white halo so their labels stay legible over the series.
+- **Bar categories** wrap onto up to three lines; when they still do not fit, the engine draws horizontal bars automatically. Keep category names descriptive rather than truncating them by hand.
+- **Near-identical bars** (spread under 1% of the largest value) show no visible difference and the validator warns. Either set `"y": {"baseline": 0.70}` (the axis starts at the baseline and a visible "Truncated axis" / "Eje truncado" notice is drawn) or set `"diff": true` (bars show the relative difference against the first bar, or against the first series in each group). Prefer `diff` or a table when the point is the size of a small difference.
+- **`x.min` / `x.max`** clip a line or fan chart to a date or number range — e.g. `"x": {"type": "date", "max": "2026-11-19"}` removes the empty right-hand gap left by a band that extends past the last observation.
+- **`x.last_label`** (`true` or a text) marks where the observed data end when a projection band continues past them: a dotted vertical line labelled *"Last data: 2026-11"* / *"Último dato: 2026-11"* (a text replaces the date, e.g. `"13-nov-2026"`). Use it on every fan chart whose X axis runs beyond the last observation.
 - Write every title, caption, series name, and label in the report's language.
 
 ```json

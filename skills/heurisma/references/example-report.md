@@ -8,7 +8,7 @@ Part of **Heurisma** (loaded during **Stage 5** so the agent imitates the exact 
 
 Notice six properties of the reference report below:
 1. **Crisp Abstract Verdict:** Section 1's `Calibrated Verdict` is **2 sentences with 3 key numbers**—not a 15-number paragraph. The renderer promotes it to the HTML Abstract without repeating it in §1.
-2. **Linked In-Text Citations:** Every sourced claim carries `[@C1]` / `[@C2]` matching `claim_id` values in `appendix/sources.csv` (here `C1` = the user-supplied CSV, `C2` = the reproducible audit script). The renderer turns them into numbered links `[1]`, `[2]`.
+2. **Linked In-Text Citations:** Every sourced claim carries `[@C1]` / `[@C2]` matching `claim_id` values in `appendix/sources.csv` (here `C1` = the user-supplied CSV, `kind = data`, Tier 2; `C2` = the reproducible audit script, `kind = own-computation`, Tier 2 — the report's own code checks a computation on `C1`, it is never independent Tier 1 evidence). The renderer turns them into numbered links `[1]`, `[2]`.
 3. **Unicode Math, No LaTeX:** `H₀`, `H₁`, `ρ`, `≤`, `×` are written directly; currency-like `$` never needs escaping.
 4. **Zero Code / Stdout Dumps:** All computation lives in `appendix/analysis.py` and `appendix/output.txt`; Section 4 summarizes findings in a clean table and places `{{fig:corr_comparison}}` inline.
 5. **Explicit Data Attempts (Online + Local):** Section 3 logs the missing covariates with the online and local rungs tried, so the limitation in Section 7 is earned.
@@ -57,7 +57,7 @@ Across `T01`–`T11`, weekly pairing spans `2.0–7.0` hours (median `4.50`, MAD
 {{fig:corr_comparison}}
 
 ### 4.2 Falsification of H₁
-Because the full-sample bootstrap confidence interval spans `[−0.89, +1.00]`—flipping sign whenever resamples omit `T12`—and the clean sample exhibits a negative correlation (r = −0.7742) [@C2], H₁ is falsified within this dataset `[Strong]`.
+Because the full-sample bootstrap confidence interval spans `[−0.89, +1.00]`—flipping sign whenever resamples omit `T12`—and the clean sample exhibits a negative correlation (r = −0.7742) [@C1; @C2], H₁ is falsified within this dataset `[Strong]`.
 
 {{fig:team_scatter}}
 
@@ -68,7 +68,7 @@ Because the full-sample bootstrap confidence interval spans `[−0.89, +1.00]`�
 ## 6. Claim-Evidence Matrix
 | Claim | Discipline / Axis | Evidence & Source Tier (As-Of Date) | Confidence Tag | Key Falsifier / Condition |
 | :- | :- | :- | :- | :- |
-| Full-sample r = +0.9804 is a single-point `T12` leverage artifact | Causal Inference | Python sensitivity & bootstrap audit [@C2], Tier 1, 2026-11 | `[Strong]` | Replicated positive slope across independent comparable squads |
+| Within the supplied dataset, full-sample r = +0.9804 is a single-point `T12` leverage artifact | Causal Inference | Supplied CSV [@C1], Tier 2, analyzed by the own sensitivity & bootstrap audit [@C2] (own computation), 2026-11 | `[Strong]` | Replicated positive slope across independent comparable squads |
 | Excluding `T12`, pairing and bug fixes correlate negatively (r = −0.7742) | Software Engineering | Leave-one-out audit on supplied CSV [@C1], Tier 2, 2026-11 | `[Moderate]` | Normalization by squad headcount and ticket story points |
 | Reverse causality (bug difficulty) drives the negative `T01`–`T11` slope | Causal Inference | Structural confounder reasoning, no direct data (Tier 3, 2026-11) | `[Speculative]` | Controlled crossover trial matching defect complexity |
 

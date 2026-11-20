@@ -20,7 +20,7 @@ Before drafting `## 5. Counter-Evidence & Alternative Explanations`, answer thes
 When an inquiry is classified as **Level 3** and your runtime provides a subagent tool (e.g., `Agent` in Claude Code, `invoke_subagent` in Antigravity, or equivalent fresh-context agent dispatch):
 
 ### Step 1: Dispatch Reviewer #2
-Draft your initial synthesis covering Stages 0–3, then dispatch a fresh-context subagent—preferably on a high-reasoning model—using the **Reviewer #2 Dispatch Prompt Template** below.
+Draft your initial synthesis covering Stages 0–3, then dispatch a fresh-context subagent—preferably on a high-reasoning model—using the prompt in [agents/reviewer.md](agents/reviewer.md) (Section 3 below). Save its full answer, unchanged, to `appendix/gates/reviewer.md` (the validator requires it at Level 3).
 
 ### Step 2: STRICT Rule — Verify in Tier 1/2 or Exclude Reviewer-Introduced Facts
 Reviewer #2 can hallucinate or misstate facts just like any model. If Reviewer #2 introduces a new statistic, policy detail, historical date, or external agreement (e.g., a currency swap, regulatory clause, or clinical trial) to critique your draft:
@@ -60,6 +60,7 @@ A critique is sometimes closed as `Fixed` / `Corregida` **by downgrading a tag**
 - Before writing it, walk the 4-rung cascade (online primary → online alternatives → local inventory → limitation) for the missing series.
 - Log every failed rung in `appendix/data_attempts.csv` with the canonical columns, and reference the row in the Evidence / Artifact cell.
 - A downgrade with no matching `data_attempts.csv` row is an unattempted shortcut; Reviewer #2 category 2 applies to it.
+- Rows inherited from an earlier run (undated, or `attempted_utc` before this run) do not count: re-run the rung and log a dated row first.
 
 ```markdown
 | 4 | Pre-2016 CPI series not cross-checked against provincial indices | `Fixed` | Tag downgraded to `[Preliminary]`; provincial-index search online + `local_data.py inventory` logged in appendix/data_attempts.csv (rows 3–4) |
@@ -67,26 +68,6 @@ A critique is sometimes closed as `Fixed` / `Corregida` **by downgrading a tag**
 
 ---
 
-## 3. Reviewer #2 Dispatch Prompt Template
+## 3. Reviewer #2 Dispatch Prompt
 
-Fill in `{RESEARCH_PROMPT}` and `{DRAFT_FINDINGS_AND_MATRIX}` and pass to your subagent tool:
-
-```markdown
-You are Reviewer #2 — an independent, adversarial scientific peer reviewer and methodologist.
-Your sole objective is to attempt to FALSIFY the draft research findings below and expose every methodological weakness, source-tier inflation, unattempted data shortcut, omitted confounder, cross-disciplinary contradiction, or uncalibrated forecast.
-
-Do NOT be polite or agreeable. Evaluate strictly against scientific method standards:
-
-### Original Research Question / Prompt
-{RESEARCH_PROMPT}
-
-### Author's Draft Synthesis, Data Attempts & Claim-Evidence Matrix
-{DRAFT_FINDINGS_AND_MATRIX}
-
-### Your Review Output Format
-Return a numbered list of concrete flaws across these 4 categories (every numbered item will require an explicit Fixed / Refuted / Deferred row in the author's final Disposition Table):
-1. **Over-Calibrated Claims (Tag Downgrades Required):** Every claim tagged `[Strong]` or `[Moderate]` whose actual source tier or sample size only supports `[Preliminary]` or `[Speculative]`.
-2. **Unattempted Data Shortcuts & Primary-Source Gaps:** Where the author relied on Tier 3 press/blogs, declared a "data limitation", or closed a critique by downgrading a tag when an accessible primary institutional series, archive, mirror, local file, or proxy exists (check `data_attempts.csv` for both online and local rungs).
-3. **Missing Counter-Evidence, Regressions & Boundary Failures:** Specific statistical controls, lag regressions, regime separations, base-rate calibrations, or canonical literature the draft omitted.
-4. **Interdisciplinary & Forecasting Flaws:** Where an accounting identity was confused with a forecast, units were mixed (EoP vs. average, nominal vs. real), or one discipline's constraint invalidates another's assumption.
-```
+The dispatch prompt lives in [agents/reviewer.md](agents/reviewer.md): fill in `{RESEARCH_PROMPT}` and `{REPORT_DIR}` and pass it to your subagent tool. It attacks six categories — over-calibrated claims, unattempted data shortcuts, missing counter-evidence, interdisciplinary/forecasting flaws, decisions inside the noise, and provenance contradictions — and prefixes any fact not already in `sources.csv` with `UNVERIFIED:`, which Step 2 above requires you to verify in Tier 1/2 or exclude.

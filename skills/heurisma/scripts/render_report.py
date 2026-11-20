@@ -14,12 +14,14 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import html
 import json
 import re
 import sys
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote
 
 # Ensure sibling svg_charts.py can be imported when invoked as a script
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -58,6 +60,7 @@ I18N: dict[str, dict[str, str]] = {
         "group": "Group",
         "label": "Label",
         "value": "Value",
+        "local_file": "local file",
     },
     "es": {
         "figure": "Figura",
@@ -78,6 +81,7 @@ I18N: dict[str, dict[str, str]] = {
         "group": "Grupo",
         "label": "Etiqueta",
         "value": "Valor",
+        "local_file": "archivo local",
     },
 }
 
@@ -132,6 +136,38 @@ def detect_language(report_md: str, lang: str = "auto") -> str:
     ):
         return "es"
     return "en"
+
+
+FILE_URI_RE = re.compile(r"file://[^\s,\"'<>)]+")
+LOCAL_TITLE_SUFFIX_RE = re.compile(r"\s*\((?:local file|archivo local)[^)]*\)", re.IGNORECASE)
+SHA_IN_TEXT_RE = re.compile(r"sha256\s+([0-9a-fA-F]{6,64})", re.IGNORECASE)
+_SUP_PAREN_RE = re.compile(r"(?<=[A-Za-z0-9)\]])\^\(([^()\s]{1,16})\)")
+_SUP_NUM_RE = re.compile(r"(?<=[A-Za-z0-9)\]])\^([-\u2212+]?\d+(?:\.\d+)?)(?![\w^])")
+_SCI_RE = re.compile(r"(?<![\w.])(\d+(?:\.\d+)?)[eE]([+\-\u2212]?\d+)(?!\w|\.\d)")
+_NEG_NUMBER_RE = re.compile(r"(?<![\w.])-(?=\d)")
+
+
+def _typographic_minus(value: str) -> str:
+    """Turn a leading ASCII hyphen-minus before a digit into U+2212 (never touches ranges like 2026-12)."""
+    return _NEG_NUMBER_RE.sub("\u2212", value)
+
+
+def _apply_scientific_notation(text: str) -> str:
+    """Render x^2, N^(-1/2) and 3e-08 with <sup>; deliberately narrow so paths, ids and hashes stay intact."""
+    out = _SUP_PAREN_RE.sub(lambda m: f"<sup>{m.group(1).replace('-', chr(0x2212))}</sup>", text)
+    out = _SUP_NUM_RE.sub(lambda m: f"<sup>{m.group(1).replace('-', chr(0x2212)).lstrip('+')}</sup>", out)
+
+    def _sci(m: re.Match[str]) -> str:
+        exp = int(m.group(2).replace("\u2212", "-"))
+        sign = "\u2212" if exp < 0 else ""
+        return f"{m.group(1)}\u00d710<sup>{sign}{abs(exp)}</sup>"
+
+    return _SCI_RE.sub(_sci, out)
+
+
+def _redact_local_paths(text: str) -> str:
+    """Replace absolute file:// URIs with their basename so reports never leak the author's home directory."""
+    return FILE_URI_RE.sub(lambda m: "file://" + Path(unquote(m.group(0)[len("file://"):])).name, text)
 
 
 def _convert_math_expr(expr: str) -> str:
@@ -208,6 +244,18 @@ def _format_inline(text: str, tracker: _CitationTracker | None = None) -> str:
 
     # Convert inline LaTeX math ($H_0$, $x^2$, $\Delta$) while preserving currency ($1.563, $1,200-$1,400)
     escaped = INLINE_MATH_RE.sub(lambda m: _convert_math_expr(m.group(1)), escaped)
+
+    # Superscripts / scientific notation, with URLs and link targets protected
+    url_spans: list[str] = []
+
+    def _stash_url(m: re.Match[str]) -> str:
+        url_spans.append(m.group(0))
+        return f"\x00URL{len(url_spans) - 1}\x00"
+
+    escaped = re.sub(r"\]\([^)]*\)|https?://[^\s<>)\"]+", _stash_url, escaped)
+    escaped = _apply_scientific_notation(escaped)
+    for idx, url_text in enumerate(url_spans):
+        escaped = escaped.replace(f"\x00URL{idx}\x00", url_text)
 
     # Convert in-text citations [@C1] / [@C1; @C2]
     if tracker is not None:
@@ -365,8 +413,10 @@ def _markdown_to_paper_html(
                 tds = []
                 for c in row:
                     clean_c = c.strip("`*")
-                    cls = ' class="num"' if NUMERIC_CELL_RE.match(clean_c) else ""
-                    tds.append(f"<td{cls}>{_format_inline(c, tracker)}</td>")
+                    is_num = bool(NUMERIC_CELL_RE.match(clean_c))
+                    cls = ' class="num"' if is_num else ""
+                    cell = _typographic_minus(c) if is_num else c
+                    tds.append(f"<td{cls}>{_format_inline(cell, tracker)}</td>")
                 out.append("<tr>" + "".join(tds) + "</tr>")
             out.append("</tbody>")
         out.append("</table></div>")
@@ -428,6 +478,12 @@ def _markdown_to_paper_html(
         elif stripped.startswith("### "):
             flush_list()
             out.append(f"<h3>{_format_inline(stripped[4:].strip(), tracker)}</h3>")
+        elif stripped.startswith("##### "):
+            flush_list()
+            out.append(f"<h5>{_format_inline(stripped[6:].strip(), tracker)}</h5>")
+        elif stripped.startswith("#### "):
+            flush_list()
+            out.append(f"<h4>{_format_inline(stripped[5:].strip(), tracker)}</h4>")
         elif stripped.startswith("> "):
             flush_list()
             out.append(f"<blockquote>{_format_inline(stripped[2:].strip(), tracker)}</blockquote>")
@@ -487,15 +543,26 @@ def _render_references(tracker: _CitationTracker, i18n: dict[str, str]) -> str:
 
     items: list[str] = []
     for num, row in ordered_rows:
-        title = html.escape((row.get("source_title") or i18n["untitled_source"]).strip())
+        raw_title = (row.get("source_title") or i18n["untitled_source"]).strip()
         url = (row.get("url") or "").strip()
+        is_local = bool(url) and (url.startswith("file://") or "://" not in url)  # file:// URIs and scheme-less paths
+        local_note = ""
+        if is_local:
+            sha_m = SHA_IN_TEXT_RE.search(raw_title) or SHA_IN_TEXT_RE.search("sha256 " + (row.get("sha256") or ""))
+            raw_title = LOCAL_TITLE_SUFFIX_RE.sub("", raw_title).strip() or i18n["untitled_source"]
+            local_note = i18n["local_file"] + (f", sha256 {sha_m.group(1)}" if sha_m else "")
+        title = html.escape(raw_title)
         tier = html.escape((row.get("tier") or "").strip())
         accessed = html.escape((row.get("accessed_date") or "").strip())
         as_of = html.escape((row.get("data_as_of") or "").strip())
         url_html = (
             f' <a href="{html.escape(url)}">{html.escape(url)}</a>'
             if url.startswith(("http://", "https://"))
-            else (f" <code>{html.escape(url)}</code>" if url else "")
+            else (
+                f" <code>{html.escape(Path(unquote(url[len('file://'):] if url.startswith('file://') else url)).name)}</code> ({html.escape(local_note)})"
+                if is_local
+                else (f" <code>{html.escape(url)}</code>" if url else "")
+            )
         )
         meta = ", ".join(
             x
@@ -528,10 +595,13 @@ def _render_appendices(appendix_dir: Path | None, i18n: dict[str, str]) -> str:
         size = path.stat().st_size
 
         in_data_dir = "data" in rel.parts
-        is_allowed_text = (not in_data_dir) and (path.suffix == ".py" or path.name in ALLOWED_APPENDIX_FILES)
+        is_gate_trace = rel.parts[:1] == ("gates",) and path.suffix == ".md"
+        is_allowed_text = (not in_data_dir) and (
+            path.suffix == ".py" or path.name in ALLOWED_APPENDIX_FILES or is_gate_trace
+        )
 
         if is_allowed_text and size <= MAX_APPENDIX_FILE_BYTES:
-            content = html.escape(path.read_text(encoding="utf-8", errors="replace"))
+            content = html.escape(_redact_local_paths(path.read_text(encoding="utf-8", errors="replace")))
             embedded.append(
                 f'<details class="appendix-item"><summary><code>appendix/{rel_str}</code> ({size:,} bytes)</summary>'
                 f"<pre><code>{content}</code></pre></details>"
@@ -552,6 +622,43 @@ def _render_appendices(appendix_dir: Path | None, i18n: dict[str, str]) -> str:
     return "\n".join(parts)
 
 
+def compute_source_hash(
+    report_md: Path,
+    charts: Path | None,
+    numbers: Path | None,
+    appendix_dir: Path | None,
+) -> str:
+    """Return a 12-hex fingerprint of every input that shapes the rendered HTML (W3 stale-HTML detection).
+
+    Covers the report Markdown, charts.json, numbers.json (when outside appendix/) and all appendix files,
+    ignoring ``__pycache__``/``.pyc``. Content-only: paths never enter the hash, so it is stable across machines.
+    """
+
+    def _file_sha(path: Path) -> str:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+
+    entries: list[tuple[str, str]] = [("report.md", _file_sha(report_md))]
+    if charts is not None and charts.is_file():
+        entries.append(("charts.json", _file_sha(charts)))
+    in_appendix = False
+    if numbers is not None and numbers.is_file():
+        if appendix_dir is not None:
+            try:
+                numbers.resolve().relative_to(appendix_dir.resolve())
+                in_appendix = True
+            except ValueError:
+                in_appendix = False
+        if not in_appendix:
+            entries.append(("numbers.json", _file_sha(numbers)))
+    if appendix_dir is not None and appendix_dir.is_dir():
+        for fp in sorted(appendix_dir.rglob("*")):
+            if not fp.is_file() or "__pycache__" in fp.parts or fp.suffix == ".pyc":
+                continue
+            entries.append((f"appendix/{fp.relative_to(appendix_dir).as_posix()}", _file_sha(fp)))
+    digest = hashlib.sha256("".join(f"{label}\0{sha}\n" for label, sha in entries).encode("utf-8"))
+    return digest.hexdigest()[:12]
+
+
 def render_html(
     report_md: str,
     *,
@@ -560,10 +667,12 @@ def render_html(
     lang: str = "auto",
     no_credit: bool = False,
     numbers: dict[str, Any] | None = None,
+    source_hash: str | None = None,
 ) -> str:
     """Render a Heurisma Markdown report into a print-ready working-paper HTML5 document."""
     resolved_lang = detect_language(report_md, lang)
     i18n = I18N[resolved_lang]
+    hash_comment = f"<!-- heurisma-sources: sha256:{source_hash} -->\n  " if source_hash else ""
 
     # Substitute {{num:key}} placeholders from explicit numbers dict or appendix/numbers.json
     nums: dict[str, Any] = {}
@@ -578,7 +687,7 @@ def render_html(
         nums.update(numbers)
     if nums:
         report_md = NUM_MARKER_RE.sub(
-            lambda m: str(nums[m.group(1)]) if m.group(1) in nums else m.group(0),
+            lambda m: _typographic_minus(str(nums[m.group(1)])) if m.group(1) in nums else m.group(0),
             report_md,
         )
 
@@ -671,6 +780,8 @@ def render_html(
       border-bottom: 1px solid var(--rule); padding-bottom: 0.25rem; page-break-after: avoid;
     }}
     h3 {{ font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; page-break-after: avoid; }}
+    h4 {{ font-size: 0.98rem; margin-top: 1.2rem; margin-bottom: 0.4rem; font-style: italic; page-break-after: avoid; }}
+    h5 {{ font-size: 0.9rem; margin-top: 1rem; margin-bottom: 0.3rem; font-variant: small-caps; page-break-after: avoid; }}
     p, li {{ margin: 0.45rem 0; }}
     ul ul {{ margin-top: 0.25rem; margin-bottom: 0.25rem; padding-left: 1.35rem; }}
     a {{ color: var(--accent); text-decoration: none; }}
@@ -720,7 +831,7 @@ def render_html(
   </style>
 </head>
 <body>
-  <article class="paper">
+  {hash_comment}<article class="paper">
     <header class="title-block">
       <h1>{_format_inline(title, tracker)}</h1>
       {meta_html}
@@ -774,9 +885,17 @@ def main(argv: list[str] | None = None) -> int:
         lang=args.lang,
         no_credit=args.no_credit,
         numbers=numbers_data,
+        source_hash=compute_source_hash(args.report_path, args.charts, args.numbers, args.appendix),
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(rendered, encoding="utf-8")
+    body_only = re.sub(r'<section class="appendices">.*?</section>', "", rendered, flags=re.DOTALL)  # quoted files
+    for key in sorted(set(NUM_MARKER_RE.findall(body_only))):
+        print(
+            f"Warning: unresolved marker '{{{{num:{key}}}}}' left literal in the HTML (no such key in numbers.json); "
+            f"validate_report.py will fail on it.",
+            file=sys.stderr,
+        )
     print(f"Rendered Heurisma working-paper HTML: {args.out} ({len(rendered.encode('utf-8')):,} bytes)")
     return 0
 
