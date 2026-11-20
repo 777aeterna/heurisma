@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="assets/logo.png" alt="Heurisma Logo" width="180" />
+  <img src="assets/banner.png" alt="Heurisma — Beyond Deep Research · Scientific-Method Agent Skill" width="100%" />
 </p>
-
-<h1 align="center">Heurisma</h1>
 
 <p align="center">
   <strong>Beyond Deep Research: a scientific-method agent skill for discipline-aware inquiry, reproducible data analysis, adversarial peer review, and publication-grade working-paper reports.</strong>
