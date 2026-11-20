@@ -1,0 +1,28 @@
+[
+  {
+    "id": "corr_sens",
+    "type": "bar",
+    "title": "Correlation Sensitivity: Full Sample vs. Outlier-Excluded",
+    "caption": "Excluding T12 reverses Pearson r from +0.98 to -0.77, matching the negative rank correlation.",
+    "source": "Internal 12-team CSV; computed in appendix/analysis.py.",
+    "y": {"label": "Correlation coefficient"},
+    "groups": ["Pearson r", "Spearman rho"],
+    "series": [
+      {"name": "Full (n=12)", "values": [0.9804, -0.3612]},
+      {"name": "Clean (n=11)", "values": [-0.7742, -0.7791]}
+    ]
+  },
+  {
+    "id": "team_scatter",
+    "type": "scatter",
+    "title": "Weekly Pair Hours vs. Bugs Fixed Across 12 Teams",
+    "caption": "T12 (45 pair hours, 88 bugs) sits >6x above T01-T11 on both axes, driving full-sample OLS leverage.",
+    "source": "Internal 12-team CSV; appendix/analysis.py.",
+    "x": {"label": "Weekly Pair Hours"},
+    "y": {"label": "Bugs Fixed"},
+    "series": [
+      {"name": "Typical Teams (T01-T11)", "points": [[2.0, 14.0], [4.0, 12.0], [3.0, 15.0], [5.0, 11.0], [6.0, 13.0], [2.0, 16.0], [7.0, 12.0], [4.0, 14.0], [5.0, 13.0], [3.0, 15.0], [6.0, 11.0]]},
+      {"name": "Flagged Outlier (T12)", "points": [[45.0, 88.0]]}
+    ]
+  }
+]

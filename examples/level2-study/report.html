@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Audit of Internal Pair-Programming Hours vs. Bug-Fix Throughput (12-Team Study)</title>
+  <style>
+    :root {
+      --text: #111827; --muted: #4b5563; --rule: #cbd5e1; --rule-dark: #1e293b;
+      --bg: #ffffff; --tint: #f8fafc; --accent: #0072B2;
+    }
+    body {
+      font-family: Charter, 'Bitstream Charter', 'Iowan Old Style', 'Source Serif Pro', Georgia, serif;
+      font-size: 17px; line-height: 1.55; color: var(--text); background: var(--bg);
+      margin: 0; font-variant-numeric: tabular-nums;
+    }
+    .paper { max-width: 720px; margin: 0 auto; padding: 3rem 1.5rem 4.5rem; }
+    header.title-block { border-bottom: 1.5px solid var(--rule-dark); padding-bottom: 1.25rem; margin-bottom: 1.75rem; }
+    h1 { font-size: 1.9rem; line-height: 1.22; margin: 0 0 0.6rem; font-weight: 700; letter-spacing: -0.01em; }
+    .meta-line { font-size: 0.88rem; color: var(--muted); margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+    .abstract {
+      background: var(--tint); border-left: 3px solid var(--accent);
+      padding: 1rem 1.25rem; margin: 1.5rem 0 2rem; font-size: 0.96rem;
+    }
+    .abstract-label {
+      font-family: system-ui, -apple-system, sans-serif; font-size: 0.75rem;
+      font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.35rem;
+    }
+    .abstract p { margin: 0.25rem 0; }
+    .abstract-change { font-size: 0.88rem; color: var(--muted); margin-top: 0.5rem; }
+    h2 {
+      font-size: 1.28rem; margin-top: 2.25rem; margin-bottom: 0.75rem;
+      border-bottom: 1px solid var(--rule); padding-bottom: 0.25rem; page-break-after: avoid;
+    }
+    h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; page-break-after: avoid; }
+    p, li { margin: 0.45rem 0; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .ep-tag {
+      font-variant: small-caps; font-family: system-ui, -apple-system, sans-serif;
+      font-size: 0.82em; font-weight: 600; letter-spacing: 0.02em; padding-left: 0.25rem;
+    }
+    .tag-strong { color: #166534; border-left: 2px solid #166534; }
+    .tag-moderate { color: #075985; border-left: 2px solid #075985; }
+    .tag-preliminary { color: #92400e; border-left: 2px solid #92400e; }
+    .tag-speculative { color: #991b1b; border-left: 2px solid #991b1b; }
+    .table-wrap { overflow-x: auto; margin: 1.25rem 0; }
+    table.booktabs {
+      width: 100%; border-collapse: collapse; font-size: 0.88rem; line-height: 1.4;
+      border-top: 1.5px solid var(--rule-dark); border-bottom: 1.5px solid var(--rule-dark);
+      page-break-inside: avoid;
+    }
+    table.booktabs th, table.booktabs td { padding: 0.45rem 0.55rem; text-align: left; border: none; vertical-align: top; }
+    table.booktabs thead th { border-bottom: 1px solid var(--rule-dark); font-weight: 700; }
+    table.booktabs td.num { text-align: right; white-space: nowrap; }
+    table.booktabs.compact { font-size: 0.8rem; margin-top: 0.5rem; }
+    figure.paper-fig { margin: 1.75rem 0; page-break-inside: avoid; }
+    .fig-title { font-size: 0.95rem; margin-bottom: 0.4rem; color: var(--text); }
+    figcaption { font-size: 0.84rem; color: var(--muted); margin-top: 0.45rem; line-height: 1.4; }
+    details.fig-data, details.appendix-item {
+      margin-top: 0.5rem; font-size: 0.85rem; border-top: 1px solid var(--rule); padding-top: 0.35rem;
+    }
+    details summary { cursor: pointer; color: var(--muted); font-family: system-ui, -apple-system, sans-serif; }
+    pre { background: var(--tint); padding: 0.75rem; overflow-x: auto; font-size: 0.8rem; border: 1px solid var(--rule); }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.86em; }
+    ol.ref-list { list-style: none; padding-left: 0; font-size: 0.86rem; line-height: 1.45; }
+    ol.ref-list li { margin: 0.4rem 0; }
+    blockquote { border-left: 2.5px solid var(--rule); margin: 1rem 0; padding-left: 1rem; color: var(--muted); }
+    @page { size: A4; margin: 2.2cm; }
+    @media print {
+      body { font-size: 11pt; }
+      .paper { max-width: none; padding: 0; }
+      details.fig-data, details.appendix-item { display: none; }
+      a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.8em; color: #4b5563; }
+      figure.paper-fig, table.booktabs { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <article class="paper">
+    <header class="title-block">
+      <h1>Audit of Internal Pair-Programming Hours vs. Bug-Fix Throughput (12-Team Study)</h1>
+      <p class="meta-line"><strong>As-Of Date:</strong> 2026-11-20 | <strong>Depth Level:</strong> Level 2 (Empirical / Data Study) | <strong>Primary Disciplines:</strong> Empirical Software Engineering + Observational Causal Inference &middot; Prepared with Heurisma</p>
+    </header>
+    <section class="abstract"><div class="abstract-label">Abstract</div><p>The supplied 12-team dataset does not support claiming that pair programming boosts bug-fix throughput <span class="ep-tag tag-strong">[strong]</span>. The apparent positive correlation ($r = +0.98$) is a single-point leverage artifact driven by <code>T12</code>, and excluding <code>T12</code> reverses the relationship to $r = -0.77$ <span class="ep-tag tag-moderate">[moderate]</span>.</p><p class="abstract-change"><strong>Falsifier:</strong> Multi-sprint telemetry normalized per developer-hour and weighted by ticket severity across comparable teams showing a replicated positive effect.</p></section>
+    <main><h2>1. Executive Summary</h2>
+<ul>
+<li><strong>Calibrated Verdict:</strong> The supplied 12-team dataset does not support claiming that pair programming boosts bug-fix throughput <span class="ep-tag tag-strong">[strong]</span>. The apparent positive correlation ($r = +0.98$) is a single-point leverage artifact driven by <code>T12</code>, and excluding <code>T12</code> reverses the relationship to $r = -0.77$ <span class="ep-tag tag-moderate">[moderate]</span>.</li>
+<li><strong>What Would Change This Conclusion:</strong> Multi-sprint telemetry normalized per developer-hour and weighted by ticket severity across comparable teams showing a replicated positive effect.</li>
+<li><strong>Key Takeaways:</strong></li>
+<li>Full-sample Pearson $r = +0.9804$ diverges sharply from full-sample Spearman $\rho = -0.3612$, exposing extreme leverage from <code>T12</code> <span class="ep-tag tag-strong">[strong]</span>.</li>
+<li>Across typical teams (<code>T01</code>–<code>T11</code>), both parametric and rank correlations are negative with narrow bootstrap 95% confidence intervals <span class="ep-tag tag-moderate">[moderate]</span>.</li>
+<li>Uncontrolled confounders (headcount, ticket severity, reverse causality) prevent drawing any causal conclusion from this cross-section <span class="ep-tag tag-preliminary">[preliminary]</span>.</li>
+</ul>
+<h2>2. Framing &amp; Hypotheses</h2>
+<ul>
+<li><strong>Scientific Discipline(s) &amp; Depth Level:</strong> Engineering &amp; Applied Sciences (Empirical Software Engineering) + Social Sciences &amp; Economics (Observational Causal Inference) | <strong>Level 2</strong>.</li>
+<li><strong>Research Question:</strong> In this 12-team internal cross-section, is weekly <code>pair_hours</code> robustly associated with higher weekly <code>bugs_fixed</code>, or is the apparent positive linear trend an outlier-leverage artifact?</li>
+<li><strong>Hypotheses:</strong></li>
+<li>$H_0$: No positive monotonic association exists across typical teams; the full-sample positive $r$ is driven by an extreme leverage observation or unmeasured confounders.</li>
+<li>$H_1$: Higher <code>pair_hours</code> is consistently and positively associated with higher <code>bugs_fixed</code>, surviving non-parametric rank tests and outlier removal.</li>
+<li><strong>Refutation Criteria:</strong> $H_1$ is falsified if full-sample Spearman $\rho \le 0$ or if removing flagged outliers flips Pearson $r \le 0$.</li>
+</ul>
+<h2>3. Methodology &amp; Evidence Standards</h2>
+<ul>
+<li><strong>Domain Evidence Hierarchy:</strong> Tier 1 = controlled crossover experiments and audited normalized telemetry; Tier 2 = multi-sprint panels with headcount/severity covariates; Tier 3 = unadjusted single-week aggregate counts.</li>
+<li><strong>Analytical &amp; Data Provenance:</strong> All computations were executed in <a href="appendix/analysis.py"><code>appendix/analysis.py</code></a> (see <a href="appendix/README.md"><code>appendix/README.md</code></a>), archiving verbatim output in <a href="appendix/output.txt"><code>appendix/output.txt</code></a>, sources in <a href="appendix/sources.csv"><code>appendix/sources.csv</code></a>, and emitting <code>charts.json</code> directly.</li>
+</ul>
+<div class="table-wrap"><table class="booktabs">
+<thead><tr><th>Target Variable</th><th>Source Tried</th><th>Method</th><th>Outcome</th><th>Fallback</th></tr></thead>
+<tbody>
+<tr><td>Team headcount &amp; ticket severity</td><td>User prompt CSV</td><td>Schema inspection</td><td>Not included in supplied table</td><td>Flagged as missing covariate; causal claims capped at <span class="ep-tag tag-preliminary">[preliminary]</span></td></tr>
+</tbody>
+</table></div>
+<h2>4. Findings</h2>
+<p>1. <strong>Extreme Single-Row Leverage (<code>T12</code>):</strong> <code>T01</code>–<code>T11</code> span <code>2–7</code> <code>pair_hours</code> (median <code>4.50</code>, MAD <code>1.50</code>) and <code>11–16</code> <code>bugs_fixed</code> (median <code>13.50</code>, MAD <code>1.50</code>), whereas <code>T12</code> reports <code>45</code> <code>pair_hours</code> and <code>88</code> <code>bugs_fixed</code>, exceeding both $\text{median} + 3 \times \text{IQR}$ and $|z| &gt; 2.5$ (<span class="ep-tag tag-strong">[strong]</span>, Tier 1 script audit).</p>
+<figure class="paper-fig" id="fig-1">
+<div class="fig-title"><strong>Figure 1.</strong> Weekly Pair Hours vs. Bugs Fixed Across 12 Teams</div>
+<svg viewBox="0 0 680 340" width="100%" role="img" style="font-family: inherit; display: block;"><title>Weekly Pair Hours vs. Bugs Fixed Across 12 Teams</title><desc>T12 (45 pair hours, 88 bugs) sits &gt;6x above T01-T11 on both axes, driving full-sample OLS leverage.</desc><line x1="64" y1="288.0" x2="654" y2="288.0" stroke="#e2e8f0" stroke-width="1"/><text x="56" y="291.5" text-anchor="end" font-size="11" fill="#475569">0</text><line x1="64" y1="237.6" x2="654" y2="237.6" stroke="#e2e8f0" stroke-width="1"/><text x="56" y="241.1" text-anchor="end" font-size="11" fill="#475569">20</text><line x1="64" y1="187.2" x2="654" y2="187.2" stroke="#e2e8f0" stroke-width="1"/><text x="56" y="190.7" text-anchor="end" font-size="11" fill="#475569">40</text><line x1="64" y1="136.8" x2="654" y2="136.8" stroke="#e2e8f0" stroke-width="1"/><text x="56" y="140.3" text-anchor="end" font-size="11" fill="#475569">60</text><line x1="64" y1="86.4" x2="654" y2="86.4" stroke="#e2e8f0" stroke-width="1"/><text x="56" y="89.9" text-anchor="end" font-size="11" fill="#475569">80</text><line x1="64" y1="36.0" x2="654" y2="36.0" stroke="#e2e8f0" stroke-width="1"/><text x="56" y="39.5" text-anchor="end" font-size="11" fill="#475569">100</text><line x1="64" y1="288" x2="654" y2="288" stroke="#334155" stroke-width="1.2"/><text x="64" y="26" text-anchor="start" font-size="11" font-weight="600" fill="#334155">Bugs Fixed</text><line x1="64.0" y1="288" x2="64.0" y2="293" stroke="#334155"/><text x="64.0" y="306" text-anchor="middle" font-size="11" fill="#475569">2</text><line x1="182.0" y1="288" x2="182.0" y2="293" stroke="#334155"/><text x="182.0" y="306" text-anchor="middle" font-size="11" fill="#475569">10.6</text><line x1="300.0" y1="288" x2="300.0" y2="293" stroke="#334155"/><text x="300.0" y="306" text-anchor="middle" font-size="11" fill="#475569">19.2</text><line x1="418.0" y1="288" x2="418.0" y2="293" stroke="#334155"/><text x="418.0" y="306" text-anchor="middle" font-size="11" fill="#475569">27.8</text><line x1="536.0" y1="288" x2="536.0" y2="293" stroke="#334155"/><text x="536.0" y="306" text-anchor="middle" font-size="11" fill="#475569">36.4</text><line x1="654.0" y1="288" x2="654.0" y2="293" stroke="#334155"/><text x="654.0" y="306" text-anchor="middle" font-size="11" fill="#475569">45</text><text x="359.0" y="330" text-anchor="middle" font-size="11" fill="#334155">Weekly Pair Hours</text><circle cx="64.0" cy="252.7" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="91.4" cy="257.8" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="77.7" cy="250.2" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="105.2" cy="260.3" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="118.9" cy="255.2" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="64.0" cy="247.7" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="132.6" cy="257.8" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="91.4" cy="252.7" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="105.2" cy="255.2" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="77.7" cy="250.2" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="118.9" cy="260.3" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="654.0" cy="66.2" r="4.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><line x1="493.5" y1="13" x2="509.5" y2="13" stroke="#D55E00" stroke-width="2.2" stroke-dasharray="6,3"/><text x="513.5" y="16" font-size="10.5" fill="#1e293b">Flagged Outlier (T12)</text><line x1="320.0" y1="13" x2="336.0" y2="13" stroke="#0072B2" stroke-width="2.2"/><text x="340.0" y="16" font-size="10.5" fill="#1e293b">Typical Teams (T01-T11)</text></svg>
+<figcaption><em>Note:</em> T12 (45 pair hours, 88 bugs) sits &gt;6x above T01-T11 on both axes, driving full-sample OLS leverage. <em>Source:</em> Internal 12-team CSV; appendix/analysis.py.</figcaption>
+<details class="fig-data"><summary>Figure data preview</summary><table class="booktabs compact"><thead><tr><th>X</th><th>Y</th></tr></thead><tbody><tr><td>2.0</td><td class="num">14.0</td></tr><tr><td>4.0</td><td class="num">12.0</td></tr><tr><td>3.0</td><td class="num">15.0</td></tr><tr><td>5.0</td><td class="num">11.0</td></tr><tr><td>6.0</td><td class="num">13.0</td></tr><tr><td>2.0</td><td class="num">16.0</td></tr><tr><td>7.0</td><td class="num">12.0</td></tr><tr><td>4.0</td><td class="num">14.0</td></tr><tr><td>5.0</td><td class="num">13.0</td></tr><tr><td>3.0</td><td class="num">15.0</td></tr><tr><td>6.0</td><td class="num">11.0</td></tr></tbody></table></details>
+</figure>
+<p>2. <strong>Parametric, Rank &amp; Bootstrap Sensitivity:</strong></p>
+<div class="table-wrap"><table class="booktabs">
+<thead><tr><th>Scope</th><th>$n$</th><th>Pearson $r$</th><th>95% Bootstrap CI ($r$)</th><th>Spearman $\rho$</th></tr></thead>
+<tbody>
+<tr><td>Full Sample (<code>T01</code>–<code>T12</code>)</td><td class="num">12</td><td class="num">+0.9804</td><td><code>[-0.8880, +0.9957]</code></td><td class="num">-0.3612</td></tr>
+<tr><td>Clean Sample (<code>T01</code>–<code>T11</code>, excl. <code>T12</code>)</td><td class="num">11</td><td class="num">-0.7742</td><td><code>[-0.9472, -0.5499]</code></td><td class="num">-0.7791</td></tr>
+</tbody>
+</table></div>
+<figure class="paper-fig" id="fig-2">
+<div class="fig-title"><strong>Figure 2.</strong> Correlation Sensitivity: Full Sample vs. Outlier-Excluded</div>
+<svg viewBox="0 0 680 320" width="100%" role="img" style="font-family: inherit; display: block;"><title>Correlation Sensitivity: Full Sample vs. Outlier-Excluded</title><desc>Excluding T12 reverses Pearson r from +0.98 to -0.77, matching the negative rank correlation.</desc><line x1="64" y1="264.0" x2="656" y2="264.0" stroke="#e2e8f0" stroke-width="1"/><text x="56" y="267.5" text-anchor="end" font-size="11" fill="#475569">-1</text><line x1="64" y1="207.5" x2="656" y2="207.5" stroke="#e2e8f0" stroke-width="1"/><text x="56" y="211.0" text-anchor="end" font-size="11" fill="#475569">-0.5</text><line x1="64" y1="151.0" x2="656" y2="151.0" stroke="#e2e8f0" stroke-width="1"/><text x="56" y="154.5" text-anchor="end" font-size="11" fill="#475569">0</text><line x1="64" y1="94.5" x2="656" y2="94.5" stroke="#e2e8f0" stroke-width="1"/><text x="56" y="98.0" text-anchor="end" font-size="11" fill="#475569">0.5</text><line x1="64" y1="38.0" x2="656" y2="38.0" stroke="#e2e8f0" stroke-width="1"/><text x="56" y="41.5" text-anchor="end" font-size="11" fill="#475569">1</text><line x1="64" y1="264" x2="656" y2="264" stroke="#334155" stroke-width="1.2"/><text x="64" y="28" text-anchor="start" font-size="11" font-weight="600" fill="#334155">Correlation coefficient</text><line x1="64" y1="151.0" x2="656" y2="151.0" stroke="#334155" stroke-width="1.2"/><rect x="154.5" y="40.2" width="56.0" height="110.8" rx="2" fill="#0072B2"/><text x="182.5" y="35.2" text-anchor="middle" font-size="10" fill="#1e293b">0.98</text><rect x="213.5" y="151.0" width="56.0" height="87.5" rx="2" fill="#D55E00"/><text x="241.5" y="250.5" text-anchor="middle" font-size="10" fill="#1e293b">-0.774</text><text x="212.0" y="282" text-anchor="middle" font-size="11" fill="#334155">Pearson r</text><rect x="450.5" y="151.0" width="56.0" height="40.8" rx="2" fill="#0072B2"/><text x="478.5" y="203.8" text-anchor="middle" font-size="10" fill="#1e293b">-0.361</text><rect x="509.5" y="151.0" width="56.0" height="88.0" rx="2" fill="#D55E00"/><text x="537.5" y="251.0" text-anchor="middle" font-size="10" fill="#1e293b">-0.779</text><text x="508.0" y="282" text-anchor="middle" font-size="11" fill="#334155">Spearman rho</text><rect x="556.0" y="7" width="11" height="11" rx="2" fill="#D55E00"/><text x="571.0" y="16" font-size="10.5" fill="#1e293b">Clean (n=11)</text><rect x="462.5" y="7" width="11" height="11" rx="2" fill="#0072B2"/><text x="477.5" y="16" font-size="10.5" fill="#1e293b">Full (n=12)</text></svg>
+<figcaption><em>Note:</em> Excluding T12 reverses Pearson r from +0.98 to -0.77, matching the negative rank correlation. <em>Source:</em> Internal 12-team CSV; computed in appendix/analysis.py.</figcaption>
+<details class="fig-data"><summary>Figure data preview</summary><table class="booktabs compact"><thead><tr><th>Group</th><th>Full (n=12)</th><th>Clean (n=11)</th></tr></thead><tbody><tr><td>Pearson r</td><td class="num">0.9804</td><td class="num">-0.7742</td></tr><tr><td>Spearman rho</td><td class="num">-0.3612</td><td class="num">-0.7791</td></tr></tbody></table></details>
+</figure>
+<p>3. <strong>Falsification of $H_1$:</strong> Full-sample bootstrap CI for Pearson $r$ spans <code>[-0.89, +1.00]</code> (crossing zero because draws omitting <code>T12</code> flip sign), confirming the positive trend is entirely an outlier artifact (<span class="ep-tag tag-strong">[strong]</span>).</p>
+<h2>5. Counter-Evidence &amp; Alternative Explanations</h2>
+<ul>
+<li><strong>Scale / Aggregation Mismatch (<code>T12</code>):</strong> <code>T12</code> is consistent with a multi-squad roll-up, a monthly total logged in a weekly column, or bulk automated ticket closure (<span class="ep-tag tag-preliminary">[preliminary]</span>).</li>
+<li><strong>Reverse Causality &amp; Missing Denominators (<code>T01</code>–<code>T11</code>):</strong> Teams handling harder, high-severity defects pair more often and close fewer tickets per week (<span class="ep-tag tag-speculative">[speculative]</span>), while raw counts omit headcount and post-fix defect reopen rates (<span class="ep-tag tag-moderate">[moderate]</span>).</li>
+</ul>
+<h2>6. Claim-Evidence Matrix</h2>
+<div class="table-wrap"><table class="booktabs">
+<thead><tr><th>Claim</th><th>Discipline / Axis</th><th>Evidence &amp; Source Tier (As-Of Date)</th><th>Confidence Tag</th><th>Key Falsifier / Condition</th></tr></thead>
+<tbody>
+<tr><td>Full-sample $r = +0.9804$ is a <code>T12</code> leverage artifact</td><td>Causal Inference</td><td>Reproducible Python bootstrap &amp; sensitivity audit (<code>appendix/analysis.py</code>, Tier 1, 2026-11)</td><td><span class="ep-tag tag-strong">[strong]</span></td><td>Replicated positive slope across independent comparable teams</td></tr>
+<tr><td>Among <code>T01</code>–<code>T11</code>, pairing and bugs fixed correlate negatively ($r = -0.7742$)</td><td>Software Engineering</td><td>Leave-one-out audit on supplied CSV (<code>appendix/output.txt</code>, Tier 2, 2026-11)</td><td><span class="ep-tag tag-moderate">[moderate]</span></td><td>Normalization by team size or ticket severity</td></tr>
+<tr><td>Reverse causality (bug complexity) explains the negative slope</td><td>Causal Inference</td><td>Structural audit of missing covariates (Tier 3, 2026-11)</td><td><span class="ep-tag tag-speculative">[speculative]</span></td><td>Controlled crossover pilot controlling for ticket difficulty</td></tr>
+</tbody>
+</table></div>
+<h2>7. Limitations &amp; Open Questions</h2>
+<ul>
+<li><strong>Verified Methodological &amp; Data Limitations:</strong> Small cross-section ($n=12$); team headcount, ticket severity, reporting-period verification for <code>T12</code>, and defect reopen rates were absent from the supplied CSV (logged in Section 3).</li>
+<li><strong>Actionable Next Steps / Experiments:</strong> Audit <code>T12</code>&#x27;s reporting definition, normalize metrics per developer-hour weighted by severity across multiple sprints, and run a controlled crossover pilot tracking both throughput and regression rates.</li>
+</ul></main>
+    
+    <section class="references"><h2>References</h2><ol class="ref-list"><li><strong>[1]</strong> Internal 12-team pair-programming CSV (user-supplied). <code>internal://user-supplied-csv</code> (Tier 2, data as of 2026-11, accessed 2026-11-20)</li><li><strong>[2]</strong> Reproducible Python sensitivity &amp; bootstrap script. <code>appendix/analysis.py</code> (Tier 1, data as of 2026-11, accessed 2026-11-20)</li></ol></section>
+    <section class="appendices"><h2>Appendices &amp; Reproducible Artifacts</h2>
+<details class="appendix-item"><summary><code>appendix/README.md</code> (415 bytes)</summary><pre><code># Reproducibility Guide (`examples/level2-study/appendix/`)
+
+Run in order from `examples/level2-study/`:
+
+```bash
+python3 appendix/analysis.py --charts-out charts.json &gt; appendix/output.txt
+python3 ../../skills/heurisma/scripts/render_report.py report.md --out report.html --charts charts.json --appendix appendix/
+python3 ../../skills/heurisma/scripts/validate_report.py report.md --level 2 --html report.html
+```
+</code></pre></details>
+<details class="appendix-item"><summary><code>appendix/analysis.py</code> (5,719 bytes)</summary><pre><code>#!/usr/bin/env python3
+&quot;&quot;&quot;Reproducible Level 2 data audit emitting console stats and charts.json v2.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import argparse
+import csv
+import io
+import json
+import math
+import random
+import statistics
+from pathlib import Path
+from typing import Callable
+
+RAW_CSV = &quot;&quot;&quot;team,pair_hours,bugs_fixed
+T01,2,14
+T02,4,12
+T03,3,15
+T04,5,11
+T05,6,13
+T06,2,16
+T07,7,12
+T08,4,14
+T09,5,13
+T10,3,15
+T11,6,11
+T12,45,88&quot;&quot;&quot;
+
+
+def median_abs_deviation(vals: list[float]) -&gt; tuple[float, float]:
+    med = statistics.median(vals)
+    mad = statistics.median([abs(v - med) for v in vals])
+    return mad, 1.4826 * mad
+
+
+def pearson_r(xs: list[float], ys: list[float]) -&gt; float:
+    mx, my = statistics.fmean(xs), statistics.fmean(ys)
+    num = sum((a - mx) * (b - my) for a, b in zip(xs, ys))
+    den = math.sqrt(sum((a - mx) ** 2 for a in xs) * sum((b - my) ** 2 for b in ys))
+    return num / den if den else 0.0
+
+
+def ranks(vals: list[float]) -&gt; list[float]:
+    indexed = sorted(enumerate(vals), key=lambda t: t[1])
+    out = [0.0] * len(vals)
+    i = 0
+    while i &lt; len(indexed):
+        j = i
+        while j + 1 &lt; len(indexed) and indexed[j + 1][1] == indexed[i][1]:
+            j += 1
+        avg_rank = (i + j) / 2.0 + 1.0
+        for k in range(i, j + 1):
+            out[indexed[k][0]] = avg_rank
+        i = j + 1
+    return out
+
+
+def spearman_rho(xs: list[float], ys: list[float]) -&gt; float:
+    return pearson_r(ranks(xs), ranks(ys))
+
+
+def bootstrap_ci_corr(
+    xs: list[float],
+    ys: list[float],
+    corr_fn: Callable[[list[float], list[float]], float],
+    n_boot: int = 2000,
+    seed: int = 42,
+) -&gt; tuple[float, float]:
+    rng = random.Random(seed)
+    n = len(xs)
+    draws = []
+    for _ in range(n_boot):
+        idx = [rng.randrange(n) for _ in range(n)]
+        draws.append(corr_fn([xs[i] for i in idx], [ys[i] for i in idx]))
+    draws.sort()
+    return draws[int(0.025 * n_boot)], draws[int(0.975 * n_boot)]
+
+
+def flag_outliers(vals: list[float]) -&gt; list[int]:
+    q1, med, q3 = statistics.quantiles(vals, n=4)
+    iqr = q3 - q1
+    mean, sd = statistics.fmean(vals), statistics.stdev(vals)
+    return [i for i, v in enumerate(vals) if (v &lt; med - 3 * iqr or v &gt; med + 3 * iqr) or abs((v - mean) / sd) &gt; 2.5]
+
+
+def main() -&gt; None:
+    parser = argparse.ArgumentParser(description=&quot;Run Level 2 pair-programming audit and emit charts.json v2.&quot;)
+    parser.add_argument(&quot;--charts-out&quot;, type=Path, default=None, help=&quot;Optional path to write charts.json v2.&quot;)
+    args = parser.parse_args()
+
+    rows = list(csv.DictReader(io.StringIO(RAW_CSV.strip())))
+    teams = [r[&quot;team&quot;] for r in rows]
+    x = [float(r[&quot;pair_hours&quot;]) for r in rows]
+    y = [float(r[&quot;bugs_fixed&quot;]) for r in rows]
+
+    outliers = sorted(set(flag_outliers(x) + flag_outliers(y)))
+    x_clean = [v for i, v in enumerate(x) if i not in outliers]
+    y_clean = [v for i, v in enumerate(y) if i not in outliers]
+
+    mad_x, madn_x = median_abs_deviation(x)
+    mad_y, madn_y = median_abs_deviation(y)
+    r_full = pearson_r(x, y)
+    rho_full = spearman_rho(x, y)
+    r_clean = pearson_r(x_clean, y_clean)
+    rho_clean = spearman_rho(x_clean, y_clean)
+
+    ci_r_full = bootstrap_ci_corr(x, y, pearson_r)
+    ci_r_clean = bootstrap_ci_corr(x_clean, y_clean, pearson_r)
+    ci_rho_clean = bootstrap_ci_corr(x_clean, y_clean, spearman_rho)
+
+    print(f&quot;Integrity: n={len(rows)}, missing=0, flagged_outliers={[teams[i] for i in outliers]}&quot;)
+    print(f&quot;Robust dispersion (full): pair_hours median={statistics.median(x):.2f} (MAD={mad_x:.2f}, MAD_n={madn_x:.2f}); bugs_fixed median={statistics.median(y):.2f} (MAD={mad_y:.2f}, MAD_n={madn_y:.2f})&quot;)
+    print(f&quot;Full Sample (n={len(x)}): Pearson r={r_full:.4f} (95% boot CI [{ci_r_full[0]:.4f}, {ci_r_full[1]:.4f}]), Spearman rho={rho_full:.4f}&quot;)
+    print(f&quot;Clean Sample (n={len(x_clean)}): Pearson r={r_clean:.4f} (95% boot CI [{ci_r_clean[0]:.4f}, {ci_r_clean[1]:.4f}]), Spearman rho={rho_clean:.4f} (95% boot CI [{ci_rho_clean[0]:.4f}, {ci_rho_clean[1]:.4f}])&quot;)
+
+    if args.charts_out is not None:
+        charts_v2 = [
+            {
+                &quot;id&quot;: &quot;corr_sens&quot;,
+                &quot;type&quot;: &quot;bar&quot;,
+                &quot;title&quot;: &quot;Correlation Sensitivity: Full Sample vs. Outlier-Excluded&quot;,
+                &quot;caption&quot;: &quot;Excluding T12 reverses Pearson r from +0.98 to -0.77, matching the negative rank correlation.&quot;,
+                &quot;source&quot;: &quot;Internal 12-team CSV; computed in appendix/analysis.py.&quot;,
+                &quot;y&quot;: {&quot;label&quot;: &quot;Correlation coefficient&quot;},
+                &quot;groups&quot;: [&quot;Pearson r&quot;, &quot;Spearman rho&quot;],
+                &quot;series&quot;: [
+                    {&quot;name&quot;: &quot;Full (n=12)&quot;, &quot;values&quot;: [round(r_full, 4), round(rho_full, 4)]},
+                    {&quot;name&quot;: &quot;Clean (n=11)&quot;, &quot;values&quot;: [round(r_clean, 4), round(rho_clean, 4)]},
+                ],
+            },
+            {
+                &quot;id&quot;: &quot;team_scatter&quot;,
+                &quot;type&quot;: &quot;scatter&quot;,
+                &quot;title&quot;: &quot;Weekly Pair Hours vs. Bugs Fixed Across 12 Teams&quot;,
+                &quot;caption&quot;: &quot;T12 (45 pair hours, 88 bugs) sits &gt;6x above T01-T11 on both axes, driving full-sample OLS leverage.&quot;,
+                &quot;source&quot;: &quot;Internal 12-team CSV; appendix/analysis.py.&quot;,
+                &quot;x&quot;: {&quot;label&quot;: &quot;Weekly Pair Hours&quot;},
+                &quot;y&quot;: {&quot;label&quot;: &quot;Bugs Fixed&quot;},
+                &quot;series&quot;: [
+                    {&quot;name&quot;: &quot;Typical Teams (T01-T11)&quot;, &quot;points&quot;: [[x[i], y[i]] for i in range(len(x)) if i not in outliers]},
+                    {&quot;name&quot;: &quot;Flagged Outlier (T12)&quot;, &quot;points&quot;: [[x[i], y[i]] for i in outliers]},
+                ],
+            },
+        ]
+        args.charts_out.write_text(json.dumps(charts_v2, indent=2) + &quot;\n&quot;, encoding=&quot;utf-8&quot;)
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre></details>
+<details class="appendix-item"><summary><code>appendix/output.txt</code> (391 bytes)</summary><pre><code>Integrity: n=12, missing=0, flagged_outliers=[&#x27;T12&#x27;]
+Robust dispersion (full): pair_hours median=4.50 (MAD=1.50, MAD_n=2.22); bugs_fixed median=13.50 (MAD=1.50, MAD_n=2.22)
+Full Sample (n=12): Pearson r=0.9804 (95% boot CI [-0.8880, 0.9957]), Spearman rho=-0.3612
+Clean Sample (n=11): Pearson r=-0.7742 (95% boot CI [-0.9472, -0.5499]), Spearman rho=-0.7791 (95% boot CI [-0.9716, -0.3940])
+</code></pre></details>
+<details class="appendix-item"><summary><code>appendix/sources.csv</code> (269 bytes)</summary><pre><code>claim_id,source_title,url,tier,accessed_date,data_as_of
+C1,Internal 12-team pair-programming CSV (user-supplied),internal://user-supplied-csv,Tier 2,2026-11-20,2026-11
+C2,Reproducible Python sensitivity &amp; bootstrap script,appendix/analysis.py,Tier 1,2026-11-20,2026-11
+</code></pre></details>
+</section>
+  </article>
+</body>
+</html>

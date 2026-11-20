@@ -1,170 +1,156 @@
 ---
 name: heurisma
-description: Use when conducting deep research, scientific or technical investigations, literature reviews, policy or market evaluations, or empirical data analysis—especially when tempted to jump straight into web searches, accept a leading prompt, eyeball a dataset, or deliver an uncalibrated binary verdict under time or authority pressure.
+description: Use when conducting scientific or technical research, empirical data investigations, literature reviews, policy or economic evaluations, or quantitative forecasting.
 ---
 
-# Heurisma: Scientific-Method Inquiry & Empirical Data Protocol
+# Heurisma: Scientific-Method Inquiry & Working-Paper Protocol
 
 ## Overview
 
-**Heurisma** replaces search-and-summarize "Deep Research" with the **scientific method**: classify the scientific discipline(s) before searching, formulate falsifiable hypotheses, execute reproducible code on data, actively attempt to falsify your own conclusions, and calibrate every claim's epistemic confidence.
-
-**Violating the letter of the rules is violating the spirit of the rules.**
+**Heurisma** replaces search-and-summarize "Deep Research" with the **scientific method**: classify the scientific discipline(s) before searching, formulate falsifiable hypotheses, acquire primary data and execute reproducible code in a clean `appendix/`, actively attempt to falsify conclusions, and deliver a clean narrative `report.md` alongside a publication-grade, print-ready working-paper `report.html`.
 
 ## The Iron Laws
 
 ```
 1. NO SEARCH OR SYNTHESIS WITHOUT COGNITIVE TRIAGE AND FALSIFIABLE HYPOTHESES FIRST (PRE-SEARCH GATE)
-2. NO QUANTITATIVE STATISTIC FROM RAW DATA WITHOUT EXECUTING A REPRODUCIBLE SCRIPT
-3. NO CONCLUSION WITHOUT ACTIVE FALSIFICATION AND CALIBRATED CONFIDENCE TAGS
+2. NO QUANTITATIVE STATISTIC OR CHART WITHOUT REPRODUCIBLE PYTHON SCRIPTS IN APPENDIX/ EMItTING CHARTS.JSON DIRECTLY
+3. NO "DATA LIMITATION" OR DEFERRED CRITIQUE WITHOUT A LOGGED SEARCH/API ATTEMPT AND CONCRETE FAILURE REASON
+4. NO CONCLUSION WITHOUT ACTIVE FALSIFICATION, CALIBRATED CONFIDENCE TAGS, AND CLOSED REVIEWER #2 DISPOSITION
 ```
 
 ---
 
-## When to Use & Adaptive Depth Levels
+## Adaptive Depth Levels
 
-Apply Heurisma to any research, evaluation, or analytical inquiry. Select the depth level during Stage 0 based on observable task properties:
+Select the depth level during Stage 0 based on the complexity and stakes of the inquiry:
 
-```dot
-digraph depth_selector {
-    rankdir=TB;
-    prompt [label="Research / Analytical Prompt", shape=box];
-    data_q [label="Includes raw data / CSV / tables\nor requires quantitative computation?", shape=diamond];
-    high_stakes [label="Crosses 3+ disciplines, high-stakes policy,\nor deeply contested evidence?", shape=diamond];
-    l1 [label="Level 1: Rigorous Inquiry\nLoad: disciplines.md + scientific-writing.md", shape=box, style=filled, fillcolor="#e0f2fe"];
-    l2 [label="Level 2: Empirical / Data Study\nLoad: Level 1 + data-protocol.md\n(Execute reproducible Python)", shape=box, style=filled, fillcolor="#fef3c7"];
-    l3 [label="Level 3: Deep Multi-Disciplinary\nLoad: All + adversarial-review.md\n(Dispatch independent Reviewer #2 subagent)", shape=box, style=filled, fillcolor="#fce7f3"];
-
-    prompt -> data_q;
-    data_q -> l2 [label="yes"];
-    data_q -> high_stakes [label="no"];
-    l2 -> high_stakes [label="also high-stakes?"];
-    high_stakes -> l3 [label="yes"];
-    high_stakes -> l1 [label="no"];
-}
-```
-
-| Depth Level | Observable Trigger | Required Modules to Read | Falsification Mode |
-|---|---|---|---|
-| **Level 1 — Rigorous Inquiry** | Conceptual, literature, technical, or policy question without raw datasets | [references/disciplines.md](references/disciplines.md), [references/scientific-writing.md](references/scientific-writing.md) | Structured self-falsification (Stage 4) |
-| **Level 2 — Empirical / Data Study** | User supplies data (CSV, table, JSON), public dataset exists, or numbers must be computed | Level 1 + [references/data-protocol.md](references/data-protocol.md) | Reproducible sensitivity/outlier code + self-falsification |
-| **Level 3 — Deep Multi-Disciplinary** | Crosses 3+ scientific branches, contested evidence, or high-stakes decision | All above + [references/adversarial-review.md](references/adversarial-review.md) | Independent *Reviewer #2* subagent dispatch |
+| Depth Level | Observable Trigger | Required Modules to Read | Deliverables Produced |
+| :--- | :--- | :--- | :--- |
+| **Level 0 — Light Mode** | Short single-claim check or quick factual question where a 7-section paper is disproportionate | `SKILL.md` only | Compact 3-part inline response (*Calibrated Verdict + Evidence & Tier + Key Falsifier/Limitation*) |
+| **Level 1 — Rigorous Inquiry** | Conceptual, literature, technical, or policy investigation without raw dataset computation | [references/disciplines.md](references/disciplines.md), [references/scientific-writing.md](references/scientific-writing.md), [references/example-report.md](references/example-report.md) | Clean `report.md` (7 sections) + working-paper `report.html` |
+| **Level 2 — Empirical / Data Study** | User supplies data, public datasets exist, or quantitative statistics/charts must be computed | Level 1 + [references/data-protocol.md](references/data-protocol.md) (+ [references/forecasting.md](references/forecasting.md) if projecting future outcomes) | Clean `report.md` (with `{{fig:id}}` markers) + working-paper `report.html` + `charts.json` + `appendix/{fetch_data.py,analysis.py,output.txt,sources.csv,README.md}` |
+| **Level 3 — Deep Multi-Disciplinary** | Crosses 3+ branches, contested evidence, macroeconomic/policy forecasting, or high decision stakes | All above + [references/adversarial-review.md](references/adversarial-review.md) | Level 2 deliverables + independent **Reviewer #2** subagent critique & closed Disposition Table + `appendix/data_attempts.csv` |
 
 ---
 
-## The 6-Stage Scientific Inquiry Protocol
+## The 7-Stage Scientific Inquiry Protocol (Levels 1–3)
 
 ### Stage 0: Cognitive Triage & Pre-Search Gate (MANDATORY FIRST STEP)
-Before running a single web search, reading external sources, or drafting findings:
-1. Read [references/disciplines.md](references/disciplines.md) and classify the prompt into one or more scientific branches:
-   - *Formal Sciences* (Mathematics, Logic, Theoretical CS)
-   - *Natural & Physical Sciences* (Physics, Chemistry, Biology, Earth/Marine Sciences)
-   - *Biomedical & Health Sciences* (Clinical Medicine, Epidemiology, Nutrition)
-   - *Social Sciences & Economics* (Economics, Behavioral Science, Public Policy)
-   - *Engineering & Applied Sciences* (Materials, Manufacturing, Systems, Software Engineering)
-   - *Humanities & Historical Inquiry* (History, Law, Philosophy, Primary Source Criticism)
-2. If 2+ branches apply, apply the **Interdisciplinary Bridge Protocol** in `references/disciplines.md`: state each branch's distinct evidence standard and where their boundaries meet.
-3. Select **Level 1**, **Level 2**, or **Level 3**.
+Before running a single web search, fetching data, or drafting findings:
+1. Declare the report's **`As-Of Date`** (current date), target language (match the user's language strictly — zero Spanglish), and temporal horizon.
+2. Read [references/disciplines.md](references/disciplines.md) and classify the prompt into one or more scientific branches (*Formal, Natural/Physical, Biomedical/Health, Social/Economics, Engineering/Applied, Humanities/Historical*).
+3. If 2+ branches apply, apply the **Interdisciplinary Bridge Protocol** in `references/disciplines.md`.
+4. If the inquiry involves future projections, scenarios, or target dates, read [references/forecasting.md](references/forecasting.md).
+5. Select **Level 0**, **Level 1**, **Level 2**, or **Level 3**.
 
 ### Stage 1: Problem Framing & Falsifiable Hypotheses
 Translate the user's prompt (even if leading or biased) into:
-- **Investigable Research Question:** Neutral, operationalized, bounded in scope.
+- **Investigable Research Question:** Neutral, operationalized, with explicit units and time horizon.
 - **Null Hypothesis ($H_0$):** The baseline, no-effect, artifact, or status-quo hypothesis.
 - **Alternative Hypothesis ($H_1$, $H_2$, ...):** Competing explanatory or directional hypotheses.
-- **Refutation Criteria:** Explicitly state *what observable evidence or metric threshold would falsify $H_1$ and $H_0$*.
+- **Refutation Criteria:** Observable empirical or logical conditions that would falsify $H_1$ and $H_0$.
 
-### Stage 2: Evidence-Weighted Collection
-Gather evidence strictly ranked by the discipline's hierarchy (from `references/disciplines.md`):
-- Separate **Primary / Peer-Reviewed Empirical Evidence** from **Independent Market/Institutional Data** and **Vendor/OEM Press Releases or Roadmaps**.
-- Never treat a corporate press release, roadmap target, or blog post as equivalent to peer-reviewed or audited empirical evidence.
-- For **Formal Sciences**, prioritize axioms, formal proofs, complexity bounds, and counterexamples over web search opinions.
+### Stage 2: Primary Data Acquisition & Data-Attempt Logging
+Gather evidence ranked by the discipline's hierarchy (`Tier 1 > Tier 2 > Tier 3`):
+- Always query **primary institutional APIs, statistical agencies, or peer-reviewed datasets (Tier 1/2)** before secondary press (Tier 3).
+- In Level 2+, write **`appendix/fetch_data.py`** to download raw series reproducibly (recording URLs, timestamps, and SHA-256 hashes into `appendix/data/`).
+- Log every used source in **`appendix/sources.csv`** and every failed/unavailable query in **`appendix/data_attempts.csv`** (and summarize in Section 3). You are forbidden from claiming a "data limitation" in Section 7 or marking a Reviewer #2 critique `Deferred` unless it has a corresponding logged attempt.
 
 ### Stage 3: Computational & Data Protocol (Conditional: Level 2+)
-If the prompt contains raw data, tables, CSVs, or testable quantitative claims:
+Whenever the inquiry involves raw data, time series, or quantitative claims:
 1. Read [references/data-protocol.md](references/data-protocol.md).
-2. Write and execute a **reproducible Python script** to inspect distributions, missing values, leverage/outliers, parametric vs. non-parametric metrics (e.g., Pearson $r$ vs. Spearman $\rho$), and sensitivity (with vs. without outliers).
-3. Include the exact runnable Python code block (or script path) and its verbatim output in the report. Never report mental math or unexecuted statistics.
+2. Write and execute **`appendix/analysis.py`** (or modular scripts `01_*.py`, `02_*.py` if >300 lines) that reads local files from `appendix/data/`, writes verbatim console results to **`appendix/output.txt`**, and **directly generates `charts.json`** (v2 schema) from the computed arrays so figures and text can never drift.
+3. Place inline figure markers **`{{fig:<chart_id>}}`** in Section 4 / Section 5 of `report.md` right where each figure is analyzed. Never paste >10 lines of raw code or stdout inside `report.md`.
 
-### Stage 4: Adversarial Falsification & Peer Review
-Actively try to break your leading conclusion:
-- Search specifically for failed replications, boundary conditions (e.g., temperature, scale, margin compression, supply bottlenecks), alternative causal explanations (confounders, reverse causality, selection bias), and counterexamples.
-- If **Level 3** applies, read [references/adversarial-review.md](references/adversarial-review.md) and dispatch a fresh subagent as **Reviewer #2** with the adversarial prompt template before writing the final report. Integrate or refute every flaw Reviewer #2 identifies.
+### Stage 4: Adversarial Falsification & Closed Reviewer #2 Loop
+Actively attempt to break your primary conclusion:
+- Test boundary failures, structural regime breaks, confounders, reverse causality, lagging official data gaps, and competing literature.
+- For **Level 3**, read [references/adversarial-review.md](references/adversarial-review.md) and dispatch an independent **Reviewer #2** using your runtime's subagent tool.
+- **Close the Review Loop:**
+  1. Include a **Reviewer #2 Disposition Table** in Section 5 covering 100% of critiques (`Fixed`, `Refuted`, or `Deferred` with logged data attempt).
+  2. **Verify or Exclude Reviewer-Introduced Facts:** Any factual claim, policy mechanism, or number introduced by Reviewer #2 MUST be verified in a Tier 1/2 primary source before inclusion; never leave a reviewer-introduced claim in the report as Tier 3 `[Preliminary]`.
 
-### Stage 5: Calibrated Scientific Writing & Validation
-Read [references/scientific-writing.md](references/scientific-writing.md) and produce the report matching the **Required Output Contract** below.
-- Tag every major finding and claim with one of the four **Epistemic Calibration Labels**:
-  - `[Strong]` — Replicated peer-reviewed evidence, formal proof, or verified multi-method empirical consensus.
-  - `[Moderate]` — Credible empirical evidence with bounded scope, known confounders, or moderate sample limits.
-  - `[Preliminary]` — Small sample, single study, observational correlation, or early pilot data.
-  - `[Speculative]` — Theoretical extrapolation, unverified vendor roadmap, or hypothesis awaiting empirical test.
-- When running inside a workspace with the validator script available, verify the drafted report before finishing:
-  ```bash
-  python3 skills/heurisma/scripts/validate_report.py path/to/report.md
-  ```
+### Stage 5: Working-Paper Scientific Writing
+Read [references/scientific-writing.md](references/scientific-writing.md) and [references/example-report.md](references/example-report.md).
+- **Single-Language Consistency:** Write 100% of headings, bullet labels, table column headers, and figure titles/captions in the user's language (use the exact Spanish template in `references/scientific-writing.md` for Spanish requests).
+- **Abstract-Style Verdict:** Keep `Calibrated Verdict` / `Veredicto calibrado` to **at most 3 sentences and at most 5 numbers** so the main conclusion is immediately memorable; put detailed numerical breakdowns in Section 4 tables and figures.
+- **Epistemic Calibration Tags:** Tag every major claim and every Claim-Evidence Matrix row with `[Strong]`/`[Fuerte]`, `[Moderate]`/`[Moderada]`, `[Preliminary]`/`[Preliminar]`, or `[Speculative]`/`[Especulativa]`. (`[Strong]`/`[Fuerte]` is strictly forbidden on Tier 3 / press sources.)
+
+### Stage 6: Clean Appendix Hygiene, Working-Paper HTML & Validation
+Before completing the task (referencing scripts relative to `<skill-dir>`, where `heurisma/SKILL.md` is installed):
+1. **Clean `appendix/`:** Write a short `appendix/README.md` listing the execution order (`fetch_data.py` → `analysis.py`), and delete any `__pycache__/`, `.pyc`, or empty `0`-byte temporary files.
+2. **Render Working-Paper `report.html`:**
+   ```bash
+   python3 <skill-dir>/scripts/render_report.py report.md --out report.html --charts charts.json --appendix appendix/
+   ```
+   *(Note: `render_report.py` embeds inline numbered SVG figures at `{{fig:id}}` markers, generates a numbered References section from `appendix/sources.csv`, and links—never embeds—`appendix/data/` and binary files so `report.html` stays lightweight and print-ready.)*
+3. **Validate Deliverables:**
+   ```bash
+   python3 <skill-dir>/scripts/validate_report.py report.md --level <1|2|3> --html report.html
+   ```
+   Fix every reported error before presenting the result to the user.
 
 ---
 
-## Required Output Contract
+## Required Output Contract (`report.md`, Levels 1–3)
 
-Every Heurisma report MUST contain these 7 top-level sections in exact order. When the user demands brevity or an urgent verdict, make each section concise (bulleted), **never omit a section**:
+Use the English template below for English inquiries, or the 100% Spanish equivalent in [references/scientific-writing.md](references/scientific-writing.md) for Spanish inquiries (never mix languages):
 
 ```markdown
-# [Descriptive Scientific Title]
+# [Descriptive Working-Paper Title]
+
+> **As-Of Date:** YYYY-MM-DD | **Depth Level:** Level <1|2|3> | **Primary Disciplines:** [Branches]
 
 ## 1. Executive Summary
-- **Calibrated Verdict:** [1–3 sentences directly answering the user's question with explicit `[Strong]` / `[Moderate]` / `[Preliminary]` / `[Speculative]` tags — never an uncalibrated binary YES/NO.]
-- **Key Takeaways:** [Bulleted synthesis separating what holds under scrutiny from what fails or remains uncertain.]
+- **Calibrated Verdict:** [Max 3 sentences and max 5 numbers directly answering the question with canonical `[Strong]` / `[Moderate]` / `[Preliminary]` / `[Speculative]` tags.]
+- **What Would Change This Conclusion:** [Concrete empirical threshold or observation that would flip the verdict.]
+- **Key Takeaways:** [2–4 concise bullets separating what holds under scrutiny from what fails or remains uncertain.]
 
 ## 2. Framing & Hypotheses
-- **Scientific Discipline(s) & Depth Level:** [e.g., Marine Chemistry + Behavioral Economics + Supply-Chain Engineering | Level 1]
-- **Research Question:** [Neutral, operationalized question]
+- **Scientific Discipline(s) & Depth Level:** [Branches + Interdisciplinary Bridge coupling]
+- **Research Question:** [Neutral, operationalized question with units and horizon]
 - **Hypotheses:**
   - $H_0$: [Null / baseline / artifact hypothesis]
-  - $H_1$: [Primary alternative hypothesis]
-- **Refutation Criteria:** [Exact empirical or logical conditions that would falsify $H_1$ and $H_0$]
+  - $H_1$: [Alternative hypothesis]
+- **Refutation Criteria:** [Exact empirical or logical conditions that falsify $H_1$ and $H_0$]
 
 ## 3. Methodology & Evidence Standards
-- **Domain Evidence Hierarchy:** [What counts as high-tier vs. low-tier evidence for each classified discipline]
-- **Analytical / Computational Method:** [Literature synthesis strategy, formal proof approach, or reproducible Python script + output for Level 2+]
+- **Domain Evidence Hierarchy:** [Tier 1 vs. Tier 2 vs. Tier 3 standards for the active disciplines]
+- **Analytical & Data Provenance:** [Summary of method, links to `appendix/fetch_data.py`, `appendix/analysis.py`, `appendix/output.txt`, and `appendix/sources.csv`, plus the Data Attempts table if any primary source failed]
 
 ## 4. Findings
-[Structured analysis organized by hypothesis or disciplinary axis. Every key claim carries an inline epistemic tag (`[Strong]`, `[Moderate]`, `[Preliminary]`, `[Speculative]`) and explicit source/tier provenance.]
+[Structured analysis organized by hypothesis or regime/axis, using booktabs Markdown tables and inline `{{fig:chart_id}}` markers for every quantitative finding. Every key claim carries a calibration tag and source reference.]
 
 ## 5. Counter-Evidence & Alternative Explanations
-[Dedicated falsification section: the strongest empirical evidence, boundary conditions, confounders, reverse-causality mechanisms, or competing models that challenge the primary findings.]
+[Strongest empirical counter-evidence, boundary failures, confounders, and—for Level 3—the mandatory **Reviewer #2 Disposition Table**.]
 
 ## 6. Claim-Evidence Matrix
-| Claim | Discipline / Axis | Evidence & Source Tier | Confidence Tag | Key Falsifier / Condition |
-| :--- | :--- | :--- | :--- | :--- |
-| [Core claim 1] | [Branch] | [Specific study / dataset / proof + Tier] | `[Strong]` / `[Moderate]` / `[Preliminary]` / `[Speculative]` | [What would invalidate this] |
+| Claim | Discipline / Axis | Evidence & Source Tier (As-Of Date) | Confidence Tag | Key Falsifier / Condition |
+| :- | :- | :- | :- | :- |
+| [Claim 1] | [Branch] | [Primary study/dataset, Tier 1/2/3, YYYY-MM] | `[Strong]` / `[Moderate]` / `[Preliminary]` / `[Speculative]` | [Falsifier] |
+| [Claim 2] | [Branch] | [Primary study/dataset, Tier 1/2/3, YYYY-MM] | `[Strong]` / `[Moderate]` / `[Preliminary]` / `[Speculative]` | [Falsifier] |
 
 ## 7. Limitations & Open Questions
-- **Methodological & Data Limitations:** [Sample size, lab-to-field gaps, unmeasured confounders, source biases]
-- **Actionable Next Steps / Experiments:** [Concrete tests, data collection, or signposts to resolve remaining uncertainty]
+- **Verified Methodological & Data Limitations:** [Only limitations backed by logged attempts in Section 3 / `appendix/data_attempts.csv`]
+- **Actionable Next Steps / Experiments:** [Concrete tests, datasets, or signposts to resolve remaining uncertainty]
 ```
 
 ---
 
-## Rationalization Table (Anti-Pressure Bulletproofing)
+## Rationalization Table (Anti-Pressure Defenses)
 
 | Excuse / Rationalization | Reality |
-|---|---|
-| *"The user's board meets in 10 minutes and asked for a definitive YES or NO without caveats."* | Time and authority pressure do not change scientific reality. Put the crisp calibrated verdict in line 1 of `## 1. Executive Summary`, and keep all 7 sections concise. Dropping calibration or counter-evidence under pressure is falsifying the report. |
-| *"The user asked me to confirm their conclusion from the data."* | Leading prompts are a primary source of confirmation bias. Frame $H_0$ vs. $H_1$ neutrally, run the script, and report what the data actually supports. |
-| *"The outlier / correlation in this 12-row CSV is obvious; I can calculate or state the stats without running a Python script."* | Unexecuted numbers lack provenance. In Level 2, ALWAYS execute a reproducible Python script and include the runnable code and output. |
-| *"I weave caveats naturally into the prose, so I don't need separate Counter-Evidence, Claim-Evidence Matrix, or Limitations sections."* | Inline caveats get buried in glossy prose. The 7-section contract and Claim-Evidence Matrix are mandatory structural gates. |
-| *"Automaker / vendor roadmaps say 2027, so I'll present that as the timeline."* | Vendor press releases are marketing targets (`[Speculative]`), not peer-reviewed empirical evidence. Separate source tiers explicitly. |
-| *"This is a pure math / logic question, so the scientific method doesn't apply."* | Formal Sciences are Stage 0 Branch 1: state axioms/definitions, test small cases or counterexamples, provide formal proof or refutation, and keep the 7-section contract compact. |
-
----
+| :--- | :--- |
+| *"The user's board meets in 10 minutes and demanded a binary YES or NO without caveats."* | Put the crisp ≤3-sentence calibrated verdict in line 1 of `## 1. Executive Summary` and keep all 7 sections concise. Never strip calibration tags or counter-evidence. |
+| *"I'll write the report in Spanish but keep the English labels ('Calibrated Verdict', 'Flaw #', 'Claim') from the template."* | Mixed-language Spanglish degrades paper quality. Use 100% Spanish headings, labels, table headers, and tags (`[Fuerte]`, `[Moderada]`, `[Preliminar]`, `[Especulativa]`) from `references/scientific-writing.md`. |
+| *"Reviewer #2 mentioned an interesting policy detail (e.g., a Treasury swap); I couldn't find the primary document, so I'll include it as Tier 3 `[Preliminary]`."* | Unverified reviewer claims are forbidden. Either verify the fact in a Tier 1/2 primary source or exclude it from the findings and log it in the Disposition Table. |
+| *"I'll hardcode the chart numbers in a separate `build_charts.py` script instead of emitting `charts.json` from `analysis.py`."* | Hand-copied chart numbers drift from `output.txt`. Emit `charts.json` directly from the computed variables in `appendix/analysis.py`. |
+| *"I'll cram 15 numbers into a 6-line Calibrated Verdict paragraph to be thorough."* | A verdict stuffed with 15 numbers buries the conclusion. Keep the verdict to ≤3 sentences and ≤5 numbers; put the rest in Section 4 tables and `{{fig:id}}` figures. |
 
 ## Red Flags — STOP and Correct Before Outputting
 
-If you catch yourself thinking or doing any of the following, **STOP immediately**:
-- Launching `search_web` before writing down the discipline classification, depth level, and $H_0 / H_1$ hypotheses.
-- Opening a report with a naked `**YES.**` or `**NO.**` stripped of `[Strong]` / `[Moderate]` / `[Preliminary]` / `[Speculative]` calibration tags.
-- Reporting Pearson $r$, Spearman $\rho$, $p$-values, or regressions on user data without having executed a Python script in this session.
-- Skipping `## 5. Counter-Evidence & Alternative Explanations`, `## 6. Claim-Evidence Matrix`, or `## 7. Limitations & Open Questions` because the user asked to "skip academic hedging" or "make it an executive brief".
-- Mixing peer-reviewed measurements, industry estimates, and corporate press releases without labeling their source tier.
-
-**All of these mean: Return to Stage 0 and enforce the Required Output Contract.**
+- Searching the web or writing code before completing Stage 0 Triage and Stage 1 Hypotheses ($H_0 / H_1$ inside Section 2).
+- Pairing `[Strong]`/`[Fuerte]` with a `Tier 3` or press/blog/roadmap source.
+- Mixing English template labels into a Spanish report.
+- Creating charts without `{{fig:id}}` markers in `report.md` or passing >30-point time series without using the `charts.json` v2 schema.
+- Leaving `__pycache__/`, empty files, or undocumented helper scripts inside `appendix/`.

@@ -18,50 +18,46 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Validate SKILL.md YAML frontmatter and discovery rules
+      - name: Validate SKILL.md frontmatter, portability, and relative links
         run: |
           python3 - <<'EOF'
+          import re
           from pathlib import Path
-          skill_path = Path("skills/heurisma/SKILL.md")
-          text = skill_path.read_text(encoding="utf-8")
-          assert text.startswith("---\n"), "SKILL.md must start with YAML frontmatter"
-          fm = text.split("---\n", 2)[1]
+
+          skill_root = Path("skills/heurisma")
+          skill_md = (skill_root / "SKILL.md").read_text(encoding="utf-8")
+          assert skill_md.startswith("---\n"), "SKILL.md must start with YAML frontmatter"
+          fm = skill_md.split("---\n", 2)[1]
           fields = dict(line.split(": ", 1) for line in fm.strip().splitlines() if ": " in line)
           assert fields.get("name") == "heurisma", f"Unexpected skill name: {fields.get('name')}"
           desc = fields.get("description", "")
           assert desc.startswith("Use when"), f"Description must start with 'Use when': {desc}"
           assert len(fm) <= 1024, f"Frontmatter exceeds 1024 chars ({len(fm)})"
-          print(f"Frontmatter OK (name=heurisma, len={len(fm)} chars)")
-          EOF
 
-      - name: Verify cross-runtime relative links inside skills/heurisma/
-        run: |
-          python3 - <<'EOF'
-          import re
-          from pathlib import Path
-          skill_root = Path("skills/heurisma")
+          forbidden = ("search_web", "TypeName", "skills/heurisma/scripts")
           link_re = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
-          broken = []
           for md_file in skill_root.rglob("*.md"):
               text = md_file.read_text(encoding="utf-8")
-              for target in link_re.findall(text):
+              for bad in forbidden:
+                  assert bad not in text, f"Runtime-locked string '{bad}' found in {md_file}"
+              clean_text = re.sub(r"^```.*?^```[ \t]*$", "", text, flags=re.MULTILINE | re.DOTALL)
+              for target in link_re.findall(clean_text):
                   if target.startswith(("http://", "https://", "mailto:", "#")):
                       continue
-                  clean_target = target.split("#", 1)[0]
-                  resolved = (md_file.parent / clean_target).resolve()
-                  if not resolved.exists():
-                      broken.append(f"{md_file}: broken link -> {target}")
-          assert not broken, "Broken relative links found:\n" + "\n".join(broken)
-          print("All relative links inside skills/heurisma/ resolved cleanly.")
+                  resolved = (md_file.parent / target.split("#", 1)[0]).resolve()
+                  assert resolved.exists(), f"{md_file}: broken link -> {target}"
+          print(f"Frontmatter, portability & links OK (len={len(fm)} chars)")
           EOF
 
-      - name: Run report validator unit tests
+      - name: Run validator, SVG engine, and renderer unit tests
         run: python3 -m unittest discover -s tests -v
 
-      - name: Run Level 2 showcase analysis script
-        run: python3 examples/scripts/analyze_example.py
-
-      - name: Validate all showcase example reports
+      - name: Run Level 2 showcase analysis, render working-paper HTML, and validate deliverables
         run: |
-          python3 skills/heurisma/scripts/validate_report.py examples/level1-brief-example.md
-          python3 skills/heurisma/scripts/validate_report.py examples/level2-data-study-example.md
+          python3 examples/level2-study/appendix/analysis.py --charts-out examples/level2-study/charts.json > examples/level2-study/appendix/output.txt
+          python3 skills/heurisma/scripts/render_report.py examples/level2-study/report.md \
+            --out examples/level2-study/report.html \
+            --charts examples/level2-study/charts.json \
+            --appendix examples/level2-study/appendix
+          python3 skills/heurisma/scripts/validate_report.py examples/level1-brief-example.md --level 1
+          python3 skills/heurisma/scripts/validate_report.py examples/level2-study/report.md --level 2 --html examples/level2-study/report.html

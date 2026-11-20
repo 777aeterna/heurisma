@@ -1,0 +1,4 @@
+Integrity: n=12, missing=0, flagged_outliers=['T12']
+Robust dispersion (full): pair_hours median=4.50 (MAD=1.50, MAD_n=2.22); bugs_fixed median=13.50 (MAD=1.50, MAD_n=2.22)
+Full Sample (n=12): Pearson r=0.9804 (95% boot CI [-0.8880, 0.9957]), Spearman rho=-0.3612
+Clean Sample (n=11): Pearson r=-0.7742 (95% boot CI [-0.9472, -0.5499]), Spearman rho=-0.7791 (95% boot CI [-0.9716, -0.3940])
