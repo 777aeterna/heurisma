@@ -6,7 +6,7 @@ Part of **Heurisma** (loaded during **Stage 5** before finalizing any research r
 
 ## 1. Epistemic Calibration Scale
 
-Every major claim in `## 1. Executive Summary`, `## 4. Findings`, and `## 6. Claim-Evidence Matrix` MUST carry an explicit bracketed calibration tag:
+Every major claim in `## 1. Executive Summary`, `## 4. Findings`, and `## 6. Claim-Evidence Matrix` MUST carry an explicit bracketed calibration tag. Always use individual canonical tags (`[Strong]`, `[Moderate]`, `[Preliminary]`, `[Speculative]`) rather than slash-combined hybrids (e.g., write `[Moderate]` or `[Preliminary]`, never `[Moderate/Preliminary]`):
 
 | Tag | Meaning | Minimum Evidence Required | Forbidden For |
 | :--- | :--- | :--- | :--- |

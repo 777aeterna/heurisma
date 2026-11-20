@@ -41,7 +41,7 @@ Even when a correlation survives outlier removal:
 
 ### Step 5: Embed Reproducible Provenance in the Report
 In `## 3. Methodology & Evidence Standards` (or `## 4. Findings`), include:
-1. The exact runnable Python snippet (or path to the executed script in the workspace).
+1. The exact runnable, self-contained Python snippet (never reference ephemeral agent scratch/temp file paths in user-facing report prose).
 2. A concise summary table of the exact computed metrics (Full Sample vs. Outlier-Excluded / Non-Parametric).
 
 ---
