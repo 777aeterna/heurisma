@@ -1,0 +1,3 @@
+target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used
+Individual-level engineer microdata & code-defect severity,Local data inventory,local_data.py inventory data/,not found,Only site-level aggregates present in hybrid_rct_sites.csv,Used site-level subgroup analysis and capped causal claims at [Moderate]
+Full-remote (5d WFH) comparison arm,Local data inventory + public RCT registry,local_data.py preview + Bloom et al. 2024,not found,Local dataset contains only Hybrid_2d vs Office_5d arms,Capped full-remote extrapolation at [Preliminary]

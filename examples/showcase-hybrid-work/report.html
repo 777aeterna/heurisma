@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hybrid Work (2 Days Remote) vs. Full-Time Office in Software Engineering: Output, Retention, and Seniority Heterogeneity</title>
+  <style>
+    :root {
+      --text: #111827; --muted: #4b5563; --rule: #cbd5e1; --rule-dark: #1e293b;
+      --bg: #ffffff; --tint: #f8fafc; --accent: #0072B2;
+    }
+    body {
+      font-family: Charter, 'Bitstream Charter', 'Iowan Old Style', 'Source Serif Pro', Georgia, serif;
+      font-size: 17px; line-height: 1.55; color: var(--text); background: var(--bg);
+      margin: 0; font-variant-numeric: tabular-nums;
+    }
+    .paper { max-width: 720px; margin: 0 auto; padding: 3rem 1.5rem 4.5rem; }
+    header.title-block { border-bottom: 1.5px solid var(--rule-dark); padding-bottom: 1.25rem; margin-bottom: 1.75rem; }
+    h1 { font-size: 1.9rem; line-height: 1.22; margin: 0 0 0.6rem; font-weight: 700; letter-spacing: -0.01em; }
+    .meta-line { font-size: 0.88rem; color: var(--muted); margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+    .abstract {
+      background: var(--tint); border-left: 3px solid var(--accent);
+      padding: 1rem 1.25rem; margin: 1.5rem 0 2rem; font-size: 0.96rem;
+    }
+    .abstract-label {
+      font-family: system-ui, -apple-system, sans-serif; font-size: 0.75rem;
+      font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.35rem;
+    }
+    .abstract p { margin: 0.25rem 0; }
+    .abstract-change { font-size: 0.88rem; color: var(--muted); margin-top: 0.5rem; }
+    h2 {
+      font-size: 1.28rem; margin-top: 2.25rem; margin-bottom: 0.75rem;
+      border-bottom: 1px solid var(--rule); padding-bottom: 0.25rem; page-break-after: avoid;
+    }
+    h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; page-break-after: avoid; }
+    p, li { margin: 0.45rem 0; }
+    ul ul { margin-top: 0.25rem; margin-bottom: 0.25rem; padding-left: 1.35rem; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .ep-tag {
+      font-variant: small-caps; font-family: system-ui, -apple-system, sans-serif;
+      font-size: 0.82em; font-weight: 600; letter-spacing: 0.02em; padding-left: 0.25rem;
+    }
+    .tag-strong { color: #166534; border-left: 2px solid #166534; }
+    .tag-moderate { color: #075985; border-left: 2px solid #075985; }
+    .tag-preliminary { color: #92400e; border-left: 2px solid #92400e; }
+    .tag-speculative { color: #991b1b; border-left: 2px solid #991b1b; }
+    .table-wrap { overflow-x: auto; margin: 1.25rem 0; }
+    table.booktabs {
+      width: 100%; border-collapse: collapse; font-size: 0.88rem; line-height: 1.4;
+      border-top: 1.5px solid var(--rule-dark); border-bottom: 1.5px solid var(--rule-dark);
+      page-break-inside: avoid;
+    }
+    table.booktabs th, table.booktabs td { padding: 0.45rem 0.55rem; text-align: left; border: none; vertical-align: top; }
+    table.booktabs thead th { border-bottom: 1px solid var(--rule-dark); font-weight: 700; }
+    table.booktabs td.num { text-align: right; white-space: nowrap; }
+    table.booktabs.compact { font-size: 0.8rem; margin-top: 0.5rem; }
+    figure.paper-fig { margin: 1.5rem 0; page-break-inside: avoid; }
+    .fig-title { font-size: 0.95rem; margin-bottom: 0.35rem; color: var(--text); }
+    figcaption { font-size: 0.84rem; color: var(--muted); margin-top: 0.35rem; line-height: 1.4; }
+    details.fig-data, details.appendix-item {
+      margin-top: 0.5rem; font-size: 0.85rem; border-top: 1px solid var(--rule); padding-top: 0.35rem;
+    }
+    details summary { cursor: pointer; color: var(--muted); font-family: system-ui, -apple-system, sans-serif; }
+    pre { background: var(--tint); padding: 0.75rem; overflow-x: auto; font-size: 0.8rem; border: 1px solid var(--rule); }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.86em; }
+    ol.ref-list { list-style: none; padding-left: 0; font-size: 0.86rem; line-height: 1.45; }
+    ol.ref-list li { margin: 0.4rem 0; }
+    blockquote { border-left: 2.5px solid var(--rule); margin: 1rem 0; padding-left: 1rem; color: var(--muted); }
+    footer.paper-footer {
+      margin-top: 3rem; padding-top: 0.75rem; border-top: 1px solid var(--rule);
+      font-size: 0.8rem; color: var(--muted); font-family: system-ui, -apple-system, sans-serif;
+    }
+    @page { size: A4; margin: 2.2cm; }
+    @media print {
+      body { font-size: 11pt; }
+      .paper { max-width: none; padding: 0; }
+      details.fig-data, details.appendix-item { display: none; }
+      a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.8em; color: #4b5563; }
+      figure.paper-fig, table.booktabs { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <article class="paper">
+    <header class="title-block">
+      <h1>Hybrid Work (2 Days Remote) vs. Full-Time Office in Software Engineering: Output, Retention, and Seniority Heterogeneity</h1>
+      <p class="meta-line"><strong>As-Of Date:</strong> 2026-11-20 | <strong>Depth Level:</strong> Level 2 (Empirical / Data Study) | <strong>Primary Disciplines:</strong> Social Sciences &amp; Economics (Labor Economics) + Engineering &amp; Applied Sciences (Empirical Software Engineering)</p>
+    </header>
+    <section class="abstract"><div class="abstract-label">Abstract</div><p>A 2-day/week hybrid schedule sharply reduces 12-month engineering attrition by 29.0% (<code>9.8%</code> vs. <code>13.9%</code>), consistent with peer-reviewed RCT evidence <span class="ep-tag tag-strong">[strong]</span>, but pooled output averages mask opposite seniority effects <span class="ep-tag tag-moderate">[moderate]</span>. In the local 16-site dataset (<code>n = 590</code> engineers), hybrid work raises senior PR output by <code>+2.73 pp</code> while lowering junior PR output by <code>-6.28 pp</code> alongside a two-thirds drop in weekly mentoring hours <span class="ep-tag tag-moderate">[moderate]</span>.</p><p class="abstract-change"><strong>Falsifier:</strong> Individual-level longitudinal telemetry controlling for defect severity and structured virtual-onboarding interventions showing junior engineers match office-based output and skill growth under hybrid schedules.</p></section>
+    <main><h2>1. Executive Summary</h2>
+<ul>
+<li><strong>What Would Change This Conclusion:</strong> Individual-level longitudinal telemetry controlling for defect severity and structured virtual-onboarding interventions showing junior engineers match office-based output and skill growth under hybrid schedules.
+</li>
+<li><strong>Key Takeaways:</strong>
+<ul>
+<li><strong>Retention gain is robust:</strong> Local 12-month attrition drops by <code>29.0%</code> <a href="#ref-1">[1]</a>, <a href="#ref-2">[2]</a>, closely matching the 33% quit-rate reduction in the 1,612-employee Trip.com <em>Nature</em> RCT <a href="#ref-3">[3]</a> <span class="ep-tag tag-strong">[strong]</span>.
+</li>
+<li><strong>Pooling bias hides seniority divergence:</strong> The pooled output difference (<code>-1.78 pp</code>) averages a positive senior gain (<code>+2.73 pp</code>) with a steep junior decline (<code>-6.28 pp</code>) <a href="#ref-2">[2]</a> <span class="ep-tag tag-moderate">[moderate]</span>.
+</li>
+<li><strong>Mentoring proximity mechanism:</strong> Junior hybrid sites drop from <code>5.15</code> to <code>1.73</code> mentoring hours/week (<code>r = +0.999</code> with output delta), aligning with co-location feedback findings in software engineering <a href="#ref-4">[4]</a> <span class="ep-tag tag-moderate">[moderate]</span>.
+</li>
+</ul>
+</li>
+</ul>
+<h2>2. Framing &amp; Hypotheses</h2>
+<ul>
+<li><strong>Scientific Discipline(s) &amp; Depth Level:</strong> Social Sciences &amp; Economics (Labor Economics — causal field experiments, retention dynamics) + Engineering &amp; Applied Sciences (Empirical Software Engineering — PR throughput, code review mentoring) | <strong>Level 2</strong>. Labor Economics governs attrition identification and subgroup heterogeneity; Software Engineering governs output metric validity and mentoring bottlenecks.
+</li>
+<li><strong>Research Question:</strong> Compared to a 5-day office schedule, does a 2-day/week hybrid policy improve software-engineering PR output and 12-month retention, and is the effect homogeneous across senior and junior engineers?
+</li>
+<li><strong>Hypotheses:</strong>
+<ul>
+<li>H₀: A 2-day hybrid schedule produces no statistically distinguishable change in PR output or 12-month retention across seniority groups.
+</li>
+<li>H₁: A 2-day hybrid schedule lowers 12-month attrition without reducing aggregate output, with uniform gains across seniority levels.
+</li>
+<li>H₂: A 2-day hybrid schedule lowers attrition overall, but produces heterogeneous output effects—raising senior output while reducing junior output due to lower in-person mentoring proximity.
+</li>
+</ul>
+</li>
+<li><strong>Refutation Criteria:</strong> H₁ is falsified if junior and senior output effects have opposite signs with non-overlapping 95% bootstrap confidence intervals. H₀ is falsified if 12-month attrition falls by ≥15% relative to office sites with a 95% CI excluding zero.
+</li>
+</ul>
+<h2>3. Methodology &amp; Evidence Standards</h2>
+<ul>
+<li><strong>Domain Evidence Hierarchy:</strong> Tier 1 = peer-reviewed randomized controlled trials (RCTs) and natural experiments with causal identification; Tier 2 = multi-site administrative/organizational RCT extracts with subgroup covariates; Tier 3 = uncontrolled surveys, press articles, or vendor whitepapers.
+</li>
+<li><strong>Analytical &amp; Data Provenance:</strong> Stage 0 local inventory (<code>local_data.py inventory data/</code>) discovered the semicolon-delimited European-format CSV <code>data/hybrid_rct_sites.csv</code> (<code>sha256: 9a7419cd6056</code>), which was copied into <code>appendix/data/</code> and registered in <a href="appendix/sources.csv"><code>appendix/sources.csv</code></a> <a href="#ref-1">[1]</a>. All statistics, bootstrap 95% CIs (<code>2,000</code> draws, fixed seed <code>42</code>), <code>charts.json</code>, and <code>appendix/numbers.json</code> were emitted directly by <a href="appendix/analysis.py"><code>appendix/analysis.py</code></a> <a href="#ref-2">[2]</a> (reproduction steps in <a href="appendix/README.md"><code>appendix/README.md</code></a>; console log in <a href="appendix/output.txt"><code>appendix/output.txt</code></a>).
+</li>
+</ul>
+<div class="table-wrap"><table class="booktabs">
+<thead><tr><th>Target Series</th><th>Source Tried</th><th>Query / Endpoint</th><th>Outcome</th><th>Failure Reason</th><th>Fallback Used</th></tr></thead>
+<tbody>
+<tr><td>Individual-level microdata &amp; defect severity</td><td>Local data inventory</td><td><code>local_data.py inventory data/</code></td><td>not found</td><td>Only site-level aggregates present in <code>hybrid_rct_sites.csv</code></td><td>Site-level subgroup analysis; causal claims capped at <span class="ep-tag tag-moderate">[moderate]</span></td></tr>
+<tr><td>Full-remote (5d WFH) arm</td><td>Local inventory + RCT registry</td><td><code>local_data.py preview</code> + Bloom et al. 2024</td><td>not found</td><td>Local dataset covers only <code>Hybrid_2d</code> vs. <code>Office_5d</code></td><td>Full-remote extrapolation capped at <span class="ep-tag tag-preliminary">[preliminary]</span></td></tr>
+</tbody>
+</table></div>
+<h2>4. Findings</h2>
+<h3>4.1 Retention Gains Replicate Tier 1 Field-Experiment Evidence</h3>
+<p>Across all <code>16</code> engineering sites (<code>590</code> engineers), 12-month attrition averages <code>9.8%</code> under 2-day hybrid versus <code>13.9%</code> under 5-day office—a <code>29.0%</code> relative reduction (95% bootstrap CI <code>[-5.4 pp, -2.6 pp]</code>) <a href="#ref-1">[1]</a>, <a href="#ref-2">[2]</a> <span class="ep-tag tag-strong">[strong]</span>. Both senior (<code>8.1%</code> vs. <code>13.4%</code>) and junior (<code>11.6%</code> vs. <code>14.3%</code>) sites exhibit lower turnover <a href="#ref-2">[2]</a>. This closely aligns with Bloom, Han &amp; Liang&#x27;s <em>Nature</em> RCT of <code>1,612</code> employees at Trip.com, which documented a <code>33%</code> reduction in quit rates with zero penalty to performance grades or promotions <a href="#ref-3">[3]</a> <span class="ep-tag tag-strong">[strong]</span>.</p>
+<h3>4.2 Seniority Heterogeneity Falsifies Uniform Output Hypothesis (H₁)</h3>
+<p>Pooling all sites yields a modest <code>-1.78 pp</code> PR delta (<code>-0.74%</code> hybrid vs. <code>+1.04%</code> office, MAD <code>3.65 pp</code>), which conceals opposite-signed subgroup effects <a href="#ref-2">[2]</a> <span class="ep-tag tag-moderate">[moderate]</span>:</p>
+<div class="table-wrap"><table class="booktabs">
+<thead><tr><th>Subgroup</th><th>Sites</th><th>Hybrid (2d) PR Delta</th><th>Office (5d) PR Delta</th><th>Difference (95% Bootstrap CI)</th><th>Hybrid Attrition</th><th>Office Attrition</th></tr></thead>
+<tbody>
+<tr><td>Pooled</td><td class="num">16</td><td class="num">-0.74%</td><td class="num">+1.04%</td><td>-1.78 pp</td><td class="num">9.8%</td><td class="num">13.9%</td></tr>
+<tr><td>Senior</td><td class="num">8</td><td class="num">+2.97%</td><td class="num">+0.25%</td><td>+2.73 pp (<code>[+2.25 pp, +3.20 pp]</code>)</td><td class="num">8.1%</td><td class="num">13.4%</td></tr>
+<tr><td>Junior</td><td class="num">8</td><td class="num">-4.45%</td><td class="num">+1.82%</td><td>-6.28 pp (<code>[-6.78 pp, -5.75 pp]</code>)</td><td class="num">11.6%</td><td class="num">14.3%</td></tr>
+</tbody>
+</table></div>
+<figure class="paper-fig" id="fig-1">
+<div class="fig-title"><strong>Figure 1.</strong> PR Output Change by Seniority and Work Policy (16 Sites)</div>
+<svg viewBox="0 0 680 304" width="100%" role="img" style="font-family: inherit; display: block;"><title>PR Output Change by Seniority and Work Policy (16 Sites)</title><desc>Pooled averages mask opposite subgroup effects: hybrid lifts Senior output (+2.7pp) while reducing Junior output (-6.3pp).</desc><line x1="68" y1="268.0" x2="656" y2="268.0" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="271.5" text-anchor="end" font-size="11" fill="#475569">-6%</text><line x1="68" y1="222.0" x2="656" y2="222.0" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="225.5" text-anchor="end" font-size="11" fill="#475569">-4%</text><line x1="68" y1="176.0" x2="656" y2="176.0" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="179.5" text-anchor="end" font-size="11" fill="#475569">-2%</text><line x1="68" y1="130.0" x2="656" y2="130.0" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="133.5" text-anchor="end" font-size="11" fill="#475569">0%</text><line x1="68" y1="84.0" x2="656" y2="84.0" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="87.5" text-anchor="end" font-size="11" fill="#475569">2%</text><line x1="68" y1="38.0" x2="656" y2="38.0" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="41.5" text-anchor="end" font-size="11" fill="#475569">4%</text><line x1="68" y1="268" x2="656" y2="268" stroke="#334155" stroke-width="1.2"/><text x="68" y="28" text-anchor="start" font-size="11" font-weight="600" fill="#334155">PRs Merged Delta</text><line x1="68" y1="130.0" x2="656" y2="130.0" stroke="#334155" stroke-width="1.2"/><rect x="108.5" y="130.0" width="56.0" height="17.0" rx="2" fill="#0072B2"/><text x="136.5" y="159.0" text-anchor="middle" font-size="10" fill="#1e293b">-0.7%</text><rect x="167.5" y="106.1" width="56.0" height="23.9" rx="2" fill="#D55E00"/><text x="195.5" y="101.1" text-anchor="middle" font-size="10" fill="#1e293b">1.0%</text><text x="166.0" y="286" text-anchor="middle" font-size="11" fill="#334155">Pooled (16 sites)</text><rect x="304.5" y="61.7" width="56.0" height="68.3" rx="2" fill="#0072B2"/><text x="332.5" y="56.7" text-anchor="middle" font-size="10" fill="#1e293b">3.0%</text><rect x="363.5" y="124.2" width="56.0" height="5.8" rx="2" fill="#D55E00"/><text x="391.5" y="119.2" text-anchor="middle" font-size="10" fill="#1e293b">0.2%</text><text x="362.0" y="286" text-anchor="middle" font-size="11" fill="#334155">Senior (8 sites)</text><rect x="500.5" y="130.0" width="56.0" height="102.3" rx="2" fill="#0072B2"/><text x="528.5" y="244.3" text-anchor="middle" font-size="10" fill="#1e293b">-4.5%</text><rect x="559.5" y="88.1" width="56.0" height="41.9" rx="2" fill="#D55E00"/><text x="587.5" y="83.1" text-anchor="middle" font-size="10" fill="#1e293b">1.8%</text><text x="558.0" y="286" text-anchor="middle" font-size="11" fill="#334155">Junior (8 sites)</text><rect x="562.5" y="7" width="11" height="11" rx="2" fill="#D55E00"/><text x="577.5" y="16" font-size="10.5" fill="#1e293b">Office (5d)</text><rect x="443.0" y="7" width="11" height="11" rx="2" fill="#0072B2"/><text x="458.0" y="16" font-size="10.5" fill="#1e293b">Hybrid (2d WFH)</text></svg>
+<figcaption><em>Note:</em> Pooled averages mask opposite subgroup effects: hybrid lifts Senior output (+2.7pp) while reducing Junior output (-6.3pp). <em>Source:</em> Local multi-site CSV (appendix/data/hybrid_rct_sites.csv); appendix/analysis.py.</figcaption>
+<details class="fig-data"><summary>Figure data preview</summary><table class="booktabs compact"><thead><tr><th>Group</th><th>Hybrid (2d WFH)</th><th>Office (5d)</th></tr></thead><tbody><tr><td>Pooled (16 sites)</td><td class="num">-0.0074</td><td class="num">0.0104</td></tr><tr><td>Senior (8 sites)</td><td class="num">0.0297</td><td class="num">0.0025</td></tr><tr><td>Junior (8 sites)</td><td class="num">-0.0445</td><td class="num">0.0182</td></tr></tbody></table></details>
+</figure>
+<p>Because senior and junior bootstrap 95% CIs are strictly opposite in sign and non-overlapping, H₁ (uniform output effect) is falsified in favor of H₂ <a href="#ref-2">[2]</a> <span class="ep-tag tag-strong">[strong]</span>.</p>
+<h3>4.3 Mentoring Proximity as the Primary Mechanism</h3>
+<p>Junior hybrid sites receive <code>1.73</code> mentoring hours/week versus <code>5.15</code> hours/week in 5-day office sites (<code>r = +0.999</code> between mentoring hours and junior PR delta) <a href="#ref-1">[1]</a>, <a href="#ref-2">[2]</a> <span class="ep-tag tag-moderate">[moderate]</span>. This directly mirrors Emanuel, Harrington &amp; Pallais&#x27;s software-engineering proximity study, which found that co-location increases online code-review feedback to junior engineers by <code>18.3%</code> while taxing senior engineers&#x27; immediate coding output <a href="#ref-4">[4]</a> <span class="ep-tag tag-strong">[strong]</span>.</p>
+<figure class="paper-fig" id="fig-2">
+<div class="fig-title"><strong>Figure 2.</strong> Weekly Mentoring Hours vs. PR Output Delta Across Engineering Sites</div>
+<svg viewBox="0 0 680 330" width="100%" role="img" style="font-family: inherit; display: block;"><title>Weekly Mentoring Hours vs. PR Output Delta Across Engineering Sites</title><desc>Junior hybrid sites experience a 66% drop in mentoring hours and sit uniformly below zero output change.</desc><line x1="68" y1="282.0" x2="654" y2="282.0" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="285.5" text-anchor="end" font-size="11" fill="#475569">-6%</text><line x1="68" y1="233.2" x2="654" y2="233.2" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="236.7" text-anchor="end" font-size="11" fill="#475569">-4%</text><line x1="68" y1="184.4" x2="654" y2="184.4" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="187.9" text-anchor="end" font-size="11" fill="#475569">-2%</text><line x1="68" y1="135.6" x2="654" y2="135.6" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="139.1" text-anchor="end" font-size="11" fill="#475569">0%</text><line x1="68" y1="86.8" x2="654" y2="86.8" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="90.3" text-anchor="end" font-size="11" fill="#475569">2%</text><line x1="68" y1="38.0" x2="654" y2="38.0" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="41.5" text-anchor="end" font-size="11" fill="#475569">4%</text><line x1="68" y1="282" x2="654" y2="282" stroke="#334155" stroke-width="1.2"/><text x="68" y="28" text-anchor="start" font-size="11" font-weight="600" fill="#334155">PRs Merged Delta</text><line x1="68.0" y1="282" x2="68.0" y2="287" stroke="#334155"/><text x="68.0" y="300" text-anchor="middle" font-size="11" fill="#475569">1</text><line x1="185.2" y1="282" x2="185.2" y2="287" stroke="#334155"/><text x="185.2" y="300" text-anchor="middle" font-size="11" fill="#475569">2</text><line x1="302.4" y1="282" x2="302.4" y2="287" stroke="#334155"/><text x="302.4" y="300" text-anchor="middle" font-size="11" fill="#475569">3</text><line x1="419.6" y1="282" x2="419.6" y2="287" stroke="#334155"/><text x="419.6" y="300" text-anchor="middle" font-size="11" fill="#475569">4</text><line x1="536.8" y1="282" x2="536.8" y2="287" stroke="#334155"/><text x="536.8" y="300" text-anchor="middle" font-size="11" fill="#475569">5</text><line x1="654.0" y1="282" x2="654.0" y2="287" stroke="#334155"/><text x="654.0" y="300" text-anchor="middle" font-size="11" fill="#475569">6</text><text x="361.0" y="322" text-anchor="middle" font-size="11" fill="#334155">Mentoring Hours / Week</text><line data-zero-line="y" x1="68" y1="135.6" x2="654" y2="135.6" stroke="#64748b" stroke-dasharray="4,3" stroke-width="1.1"/><circle cx="443.0" cy="60.0" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="419.6" cy="67.3" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="466.5" cy="47.8" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="407.9" cy="77.0" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="478.2" cy="125.8" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="454.8" cy="130.7" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="489.9" cy="123.4" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="466.5" cy="138.0" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="161.8" cy="238.1" r="4.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="126.6" cy="260.0" r="4.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="185.2" cy="228.3" r="4.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="138.3" cy="250.3" r="4.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="548.5" cy="91.7" r="4.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="583.7" cy="84.4" r="4.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="525.1" cy="99.0" r="4.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="560.2" cy="89.2" r="4.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="126.6" cy="260.0" r="5.5" fill="#D55E00" stroke="#ffffff" stroke-width="1.5"/><text x="134.6" y="263.5" text-anchor="start" font-size="10.5" font-weight="600" fill="#D55E00" style="paint-order: stroke; stroke: #ffffff; stroke-width: 3px; stroke-linejoin: round;">S11 (Junior Hybrid)</text><line x1="555.6" y1="13" x2="571.6" y2="13" stroke="#D55E00" stroke-width="2.2" stroke-dasharray="6,3"/><text x="575.6" y="16" font-size="10.5" fill="#1e293b">Junior Sites</text><line x1="457.2" y1="13" x2="473.2" y2="13" stroke="#0072B2" stroke-width="2.2"/><text x="477.2" y="16" font-size="10.5" fill="#1e293b">Senior Sites</text></svg>
+<figcaption><em>Note:</em> Junior hybrid sites experience a 66% drop in mentoring hours and sit uniformly below zero output change. <em>Source:</em> Local multi-site CSV (appendix/data/hybrid_rct_sites.csv); appendix/analysis.py.</figcaption>
+<details class="fig-data"><summary>Figure data preview</summary><table class="booktabs compact"><thead><tr><th>X</th><th>Y</th></tr></thead><tbody><tr><td>4.2</td><td class="num">0.031</td></tr><tr><td>4.0</td><td class="num">0.028</td></tr><tr><td>4.4</td><td class="num">0.036</td></tr><tr><td>3.9</td><td class="num">0.024</td></tr><tr><td>4.5</td><td class="num">0.004</td></tr><tr><td>4.3</td><td class="num">0.002</td></tr><tr><td>4.6</td><td class="num">0.005</td></tr><tr><td>4.4</td><td class="num">-0.001</td></tr></tbody></table></details>
+</figure>
+<h2>5. Counter-Evidence &amp; Alternative Explanations</h2>
+<ul>
+<li><strong>PR Count Is an Incomplete Output Proxy:</strong> Merging more pull requests does not capture architectural quality, incident rates, or code-review load; senior engineers in hybrid sites may merge more PRs partly because they spend fewer hours reviewing junior code <a href="#ref-4">[4]</a> <span class="ep-tag tag-moderate">[moderate]</span>.
+</li>
+<li><strong>Site-Level Aggregation &amp; Small Site Count (<code>n = 16</code>):</strong> Without engineer-level microdata, site-level differences could reflect unobserved project complexity or manager quality across sites <a href="#ref-1">[1]</a> <span class="ep-tag tag-moderate">[moderate]</span>.
+</li>
+<li><strong>Full-Remote Extrapolation Risk:</strong> Neither the local dataset nor the Trip.com <em>Nature</em> RCT directly evaluates a mandatory 5-day full-remote policy; extrapolating hybrid retention gains to full-remote without structured onboarding risks steeper junior skill-acquisition penalties <a href="#ref-3">[3]</a>, <a href="#ref-4">[4]</a> <span class="ep-tag tag-preliminary">[preliminary]</span>.
+</li>
+</ul>
+<h2>6. Claim-Evidence Matrix</h2>
+<div class="table-wrap"><table class="booktabs">
+<thead><tr><th>Claim</th><th>Discipline / Axis</th><th>Evidence &amp; Source Tier (As-Of Date)</th><th>Confidence Tag</th><th>Key Falsifier / Condition</th></tr></thead>
+<tbody>
+<tr><td>2-day hybrid work lowers 12-month attrition by ~29–33%</td><td>Labor Economics</td><td>Trip.com <em>Nature</em> RCT <a href="#ref-3">[3]</a> (Tier 1, 2024-06) + local 16-site dataset <a href="#ref-1">[1]</a>, <a href="#ref-2">[2]</a> (Tier 2, 2026-10)</td><td><span class="ep-tag tag-strong">[strong]</span></td><td>Replicated multi-year RCT showing turnover rebound once external labor markets tighten</td></tr>
+<tr><td>Hybrid raises senior PR output (<code>+2.73 pp</code>) while lowering junior PR output (<code>-6.28 pp</code>)</td><td>Empirical Software Engineering</td><td>Local 16-site bootstrap audit <a href="#ref-1">[1]</a>, <a href="#ref-2">[2]</a> (Tier 2, 2026-10)</td><td><span class="ep-tag tag-moderate">[moderate]</span></td><td>Individual-level panel controlling for ticket complexity and defect reopen rates</td></tr>
+<tr><td>Reduced physical mentoring proximity drives the junior output penalty</td><td>Labor Economics / Software Engineering</td><td>Co-location feedback study <a href="#ref-4">[4]</a> (Tier 1, 2023-11) + local mentoring correlation <a href="#ref-2">[2]</a> (Tier 2, 2026-10)</td><td><span class="ep-tag tag-moderate">[moderate]</span></td><td>Structured virtual pair-programming trial closing the junior output gap</td></tr>
+<tr><td>Mandatory 5-day full-remote would deepen junior onboarding loss</td><td>Labor Economics</td><td>Extrapolation from proximity trade-off <a href="#ref-4">[4]</a> without a 5d remote arm (Tier 2/3, 2026-11)</td><td><span class="ep-tag tag-preliminary">[preliminary]</span></td><td>Direct 3-arm RCT (Office 5d vs. Hybrid 2d vs. Full Remote)</td></tr>
+</tbody>
+</table></div>
+<h2>7. Limitations &amp; Open Questions</h2>
+<ul>
+<li><strong>Verified Methodological &amp; Data Limitations:</strong> Site-level aggregates (<code>n = 16</code> sites, <code>590</code> engineers) lack individual tenure, defect-severity weights, and a 5-day full-remote arm (both gaps logged in <code>appendix/data_attempts.csv</code>).
+</li>
+<li><strong>Actionable Next Steps / Experiments:</strong> Adopt 2-day hybrid with synchronized in-office &quot;anchor days&quot; (e.g., Tuesday–Thursday) pairing junior and senior engineers, track defect-weighted PR quality and code-review turnaround at the engineer level, and test whether scheduled virtual office hours recover junior mentoring hours.
+</li>
+</ul></main>
+    
+    <section class="references"><h2>References</h2><ol class="ref-list"><li id="ref-1"><strong>[1]</strong> Multi-site engineering hybrid RCT dataset — local copy supplied by the user (local file, sha256 9a7419cd6056). <code>file://appendix/data/hybrid_rct_sites.csv</code> (Tier 2, data as of 2026-10, accessed 2026-11-20)</li><li id="ref-2"><strong>[2]</strong> Reproducible subgroup &amp; bootstrap audit script (appendix/analysis.py). <code>appendix/analysis.py</code> (Tier 1, data as of 2026-11, accessed 2026-11-20)</li><li id="ref-3"><strong>[3]</strong> Bloom, N., Han, R., &amp; Liang, J. (2024). Hybrid working from home improves retention without damaging performance. Nature, 630, 920–925. <a href="https://doi.org/10.1038/s41586-024-07500-2">https://doi.org/10.1038/s41586-024-07500-2</a> (Tier 1, data as of 2024-06, accessed 2026-11-20)</li><li id="ref-4"><strong>[4]</strong> Emanuel, N., Harrington, E., &amp; Pallais, A. (2023). The Power of Proximity to Coworkers: Training for Tomorrow or Productivity Today? NBER Working Paper 31880. <a href="https://www.nber.org/papers/w31880">https://www.nber.org/papers/w31880</a> (Tier 1, data as of 2023-11, accessed 2026-11-20)</li></ol></section>
+    <section class="appendices"><h2>Appendices &amp; Reproducible Artifacts</h2>
+<details class="appendix-item"><summary><code>appendix/README.md</code> (556 bytes)</summary><pre><code># Reproducibility Guide (`examples/showcase-hybrid-work/appendix/`)
+
+Run in order from `examples/showcase-hybrid-work/`:
+
+```bash
+python3 -B ../../skills/heurisma/scripts/local_data.py inventory data/
+python3 -B appendix/analysis.py --charts-out charts.json --numbers-out appendix/numbers.json &gt; appendix/output.txt
+python3 -B ../../skills/heurisma/scripts/render_report.py report.md --out report.html --charts charts.json --appendix appendix/
+python3 -B ../../skills/heurisma/scripts/validate_report.py report.md --level 2 --html report.html --strict
+```
+</code></pre></details>
+<details class="appendix-item"><summary><code>appendix/analysis.py</code> (9,005 bytes)</summary><pre><code>#!/usr/bin/env python3
+&quot;&quot;&quot;Reproducible Level 2 hybrid-work subgroup &amp; mentoring audit emitting output.txt, charts.json v2, and numbers.json.&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import random
+import statistics
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPTS_DIR = ROOT.parents[1] / &quot;skills&quot; / &quot;heurisma&quot; / &quot;scripts&quot;
+sys.path.insert(0, str(SCRIPTS_DIR))
+from local_data import read_table  # noqa: E402
+
+
+def median_abs_deviation(vals: list[float]) -&gt; tuple[float, float]:
+    med = statistics.median(vals)
+    mad = statistics.median([abs(v - med) for v in vals])
+    return mad, 1.4826 * mad
+
+
+def pearson_r(xs: list[float], ys: list[float]) -&gt; float:
+    mx, my = statistics.fmean(xs), statistics.fmean(ys)
+    num = sum((a - mx) * (b - my) for a, b in zip(xs, ys))
+    den = math.sqrt(sum((a - mx) ** 2 for a in xs) * sum((b - my) ** 2 for b in ys))
+    return num / den if den else 0.0
+
+
+def bootstrap_diff_ci(a: list[float], b: list[float], n_boot: int = 2000, seed: int = 42) -&gt; tuple[float, float]:
+    rng = random.Random(seed)
+    na, nb = len(a), len(b)
+    draws = []
+    for _ in range(n_boot):
+        ma = statistics.fmean(a[rng.randrange(na)] for _ in range(na))
+        mb = statistics.fmean(b[rng.randrange(nb)] for _ in range(nb))
+        draws.append(ma - mb)
+    draws.sort()
+    return draws[int(0.025 * n_boot)], draws[int(0.975 * n_boot)]
+
+
+def summarize(rows: list[dict], key: str) -&gt; dict[str, float]:
+    vals = [float(r[key]) for r in rows]
+    mad, madn = median_abs_deviation(vals)
+    return {
+        &quot;n&quot;: len(vals),
+        &quot;mean&quot;: statistics.fmean(vals),
+        &quot;median&quot;: statistics.median(vals),
+        &quot;sd&quot;: statistics.stdev(vals) if len(vals) &gt; 1 else 0.0,
+        &quot;mad&quot;: mad,
+        &quot;madn&quot;: madn,
+    }
+
+
+def main() -&gt; None:
+    parser = argparse.ArgumentParser(description=&quot;Analyze local hybrid_rct_sites.csv and emit charts.json + numbers.json.&quot;)
+    parser.add_argument(&quot;--charts-out&quot;, type=Path, default=None, help=&quot;Output path for charts.json v2.&quot;)
+    parser.add_argument(&quot;--numbers-out&quot;, type=Path, default=None, help=&quot;Output path for appendix/numbers.json.&quot;)
+    args = parser.parse_args()
+
+    rows = read_table(ROOT / &quot;appendix&quot; / &quot;data&quot; / &quot;hybrid_rct_sites.csv&quot;)
+    total_eng = sum(int(r[&quot;n_engineers&quot;]) for r in rows)
+
+    hyb = [r for r in rows if r[&quot;policy_group&quot;] == &quot;Hybrid_2d&quot;]
+    off = [r for r in rows if r[&quot;policy_group&quot;] == &quot;Office_5d&quot;]
+    sen_h = [r for r in hyb if r[&quot;seniority&quot;] == &quot;Senior&quot;]
+    sen_o = [r for r in off if r[&quot;seniority&quot;] == &quot;Senior&quot;]
+    jun_h = [r for r in hyb if r[&quot;seniority&quot;] == &quot;Junior&quot;]
+    jun_o = [r for r in off if r[&quot;seniority&quot;] == &quot;Junior&quot;]
+
+    # Output delta (PRs merged %)
+    s_all_h, s_all_o = summarize(hyb, &quot;prs_merged_delta_pct&quot;), summarize(off, &quot;prs_merged_delta_pct&quot;)
+    s_sen_h, s_sen_o = summarize(sen_h, &quot;prs_merged_delta_pct&quot;), summarize(sen_o, &quot;prs_merged_delta_pct&quot;)
+    s_jun_h, s_jun_o = summarize(jun_h, &quot;prs_merged_delta_pct&quot;), summarize(jun_o, &quot;prs_merged_delta_pct&quot;)
+
+    # 12m attrition
+    a_all_h, a_all_o = summarize(hyb, &quot;attrition_12m_pct&quot;), summarize(off, &quot;attrition_12m_pct&quot;)
+    a_sen_h, a_sen_o = summarize(sen_h, &quot;attrition_12m_pct&quot;), summarize(sen_o, &quot;attrition_12m_pct&quot;)
+    a_jun_h, a_jun_o = summarize(jun_h, &quot;attrition_12m_pct&quot;), summarize(jun_o, &quot;attrition_12m_pct&quot;)
+
+    # Mentoring hours/wk
+    m_jun_h = summarize(jun_h, &quot;mentoring_hrs_wk&quot;)[&quot;mean&quot;]
+    m_jun_o = summarize(jun_o, &quot;mentoring_hrs_wk&quot;)[&quot;mean&quot;]
+
+    # Differences &amp; bootstrap 95% CIs
+    diff_pr_all = s_all_h[&quot;mean&quot;] - s_all_o[&quot;mean&quot;]
+    diff_pr_sen = s_sen_h[&quot;mean&quot;] - s_sen_o[&quot;mean&quot;]
+    diff_pr_jun = s_jun_h[&quot;mean&quot;] - s_jun_o[&quot;mean&quot;]
+    ci_pr_sen = bootstrap_diff_ci([r[&quot;prs_merged_delta_pct&quot;] for r in sen_h], [r[&quot;prs_merged_delta_pct&quot;] for r in sen_o])
+    ci_pr_jun = bootstrap_diff_ci([r[&quot;prs_merged_delta_pct&quot;] for r in jun_h], [r[&quot;prs_merged_delta_pct&quot;] for r in jun_o])
+
+    rel_attr_drop = (a_all_h[&quot;mean&quot;] - a_all_o[&quot;mean&quot;]) / a_all_o[&quot;mean&quot;]
+    diff_attr_pp = (a_all_h[&quot;mean&quot;] - a_all_o[&quot;mean&quot;]) * 100.0
+    ci_attr_all = bootstrap_diff_ci([r[&quot;attrition_12m_pct&quot;] for r in hyb], [r[&quot;attrition_12m_pct&quot;] for r in off])
+
+    # Mentoring vs PR delta correlation across all 16 sites
+    ment_xs = [float(r[&quot;mentoring_hrs_wk&quot;]) for r in rows]
+    pr_ys = [float(r[&quot;prs_merged_delta_pct&quot;]) for r in rows]
+    r_ment_pr = pearson_r(ment_xs, pr_ys)
+    r_ment_jun = pearson_r([float(r[&quot;mentoring_hrs_wk&quot;]) for r in jun_h + jun_o], [float(r[&quot;prs_merged_delta_pct&quot;]) for r in jun_h + jun_o])
+
+    print(f&quot;Dataset integrity: sites={len(rows)}, total_engineers={total_eng}, missing=0&quot;)
+    print(f&quot;Pooled PR delta: Hybrid_2d={s_all_h[&#x27;mean&#x27;]*100:+.2f}% (MAD={s_all_h[&#x27;mad&#x27;]*100:.2f}pp) vs Office_5d={s_all_o[&#x27;mean&#x27;]*100:+.2f}% (diff={diff_pr_all*100:+.2f}pp)&quot;)
+    print(f&quot;Senior PR delta: Hybrid_2d={s_sen_h[&#x27;mean&#x27;]*100:+.2f}% vs Office_5d={s_sen_o[&#x27;mean&#x27;]*100:+.2f}% (diff={diff_pr_sen*100:+.2f}pp, 95% boot CI [{ci_pr_sen[0]*100:+.2f}pp, {ci_pr_sen[1]*100:+.2f}pp])&quot;)
+    print(f&quot;Junior PR delta: Hybrid_2d={s_jun_h[&#x27;mean&#x27;]*100:+.2f}% vs Office_5d={s_jun_o[&#x27;mean&#x27;]*100:+.2f}% (diff={diff_pr_jun*100:+.2f}pp, 95% boot CI [{ci_pr_jun[0]*100:+.2f}pp, {ci_pr_jun[1]*100:+.2f}pp])&quot;)
+    print(f&quot;12m Attrition: Hybrid_2d={a_all_h[&#x27;mean&#x27;]*100:.1f}% vs Office_5d={a_all_o[&#x27;mean&#x27;]*100:.1f}% (diff={diff_attr_pp:+.1f}pp, rel={rel_attr_drop*100:+.1f}%, 95% boot CI [{ci_attr_all[0]*100:+.1f}pp, {ci_attr_all[1]*100:+.1f}pp])&quot;)
+    print(f&quot;Senior Attrition: Hybrid_2d={a_sen_h[&#x27;mean&#x27;]*100:.1f}% vs Office_5d={a_sen_o[&#x27;mean&#x27;]*100:.1f}%&quot;)
+    print(f&quot;Junior Attrition: Hybrid_2d={a_jun_h[&#x27;mean&#x27;]*100:.1f}% vs Office_5d={a_jun_o[&#x27;mean&#x27;]*100:.1f}%&quot;)
+    print(f&quot;Junior mentoring hrs/wk: Hybrid_2d={m_jun_h:.2f} vs Office_5d={m_jun_o:.2f} (r_all={r_ment_pr:+.3f}, r_junior={r_ment_jun:+.3f})&quot;)
+
+    if args.charts_out is not None:
+        worst_jun = min(jun_h, key=lambda r: float(r[&quot;prs_merged_delta_pct&quot;]))
+        charts_v2 = [
+            {
+                &quot;id&quot;: &quot;subgroup_output&quot;,
+                &quot;type&quot;: &quot;bar&quot;,
+                &quot;title&quot;: &quot;PR Output Change by Seniority and Work Policy (16 Sites)&quot;,
+                &quot;caption&quot;: &quot;Pooled averages mask opposite subgroup effects: hybrid lifts Senior output (+2.7pp) while reducing Junior output (-6.3pp).&quot;,
+                &quot;source&quot;: &quot;Local multi-site CSV (appendix/data/hybrid_rct_sites.csv); appendix/analysis.py.&quot;,
+                &quot;y&quot;: {&quot;label&quot;: &quot;PRs Merged Delta&quot;, &quot;format&quot;: &quot;percent&quot;},
+                &quot;groups&quot;: [&quot;Pooled (16 sites)&quot;, &quot;Senior (8 sites)&quot;, &quot;Junior (8 sites)&quot;],
+                &quot;series&quot;: [
+                    {&quot;name&quot;: &quot;Hybrid (2d WFH)&quot;, &quot;values&quot;: [round(s_all_h[&quot;mean&quot;], 4), round(s_sen_h[&quot;mean&quot;], 4), round(s_jun_h[&quot;mean&quot;], 4)]},
+                    {&quot;name&quot;: &quot;Office (5d)&quot;, &quot;values&quot;: [round(s_all_o[&quot;mean&quot;], 4), round(s_sen_o[&quot;mean&quot;], 4), round(s_jun_o[&quot;mean&quot;], 4)]},
+                ],
+            },
+            {
+                &quot;id&quot;: &quot;mentoring_scatter&quot;,
+                &quot;type&quot;: &quot;scatter&quot;,
+                &quot;title&quot;: &quot;Weekly Mentoring Hours vs. PR Output Delta Across Engineering Sites&quot;,
+                &quot;caption&quot;: &quot;Junior hybrid sites experience a 66% drop in mentoring hours and sit uniformly below zero output change.&quot;,
+                &quot;source&quot;: &quot;Local multi-site CSV (appendix/data/hybrid_rct_sites.csv); appendix/analysis.py.&quot;,
+                &quot;x&quot;: {&quot;label&quot;: &quot;Mentoring Hours / Week&quot;},
+                &quot;y&quot;: {&quot;label&quot;: &quot;PRs Merged Delta&quot;, &quot;format&quot;: &quot;percent&quot;},
+                &quot;series&quot;: [
+                    {&quot;name&quot;: &quot;Senior Sites&quot;, &quot;points&quot;: [[float(r[&quot;mentoring_hrs_wk&quot;]), float(r[&quot;prs_merged_delta_pct&quot;])] for r in sen_h + sen_o]},
+                    {&quot;name&quot;: &quot;Junior Sites&quot;, &quot;points&quot;: [[float(r[&quot;mentoring_hrs_wk&quot;]), float(r[&quot;prs_merged_delta_pct&quot;])] for r in jun_h + jun_o]},
+                ],
+                &quot;highlight&quot;: {
+                    &quot;x&quot;: float(worst_jun[&quot;mentoring_hrs_wk&quot;]),
+                    &quot;y&quot;: float(worst_jun[&quot;prs_merged_delta_pct&quot;]),
+                    &quot;label&quot;: f&quot;{worst_jun[&#x27;site_id&#x27;]} (Junior Hybrid)&quot;,
+                },
+            },
+        ]
+        args.charts_out.write_text(json.dumps(charts_v2, indent=2) + &quot;\n&quot;, encoding=&quot;utf-8&quot;)
+
+    if args.numbers_out is not None:
+        numbers = {
+            &quot;total_sites&quot;: len(rows),
+            &quot;total_engineers&quot;: total_eng,
+            &quot;pooled_pr_diff&quot;: f&quot;{diff_pr_all * 100:+.2f} pp&quot;,
+            &quot;senior_pr_diff&quot;: f&quot;{diff_pr_sen * 100:+.2f} pp&quot;,
+            &quot;junior_pr_diff&quot;: f&quot;{diff_pr_jun * 100:+.2f} pp&quot;,
+            &quot;attr_hyb&quot;: f&quot;{a_all_h[&#x27;mean&#x27;] * 100:.1f}%&quot;,
+            &quot;attr_off&quot;: f&quot;{a_all_o[&#x27;mean&#x27;] * 100:.1f}%&quot;,
+            &quot;attr_rel_drop&quot;: f&quot;{abs(rel_attr_drop) * 100:.1f}%&quot;,
+            &quot;jun_ment_hyb&quot;: f&quot;{m_jun_h:.2f}&quot;,
+            &quot;jun_ment_off&quot;: f&quot;{m_jun_o:.2f}&quot;,
+            &quot;r_ment_jun&quot;: f&quot;{r_ment_jun:+.3f}&quot;,
+        }
+        args.numbers_out.write_text(json.dumps(numbers, indent=2) + &quot;\n&quot;, encoding=&quot;utf-8&quot;)
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre></details>
+<details class="appendix-item"><summary><code>appendix/data_attempts.csv</code> (571 bytes)</summary><pre><code>target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used
+Individual-level engineer microdata &amp; code-defect severity,Local data inventory,local_data.py inventory data/,not found,Only site-level aggregates present in hybrid_rct_sites.csv,Used site-level subgroup analysis and capped causal claims at [Moderate]
+Full-remote (5d WFH) comparison arm,Local data inventory + public RCT registry,local_data.py preview + Bloom et al. 2024,not found,Local dataset contains only Hybrid_2d vs Office_5d arms,Capped full-remote extrapolation at [Preliminary]
+</code></pre></details>
+<details class="appendix-item"><summary><code>appendix/numbers.json</code> (297 bytes)</summary><pre><code>{
+  &quot;total_sites&quot;: 16,
+  &quot;total_engineers&quot;: 590,
+  &quot;pooled_pr_diff&quot;: &quot;-1.78 pp&quot;,
+  &quot;senior_pr_diff&quot;: &quot;+2.73 pp&quot;,
+  &quot;junior_pr_diff&quot;: &quot;-6.28 pp&quot;,
+  &quot;attr_hyb&quot;: &quot;9.8%&quot;,
+  &quot;attr_off&quot;: &quot;13.9%&quot;,
+  &quot;attr_rel_drop&quot;: &quot;29.0%&quot;,
+  &quot;jun_ment_hyb&quot;: &quot;1.73&quot;,
+  &quot;jun_ment_off&quot;: &quot;5.15&quot;,
+  &quot;r_ment_jun&quot;: &quot;+0.999&quot;
+}
+</code></pre></details>
+<details class="appendix-item"><summary><code>appendix/output.txt</code> (644 bytes)</summary><pre><code>Dataset integrity: sites=16, total_engineers=590, missing=0
+Pooled PR delta: Hybrid_2d=-0.74% (MAD=3.65pp) vs Office_5d=+1.04% (diff=-1.78pp)
+Senior PR delta: Hybrid_2d=+2.97% vs Office_5d=+0.25% (diff=+2.73pp, 95% boot CI [+2.25pp, +3.20pp])
+Junior PR delta: Hybrid_2d=-4.45% vs Office_5d=+1.82% (diff=-6.28pp, 95% boot CI [-6.78pp, -5.75pp])
+12m Attrition: Hybrid_2d=9.8% vs Office_5d=13.9% (diff=-4.0pp, rel=-29.0%, 95% boot CI [-5.4pp, -2.6pp])
+Senior Attrition: Hybrid_2d=8.1% vs Office_5d=13.4%
+Junior Attrition: Hybrid_2d=11.6% vs Office_5d=14.3%
+Junior mentoring hrs/wk: Hybrid_2d=1.73 vs Office_5d=5.15 (r_all=+0.879, r_junior=+0.999)
+</code></pre></details>
+<details class="appendix-item"><summary><code>appendix/sources.csv</code> (798 bytes)</summary><pre><code>claim_id,source_title,url,tier,accessed_date,data_as_of
+C1,&quot;Multi-site engineering hybrid RCT dataset — local copy supplied by the user (local file, sha256 9a7419cd6056)&quot;,file://appendix/data/hybrid_rct_sites.csv,Tier 2,2026-11-20,2026-10
+C2,&quot;Bloom, N., Han, R., &amp; Liang, J. (2024). Hybrid working from home improves retention without damaging performance. Nature, 630, 920–925&quot;,https://doi.org/10.1038/s41586-024-07500-2,Tier 1,2026-11-20,2024-06
+C3,&quot;Emanuel, N., Harrington, E., &amp; Pallais, A. (2023). The Power of Proximity to Coworkers: Training for Tomorrow or Productivity Today? NBER Working Paper 31880&quot;,https://www.nber.org/papers/w31880,Tier 1,2026-11-20,2023-11
+C4,&quot;Reproducible subgroup &amp; bootstrap audit script (appendix/analysis.py)&quot;,appendix/analysis.py,Tier 1,2026-11-20,2026-11
+</code></pre></details>
+<h3>External Data &amp; Large Files (Linked, Not Embedded)</h3><ul><li><a href="appendix/data/hybrid_rct_sites.csv"><code>appendix/data/hybrid_rct_sites.csv</code></a> (744 bytes — external artifact)</li></ul>
+</section>
+    <footer class="paper-footer">Prepared with Heurisma</footer>
+  </article>
+</body>
+</html>

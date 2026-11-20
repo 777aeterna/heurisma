@@ -1,0 +1,131 @@
+[
+  {
+    "id": "subgroup_output",
+    "type": "bar",
+    "title": "PR Output Change by Seniority and Work Policy (16 Sites)",
+    "caption": "Pooled averages mask opposite subgroup effects: hybrid lifts Senior output (+2.7pp) while reducing Junior output (-6.3pp).",
+    "source": "Local multi-site CSV (appendix/data/hybrid_rct_sites.csv); appendix/analysis.py.",
+    "y": {
+      "label": "PRs Merged Delta",
+      "format": "percent"
+    },
+    "groups": [
+      "Pooled (16 sites)",
+      "Senior (8 sites)",
+      "Junior (8 sites)"
+    ],
+    "series": [
+      {
+        "name": "Hybrid (2d WFH)",
+        "values": [
+          -0.0074,
+          0.0297,
+          -0.0445
+        ]
+      },
+      {
+        "name": "Office (5d)",
+        "values": [
+          0.0104,
+          0.0025,
+          0.0182
+        ]
+      }
+    ]
+  },
+  {
+    "id": "mentoring_scatter",
+    "type": "scatter",
+    "title": "Weekly Mentoring Hours vs. PR Output Delta Across Engineering Sites",
+    "caption": "Junior hybrid sites experience a 66% drop in mentoring hours and sit uniformly below zero output change.",
+    "source": "Local multi-site CSV (appendix/data/hybrid_rct_sites.csv); appendix/analysis.py.",
+    "x": {
+      "label": "Mentoring Hours / Week"
+    },
+    "y": {
+      "label": "PRs Merged Delta",
+      "format": "percent"
+    },
+    "series": [
+      {
+        "name": "Senior Sites",
+        "points": [
+          [
+            4.2,
+            0.031
+          ],
+          [
+            4.0,
+            0.028
+          ],
+          [
+            4.4,
+            0.036
+          ],
+          [
+            3.9,
+            0.024
+          ],
+          [
+            4.5,
+            0.004
+          ],
+          [
+            4.3,
+            0.002
+          ],
+          [
+            4.6,
+            0.005
+          ],
+          [
+            4.4,
+            -0.001
+          ]
+        ]
+      },
+      {
+        "name": "Junior Sites",
+        "points": [
+          [
+            1.8,
+            -0.042
+          ],
+          [
+            1.5,
+            -0.051
+          ],
+          [
+            2.0,
+            -0.038
+          ],
+          [
+            1.6,
+            -0.047
+          ],
+          [
+            5.1,
+            0.018
+          ],
+          [
+            5.4,
+            0.021
+          ],
+          [
+            4.9,
+            0.015
+          ],
+          [
+            5.2,
+            0.019
+          ]
+        ]
+      }
+    ],
+    "highlight": {
+      "x": 1.5,
+      "y": -0.051,
+      "label": "S11 (Junior Hybrid)"
+    }
+  }
+]

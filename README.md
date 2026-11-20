@@ -92,6 +92,7 @@ cp -r heurisma/skills/heurisma ~/.claude/skills/heurisma
 ## Showcase Examples & CLI Tools
 
 Inspect validated outputs generated with Heurisma:
+- **Live Prompt → Output Showcase (v0.4.0 — Local European CSV + Tier 1 Literature + Linked Citations):** [`examples/showcase-hybrid-work/PROMPT.md`](examples/showcase-hybrid-work/PROMPT.md) → [`report.md`](examples/showcase-hybrid-work/report.md) · [`report.html`](examples/showcase-hybrid-work/report.html) · [`appendix/`](examples/showcase-hybrid-work/appendix)
 - **Level 1 — Rigorous Inquiry (Pressure-Tested Board Brief):** [`examples/level1-brief-example.md`](examples/level1-brief-example.md)
 - **Level 2 — Empirical Data Study (Working-Paper Format + Reproducible Appendix):** [`examples/level2-study/report.md`](examples/level2-study/report.md) + [`examples/level2-study/appendix/`](examples/level2-study/appendix)
 

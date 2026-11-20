@@ -1,0 +1,13 @@
+{
+  "total_sites": 16,
+  "total_engineers": 590,
+  "pooled_pr_diff": "-1.78 pp",
+  "senior_pr_diff": "+2.73 pp",
+  "junior_pr_diff": "-6.28 pp",
+  "attr_hyb": "9.8%",
+  "attr_off": "13.9%",
+  "attr_rel_drop": "29.0%",
+  "jun_ment_hyb": "1.73",
+  "jun_ment_off": "5.15",
+  "r_ment_jun": "+0.999"
+}

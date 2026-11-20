@@ -1,0 +1,8 @@
+Dataset integrity: sites=16, total_engineers=590, missing=0
+Pooled PR delta: Hybrid_2d=-0.74% (MAD=3.65pp) vs Office_5d=+1.04% (diff=-1.78pp)
+Senior PR delta: Hybrid_2d=+2.97% vs Office_5d=+0.25% (diff=+2.73pp, 95% boot CI [+2.25pp, +3.20pp])
+Junior PR delta: Hybrid_2d=-4.45% vs Office_5d=+1.82% (diff=-6.28pp, 95% boot CI [-6.78pp, -5.75pp])
+12m Attrition: Hybrid_2d=9.8% vs Office_5d=13.9% (diff=-4.0pp, rel=-29.0%, 95% boot CI [-5.4pp, -2.6pp])
+Senior Attrition: Hybrid_2d=8.1% vs Office_5d=13.4%
+Junior Attrition: Hybrid_2d=11.6% vs Office_5d=14.3%
+Junior mentoring hrs/wk: Hybrid_2d=1.73 vs Office_5d=5.15 (r_all=+0.879, r_junior=+0.999)

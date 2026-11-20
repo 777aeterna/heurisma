@@ -68,3 +68,13 @@ jobs:
           python3 -B skills/heurisma/scripts/validate_report.py examples/level1-brief-example.md --level 1
           python3 -B skills/heurisma/scripts/validate_report.py examples/level2-study/report.md \
             --level 2 --html examples/level2-study/report.html --strict
+          python3 -B examples/showcase-hybrid-work/appendix/analysis.py \
+            --charts-out examples/showcase-hybrid-work/charts.json \
+            --numbers-out examples/showcase-hybrid-work/appendix/numbers.json \
+            > examples/showcase-hybrid-work/appendix/output.txt
+          python3 -B skills/heurisma/scripts/render_report.py examples/showcase-hybrid-work/report.md \
+            --out examples/showcase-hybrid-work/report.html \
+            --charts examples/showcase-hybrid-work/charts.json \
+            --appendix examples/showcase-hybrid-work/appendix
+          python3 -B skills/heurisma/scripts/validate_report.py examples/showcase-hybrid-work/report.md \
+            --level 2 --html examples/showcase-hybrid-work/report.html --strict
