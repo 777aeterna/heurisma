@@ -39,7 +39,7 @@
 
 Even with 6/6 structural passes, manual auditor inspection identified two minor formatting loopholes in Scenario 01:
 
-1. **Ephemeral Scratch Path Reference:** The subagent referenced a temporary scratch path in prose alongside the embedded Python code block.
+1. **Ephemeral Scratch Path Reference:** The subagent referenced its internal scratch path (`<agent-scratch-dir>/model.py`) in prose alongside the embedded Python code block.
    - *Fix applied in `references/data-protocol.md` (Step 5):* Explicitly forbade referencing ephemeral agent scratch/temp paths in user-facing report prose; embedded code blocks must be self-contained.
 2. **Slash-Combined Calibration Tags (`[Moderate/Preliminary]`):** In one summary bullet, the subagent combined two tags with a slash instead of assigning each clause its own canonical tag.
    - *Fix applied in `references/scientific-writing.md` (Section 1):* Added an explicit rule requiring individual canonical tags (`[Strong]`, `[Moderate]`, `[Preliminary]`, `[Speculative]`) rather than slash-combined hybrids.
