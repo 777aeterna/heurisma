@@ -4,6 +4,32 @@ All notable changes to **Heurisma** will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2026-11-21 (Provenance Gaps, Caption Closure & Calibrated Fans)
+
+Driven by a code-executing audit of v0.8.0 and by replaying a real Level 3 run through the new validator: a run that v0.8.0 passed with 0 errors and 0 warnings now reports 6 errors and 5 warnings, each a genuine provenance or traceability gap. Mutation detection goes from **25/25** to **34/34** (`M26`–`M34`).
+
+### Added
+- **Chart text closure (`P1-UNTRACED-NUM`):** figures in a chart's `title`, `caption` and `source` must appear in `appendix/output.txt` or `appendix/numbers.json`, like Section 4 table cells; a bare `1,00×` ratio baseline is exempt.
+- **Retrieval proof for literature:** an `agent-fetched` `kind=literature` source needs a `used` row in `data_attempts.csv`, stamped at or after the run start, that names its `claim_id` or URL (warning at Level 2, error at Level 3). A Tier 1 literature row with no saved document and no `(web summary)` / `(resumen web)` / `(abstract only)` label gets a warning.
+- **Tier inherited by local tables:** a `[Strong]` matrix row resting only on local tables whose `primary_source_id` rows map to Tier 3 in `appendix/data/sources_metadata.csv` is a `P0-STRONG` error. `tier` and `tier_classification` columns are both read.
+- **Files added after preregistration:** a file in `appendix/data/` absent from the sealed `known_artifacts`, `download_log.csv` and `intake.md` raises a `P2-PREREG` warning, even if it is registered in `sources.csv`.
+- **Calibrated fans:** a `fan` chart described as calibrated needs a `calibration` block (`method`, `source_id`); the first projected `p10` may not sit above the last observed value (`FIG-DESIGN`).
+- **Reviewer anchor:** `--gate-header reviewer` also prints `ANALYSIS-SHA256`; if `appendix/analysis.py` changes afterwards, Section 5 needs a *Post-review changes* subsection (`GATE-BINDING`, checked whenever `reviewer.md` exists).
+- **`SRC-TIER`:** the `tier` column must be exactly `Tier 1`, `Tier 2` or `Tier 3`; a bare `3` used to bypass every Tier 3 rule.
+- **Nine new mutations (`M26`–`M34`)** and four test modules (`tests/test_v081_*.py`).
+
+### Changed
+- A local `user-curated` file can no longer be Tier 2 (it was only blocked at Tier 1): it stays Tier 3, and a stated origin counts only as a separate `agent-fetched` download made in this run.
+- `--json`: `agent-fetched` provenance messages are now `P2-SELECTION` (they fell back to `GEN`), and every fan-chart design warning is `FIG-DESIGN` (the divergence warning was reported as `FIG-SCHEMA`).
+- `SKILL.md`, `references/` and the three agent prompts (and their `agents/` mirrors) follow the code: local files are Tier 3, mixed tables carry `primary_source_id` + `sources_metadata.csv`, captions are built from computed variables, and at Level 3 the order is Reviewer #2 → Disposition Table → second source-verifier pass → QA. The source-verifier quotes only `sources.csv` / `data_attempts.csv`, so inserting the Disposition Table cannot shift its quoted lines.
+
+### Fixed
+- `local_data.worst_tier` ignored a `tier_classification` column and treated every id as unknown (Tier 3).
+- Doc contradictions found by cold runs: `SKILL.md` and `data-protocol.md` taught a Tier 2 (and, in an example, Tier 1) cap for local files that the validator rejects.
+
+### Known Debt / Pending Verification
+- The 40 agent evaluations of `evals/rubric.md` and the PNG asset recompression are still pending (unchanged from v0.8.0).
+
 ## [0.8.0] - 2026-11-21 (Semantic Integrity, Frictionless Gates & Temporal/Chart Guards)
 
 Driven by lessons from a full Level 3 cold-run evaluation of v0.7.0. Closes six semantic bypasses (`M20`–`M25`, bringing mutation detection from **19/25** to **25/25**), eliminates gate-workflow friction (`--gate-header`, closed-loop Reviewer #2 hash exemption, `QUOTE:` marker escaping), and hardens data ingestion and temporal/fan chart rules.

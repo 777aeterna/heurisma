@@ -347,6 +347,188 @@ def m25_untraced_stat_in_section4_table(ws: Path) -> None:
     )
 
 
+# ------------------------------------------------------------------------------------------ v0.8.1 mutations (M26+)
+def _add_selection_columns(ws: Path, c1_tier: str | None = None) -> None:
+    """Give sources.csv selection/retrieved_utc columns: C1 user-curated, everything else agent-fetched."""
+
+    def fn(rows: list[dict[str, str]], cols: list[str]) -> tuple[list[dict[str, str]], list[str]]:
+        cols = cols + [c for c in ("selection", "retrieved_utc") if c not in cols]
+        for r in rows:
+            if (r.get("claim_id") or "").strip() == "C1":
+                if c1_tier:
+                    r["tier"] = c1_tier
+                r["selection"] = "user-curated"
+                r["retrieved_utc"] = "2026-11-20T09:00:00Z"
+            else:
+                r["selection"] = "agent-fetched"
+                r["retrieved_utc"] = "2026-11-20T12:00:00Z"
+        return rows, cols
+
+    _rewrite_csv(ws, "appendix/sources.csv", fn)
+
+
+def _register_local_csv(ws: Path, rel: str, claim_id: str, title: str, tier: str, selection: str | None = None) -> None:
+    """Append a registered local data file (with its real sha256 prefix) to sources.csv."""
+    import local_data
+
+    digest = local_data.sha12(ws / rel)
+
+    def fn(rows: list[dict[str, str]], cols: list[str]) -> tuple[list[dict[str, str]], list[str]]:
+        row = {
+            "claim_id": claim_id,
+            "source_title": f"{title} (local file, sha256 {digest})",
+            "url": rel,
+            "tier": tier,
+            "accessed_date": "2026-11-20",
+            "data_as_of": "2026-10",
+            "kind": "data",
+        }
+        if "selection" in cols:
+            row["selection"] = selection or "user-curated"
+            row["retrieved_utc"] = "2026-11-20T09:00:00Z"
+        rows.append(row)
+        return rows, cols
+
+    _rewrite_csv(ws, "appendix/sources.csv", fn)
+
+
+def m26_local_user_curated_laundered_to_tier2(ws: Path) -> None:
+    """A user-curated local file is bumped to Tier 2 (not Tier 1) and carries a [Strong] claim."""
+    _add_selection_columns(ws, c1_tier="Tier 2")
+    _edit(ws, "report.md", _ROW2, _ROW2.replace("(Tier 3 origin)", "(Tier 2)").replace("`[Preliminary]`", "`[Strong]`"))
+
+
+def _write_parameters_table(ws: Path) -> None:
+    """appendix/data/parameters.csv inherits Tier 3 from sources_metadata.csv through primary_source_id."""
+    data = ws / "appendix" / "data"
+    data.joinpath("parameters.csv").write_text(
+        "parameter,value,primary_source_id\nreview_window_days,30,S1\nquorum,5,S1\n", encoding="utf-8"
+    )
+    data.joinpath("sources_metadata.csv").write_text(
+        "source_id,tier,title\nS1,Tier 3,Industry blog commentary\n", encoding="utf-8"
+    )
+
+
+def m27_strong_on_table_inheriting_tier3(ws: Path) -> None:
+    """A [Strong] row cites a local table (declared Tier 2) whose cells inherit Tier 3 via primary_source_id."""
+    _write_parameters_table(ws)
+    _register_local_csv(ws, "appendix/data/parameters.csv", "C5", "Parameters table transcribed from a document", "Tier 2")
+    _register_local_csv(ws, "appendix/data/sources_metadata.csv", "C6", "Source metadata for the parameters table", "Tier 2")
+    _edit(
+        ws,
+        "report.md",
+        "| Lower mentoring hours explain the junior output gap",
+        "| The documented review window is 30 days | Software Engineering | Parameters table [@C5], Tier 2, "
+        "2026-10 | `[Strong]` | A revised source document with a different window |\n"
+        "| Lower mentoring hours explain the junior output gap",
+    )
+
+
+def m28_agent_fetched_literature_without_proof(ws: Path) -> None:
+    """kind=literature rows are marked agent-fetched but no `used` attempt in data_attempts.csv backs them."""
+    _add_selection_columns(ws)
+
+
+def m29_data_file_added_after_prereg(ws: Path) -> None:
+    """A data file appears in appendix/data/ after preregistration was sealed, outside download_log and intake."""
+    import hashlib
+
+    import local_data
+
+    app = ws / "appendix"
+    known = {"data/hybrid_rct_sites.csv": local_data.sha12(app / "data" / "hybrid_rct_sites.csv")}
+    body = {
+        "sealed_utc": "2026-11-20T08:00:00Z",
+        "hypotheses": {"H0": "No difference between hybrid and office sites.", "H1": "Hybrid changes output."},
+        "plan": "Exact stratified permutation tests.",
+        "known_artifacts": known,
+    }
+    body["sha256"] = hashlib.sha256(
+        json.dumps({k: v for k, v in body.items() if k != "sha256"}, sort_keys=True, ensure_ascii=False).encode("utf-8")
+    ).hexdigest()
+    (app / "preregistration.json").write_text(json.dumps(body, indent=1, ensure_ascii=False), encoding="utf-8")
+    (app / "data" / "parameters.csv").write_text("parameter,value\nreview_window_days,30\n", encoding="utf-8")
+    _register_local_csv(ws, "appendix/data/parameters.csv", "C5", "Constants transcribed by hand", "Tier 3")
+
+
+def m30_chart_caption_contradicts_output(ws: Path) -> None:
+    """A charts.json caption carries a figure that appears in neither output.txt nor numbers.json."""
+    charts = json.loads((ws / "charts.json").read_text(encoding="utf-8"))
+    charts[0]["caption"] = charts[0]["caption"].rstrip(".") + "; 93,6 % of the covariance is between stations."
+    (ws / "charts.json").write_text(json.dumps(charts), encoding="utf-8")
+
+
+def _append_fan(ws: Path, chart: dict) -> None:
+    charts = json.loads((ws / "charts.json").read_text(encoding="utf-8"))
+    charts.append(chart)
+    (ws / "charts.json").write_text(json.dumps(charts), encoding="utf-8")
+    _edit(ws, "report.md", "{{fig:mentoring_scatter}}", "{{fig:mentoring_scatter}}\n\n{{fig:fan_v081}}")
+
+
+def m31_fan_called_calibrated_without_calibration(ws: Path) -> None:
+    """A fan chart claims calibrated quantiles but has no calibration block (method + source_id)."""
+    pts = lambda a, b, c: [["2026-10", a], ["2026-11", b], ["2026-12", c]]  # noqa: E731
+    _append_fan(
+        ws,
+        {
+            "id": "fan_v081",
+            "type": "fan",
+            "title": "Calibrated fan for attrition",
+            "caption": "Quantiles are compound-rate scenarios.",
+            "x": {"type": "date", "observed_until": "2026-10"},
+            "y": {"label": "Index"},
+            "quantiles": {"p10": pts(100, 98, 96), "p50": pts(100, 101, 102), "p90": pts(100, 104, 108)},
+        },
+    )
+
+
+def m32_fan_p10_excludes_decline(ws: Path) -> None:
+    """The first projected p10 sits above the last observed (p50) value, so no decline is representable."""
+    pts = lambda a, b, c: [["2026-10", a], ["2026-11", b], ["2026-12", c]]  # noqa: E731
+    _append_fan(
+        ws,
+        {
+            "id": "fan_v081",
+            "type": "fan",
+            "title": "Scenario fan for attrition",
+            "caption": "Quantiles are compound-rate scenarios.",
+            "x": {"type": "date", "observed_until": "2026-10"},
+            "y": {"label": "Index"},
+            "quantiles": {"p10": pts(100, 103, 106), "p50": pts(100, 105, 110), "p90": pts(100, 108, 116)},
+        },
+    )
+
+
+def m33_analysis_changed_after_reviewer(ws: Path) -> None:
+    """analysis.py changes after reviewer.md was stamped and Section 5 has no post-review section."""
+    import hashlib
+
+    app = ws / "appendix"
+    stale = hashlib.sha256(b"analysis.py as the reviewer saw it").hexdigest()[:12]
+    app.joinpath("gates", "reviewer.md").write_text(
+        "MODE: subagent\n"
+        f"REVIEWED-SHA256: {validate_report.gate_hash(ws, 'reviewer')}\n"
+        "REVIEWED-UTC: 2026-11-20T10:00:00Z\n"
+        f"ANALYSIS-SHA256: {stale}\n"
+        "QUOTE: report.md:1: \"Hybrid Work\"\n"
+        "QUOTE: report.md:5: \"Executive Summary\"\n" + "pad " * 120,
+        encoding="utf-8",
+    )
+
+
+def m34_bare_digit_tier_dodges_tier3_rules(ws: Path) -> None:
+    """The Tier 3 source is written as tier '3', so every 'Tier 3' rule misses it, and it carries [Strong]."""
+
+    def fn(rows: list[dict[str, str]], cols: list[str]) -> tuple[list[dict[str, str]], list[str]]:
+        for r in rows:
+            if (r.get("claim_id") or "").strip() == "C1":
+                r["tier"] = "3"
+        return rows, cols
+
+    _rewrite_csv(ws, "appendix/sources.csv", fn)
+    _edit(ws, "report.md", _ROW2, _ROW2.replace(" (Tier 3 origin), exact tests in own computation [@C4]", "").replace("`[Preliminary]`", "`[Strong]`"))
+
+
 MUTATIONS: dict[str, tuple[str, Mutation, bool]] = {
     # name: (description, function, re-render after applying)
     "M01": ("data value changed, HTML re-rendered", m01_data_value_changed, True),
@@ -374,6 +556,15 @@ MUTATIONS: dict[str, tuple[str, Mutation, bool]] = {
     "M23": ("observed line chart plots a point date after the report As-Of Date", m23_observed_line_chart_after_as_of, True),
     "M24": ("preregistration H1 contains exact computed figures from numbers.json (HARKing)", m24_harking_preregistration_contains_results, True),
     "M25": ("Section 4 table cell has a hand-typed statistic absent from output.txt/numbers.json", m25_untraced_stat_in_section4_table, True),
+    "M26": ("local user-curated file raised to Tier 2 carrying a [Strong] claim", m26_local_user_curated_laundered_to_tier2, True),
+    "M27": ("[Strong] row on a local table whose cells inherit Tier 3 via primary_source_id", m27_strong_on_table_inheriting_tier3, True),
+    "M28": ("agent-fetched kind=literature rows with no used attempt in data_attempts.csv", m28_agent_fetched_literature_without_proof, True),
+    "M29": ("data file added to appendix/data/ after preregistration was sealed", m29_data_file_added_after_prereg, True),
+    "M30": ("charts.json caption carries a figure absent from output.txt/numbers.json", m30_chart_caption_contradicts_output, True),
+    "M31": ("fan chart called calibrated with no calibration block", m31_fan_called_calibrated_without_calibration, True),
+    "M32": ("fan chart whose first projected p10 is above the last observed value", m32_fan_p10_excludes_decline, True),
+    "M33": ("analysis.py changed after reviewer.md with no post-review section in Section 5", m33_analysis_changed_after_reviewer, True),
+    "M34": ("tier written as a bare digit ('3') so Tier 3 rules miss a [Strong] row", m34_bare_digit_tier_dodges_tier3_rules, True),
 }
 
 # Mutations the validator does not yet catch -> the v0.8.0 phase that will. Remove an entry when its phase lands.
@@ -409,6 +600,15 @@ EXPECT: dict[str, str] = {
     "M23": r"(?i)after the report As-Of Date",
     "M24": r"(?i)computed result figures|HARKing|numbers\.json",
     "M25": r"(?i)not found in appendix/output\.txt or appendix/numbers\.json|untraced",
+    "M26": r"cannot be Tier 2",
+    "M27": r"(?i)inherit",
+    "M28": r"kind=literature",
+    "M29": r"(?i)after preregistration",
+    "M30": r"(?i)caption",
+    "M31": r"(?i)calibration",
+    "M32": r"(?i)\bp10\b",
+    "M33": r"(?i)after the reviewer",
+    "M34": r"has tier '3'",
 }
 # Mutations about the gates themselves keep the gates as the mutation left them; every other mutation re-stamps
 # REVIEWED-SHA256 afterwards, as an agent covering its tracks would.

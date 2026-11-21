@@ -10,7 +10,7 @@
   <a href="https://github.com/777aeterna/heurisma/actions/workflows/validate-skill.yml">
     <img src="https://github.com/777aeterna/heurisma/actions/workflows/validate-skill.yml/badge.svg" alt="CI Validation" />
   </a>
-  <img src="https://img.shields.io/badge/Version-v0.8.0-0072B2?style=flat-square" alt="Version v0.8.0" />
+  <img src="https://img.shields.io/badge/Version-v0.8.1-0072B2?style=flat-square" alt="Version v0.8.1" />
   <img src="https://img.shields.io/badge/Python-%E2%89%A53.9_stdlib_only-009E73?style=flat-square" alt="Python >= 3.9 stdlib only" />
   <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=flat-square" alt="License: MIT" />
   <img src="https://img.shields.io/badge/Agent_Skills-Spec_Compliant-22D3EE?style=flat-square" alt="Agent Skills Spec" />
@@ -26,15 +26,15 @@ Conventional **Deep Research** tools are primarily *retrieval and summarization 
 
 **Heurisma** (from Greek *heuriskein*, "to discover") pairs a **scientific-method protocol** with a deterministic **epistemic linter**:
 
-| Dimension | Conventional Deep Research | Heurisma (`v0.8.0`) |
+| Dimension | Conventional Deep Research | Heurisma (`v0.8.1`) |
 | :--- | :--- | :--- |
 | **Before Searching** | Launches queries immediately | **Pre-Search Gate:** classifies scientific branch(es), `As-Of Date`, evidence standards, depth level (`Level 0–3`), seals `appendix/run.json`, and offers one non-blocking pre-flight data intake (Stage 0 step 9, idempotent multi-channel `appendix/intake.md`) |
 | **Hypotheses & Forecasts** | Implicit narrative confirmation | Explicit **$H_0$ / $H_1$ falsifiable hypotheses** sealed in `appendix/preregistration.json` before `analysis.py` (anti-post-hoc & anti-HARKing checks) + multi-scenario forecasting (*identities ≠ forecasts*, honest *Parametric scenario bands* vs. calibrated fans) |
-| **Data & Provenance** | Eyeballs tables or declares lazy "data limitations" | **Provenance verified by recomputed SHA-256 over every local file** and `download_log.csv` entry; `fetch_lib.py` + `analysis.py` + `sources.csv` (`kind`, `sha256`, `selection`, `retrieved_utc`) + tool-stamped **Data-Attempts Log**; 4-rung cascade (online primary → alternatives → user's local files → limitation), `user-curated` local files capped at Tier 2 (`agent-fetched` requires `retrieved_utc >= run_started_utc` + download proof), and `worst_tier()` inheritance |
+| **Data & Provenance** | Eyeballs tables or declares lazy "data limitations" | **Provenance verified by recomputed SHA-256 over every local file** and `download_log.csv` entry; `fetch_lib.py` + `analysis.py` + `sources.csv` (`kind`, `sha256`, `selection`, `retrieved_utc`) + tool-stamped **Data-Attempts Log**; 4-rung cascade (online primary → alternatives → user's local files → limitation), `user-curated` local files kept at Tier 3 (`agent-fetched` requires `retrieved_utc >= run_started_utc` + download or logged-retrieval proof), and Tier inherited by mixed-source tables through `primary_source_id` |
 | **Numbers in the Text** | Retyped by hand, drift from the analysis | `{{num:key}}` placeholders filled from `appendix/numbers.json` + **numeric closure (`P1-UNTRACED-NUM`)** verifying Section 4 table statistics against `output.txt` / `numbers.json` |
 | **Confirmation Bias** | Summarizes consensus narrative | Mandatory **Counter-Evidence** (`Tier 1/2` `agent-fetched` outside user-curated corpora) + **three gates** (source-verifier, Reviewer #2, QA) with `--gate-header` artifact binding (`REVIEWED-SHA256`, `REVIEWED-UTC`, literal `QUOTE:` lines, and closed-loop Reviewer #2 Disposition Table support); independence requires subagents — the inline fallback is self-review and is labelled as such |
 | **Deliverables & Figures** | Wall of text or bloated code dumps | Clean `report.md` + lightweight, print-ready **working-paper `report.html`** (zero JS, URL scheme allowlist) with **inline SVG charts** and temporal/fan-anchor schema validation; **byte-for-byte reproducible rendering; `--reproduce` re-runs the analysis and diffs artifacts** |
-| **Verification** | Unchecked prose | Zero-dependency (**Python ≥ 3.9, standard library only**) bilingual (EN/ES) **epistemic linter** (`--strict`, `--json`, `--reproduce`, `--diff`, `--gate-hash`, `--gate-header`); **25/25** known violations caught in `tests/mutation_report.py` |
+| **Verification** | Unchecked prose | Zero-dependency (**Python ≥ 3.9, standard library only**) bilingual (EN/ES) **epistemic linter** (`--strict`, `--json`, `--reproduce`, `--diff`, `--gate-hash`, `--gate-header`); **34/34** known violations caught in `tests/mutation_report.py` |
 
 **Bring your own data (optional, recommended for Level 2+).** Before searching, Heurisma tells you exactly which series/period/granularity would change the answer and invites you to drop them into `datos/` (or documents into `inbox/sources/`). Ingestion is hash-registered and offline-rehearsable (`local_data.py intake`). A corpus you curated yourself is never treated as sufficient: independent counter-evidence is still fetched, and claims resting only on it are capped and labelled for selection bias.
 
@@ -101,7 +101,7 @@ cp -r heurisma/skills/heurisma ~/.claude/skills/heurisma
 cp heurisma/agents/*.md ~/.claude/agents/
 ```
 
-Or download `heurisma-skill-v0.8.0.zip` from the [latest release](https://github.com/777aeterna/heurisma/releases/latest): it holds `heurisma/` (the skill) and `claude-agents/` (the subagent definitions).
+Or download `heurisma-skill-v0.8.1.zip` from the [latest release](https://github.com/777aeterna/heurisma/releases/latest): it holds `heurisma/` (the skill) and `claude-agents/` (the subagent definitions).
 
 ---
 
@@ -133,7 +133,7 @@ python3 -B skills/heurisma/scripts/validate_report.py examples/level2-study/repo
 
 ## Verification & Quality Assurance
 
-- **333/333 unit tests passing** (`python3 -B -m unittest discover -s tests`); **validator detection rate: `25/25` known violations** (`python3 -B tests/mutation_report.py --min-rate 1.0`, measuring real rule-specific detection even when gates are restamped after tampering).
+- **391/391 unit tests passing** (`python3 -B -m unittest discover -s tests`); **validator detection rate: `34/34` known violations** (`python3 -B tests/mutation_report.py --min-rate 1.0`, measuring real rule-specific detection even when gates are restamped after tampering).
 - **Three gates with artifact-bound contracts:** portable prompts in [`skills/heurisma/references/agents/`](skills/heurisma/references/agents) and Claude Code definitions in [`agents/`](agents) (`heurisma-reviewer`, `heurisma-source-verifier`, `heurisma-qa`). Independence requires subagents — when a runtime has no subagent tool, the inline fallback is recorded as `MODE: self-review`, flagged by the validator, and labelled as self-review in Section 3 and the rendered HTML.
 - **Cold-start subagent tests of the skill text:** behavioral rules are added only after a baseline failure is observed. For example, own code registered as Tier 1 fell from 3/3 to 0/3, and reusing an inherited limitation fell from the audited failure to 0/3; conversely, user-curated corpus selection bias did not fail in 6 cold-start trials (0/6), so it is enforced deterministically in `validate_report.py` without bloating `SKILL.md`. A preregistered multi-model rubric lives in [`evals/rubric.md`](evals/rubric.md).
 - **Security & threat model:** see [`SECURITY.md`](SECURITY.md).

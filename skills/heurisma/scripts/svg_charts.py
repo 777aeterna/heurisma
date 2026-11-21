@@ -705,6 +705,24 @@ def _spread_is_negligible(vals: list[float]) -> bool:
     return len(vals) >= 2 and biggest > 0 and (max(vals) - min(vals)) < 0.01 * biggest
 
 
+def _fan_value_at(points: Any, x: str) -> float | None:
+    """y of the point whose x equals ``x`` in a fan quantile series, else None."""
+    for pt in points if isinstance(points, list) else []:
+        if isinstance(pt, (list, tuple)) and len(pt) >= 2 and str(pt[0]).strip() == x:
+            return _to_float(pt[1])
+    return None
+
+
+def _fan_value_after(points: Any, x: str) -> float | None:
+    """y of the point that follows the one at ``x`` in a fan quantile series, else None."""
+    pts = points if isinstance(points, list) else []
+    for i, pt in enumerate(pts):
+        if isinstance(pt, (list, tuple)) and len(pt) >= 2 and str(pt[0]).strip() == x:
+            nxt = pts[i + 1] if i + 1 < len(pts) else None
+            return _to_float(nxt[1]) if isinstance(nxt, (list, tuple)) and len(nxt) >= 2 else None
+    return None
+
+
 def chart_warnings(chart: dict[str, Any], lang: str = "en") -> list[str]:
     """Design warnings for a chart dict (the validator surfaces them): near-identical bars (G2), a fan chart
     whose "last data" marker has no date to sit on (C6), or a fan chart whose quantiles diverge at observed_until."""
@@ -737,6 +755,26 @@ def chart_warnings(chart: dict[str, Any], lang: str = "en") -> list[str]:
                     f"Chart '{chart.get('id', '?')}': fan chart quantiles diverge at observed_until anchor "
                     f"'{obs_until}' ({min(anchor_vals):g} to {max(anchor_vals):g}); anchor all quantiles to the "
                     f"last observed value."
+                )
+            quantiles_d = chart.get("quantiles") or {}
+            observed_p50 = _fan_value_at(quantiles_d.get("p50"), obs_until)
+            first_p10 = _fan_value_after(quantiles_d.get("p10"), obs_until)
+            if observed_p50 is not None and first_p10 is not None and first_p10 > observed_p50 + 1e-9:
+                warns.append(
+                    f"Chart '{chart.get('id', '?')}': fan chart first projected p10 ({first_p10:g}) is above the last "
+                    f"observed value ({observed_p50:g}), so no quantile allows a decline or stagnation; widen the lower "
+                    f"tail or state in the caption why a decline is excluded."
+                )
+        if re.search(r"calibrad|calibrat", f"{chart.get('title') or ''} {chart.get('caption') or ''}", re.IGNORECASE):
+            cal = chart.get("calibration")
+            if not (
+                isinstance(cal, dict)
+                and all(isinstance(cal.get(k), str) and cal[k].strip() for k in ("method", "source_id"))
+            ):
+                warns.append(
+                    f"Chart '{chart.get('id', '?')}': fan chart is described as calibrated but has no calibration block; "
+                    f"add \"calibration\": {{\"method\": ..., \"source_id\": ...}} naming how the quantiles were "
+                    f"calibrated, or drop the word (parametric scenario bands are not calibrated)."
                 )
         return warns
     if ctype != "bar":
@@ -1003,7 +1041,7 @@ def _wrap_svg(chart: dict[str, Any], width: int, height: int, elements: list[str
 CHART_TYPES = ("line", "scatter", "bar", "fan")
 CHART_KEYS = (
     "id", "type", "title", "caption", "source", "x", "y", "series", "groups", "bands", "annotations",
-    "reference_lines", "quantiles", "highlight", "diff", "points", "x_label", "y_label",
+    "reference_lines", "quantiles", "highlight", "diff", "points", "x_label", "y_label", "calibration",
 )
 X_KEYS = ("type", "label", "format", "min", "max", "last_label", "observed_until")
 Y_KEYS = ("label", "format", "scale", "baseline")
@@ -1048,6 +1086,8 @@ def validate_charts_schema(chart: dict[str, Any], as_of_date: str | None = None)
             close = [KEY_ALIASES[key]] if key in KEY_ALIASES else difflib.get_close_matches(key, CHART_KEYS, n=1, cutoff=0.5)
             hint = f" (did you mean '{close[0]}'?)" if close else ""
             add(f"unknown key '{key}'{hint}.")
+    if "calibration" in chart and not isinstance(chart["calibration"], dict):
+        add("'calibration' must be an object with 'method' and 'source_id'.")
     x_cfg, y_cfg = chart.get("x") or {}, chart.get("y") or {}
     for name, cfg, allowed in (("x", x_cfg, X_KEYS), ("y", y_cfg, Y_KEYS)):
         if not isinstance(cfg, dict):

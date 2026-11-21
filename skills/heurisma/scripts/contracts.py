@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-__version__ = "0.8.0"
+__version__ = "0.8.1"
 
 # Epistemic confidence tags (canonical English + localized Spanish)
 TAG_TO_CANONICAL: dict[str, str] = {
@@ -27,6 +27,10 @@ VALID_KINDS: tuple[str, ...] = ("data", "literature", "press", "own-computation"
 WEAK_KINDS: tuple[str, ...] = ("press", "blog", "own-computation")
 DOCUMENT_KINDS: tuple[str, ...] = ("literature", "press")
 VALID_SELECTIONS: tuple[str, ...] = ("user-curated", "agent-fetched", "third-party")
+# The tier column is canonical: every tier rule matches "Tier N", so "3" or "T3" would bypass them.
+VALID_TIERS: tuple[str, ...] = ("Tier 1", "Tier 2", "Tier 3")
+# A title carrying one of these says the document itself was not read (only a web search summary): no Tier 1 on it.
+WEB_SUMMARY_LABELS: tuple[str, ...] = ("web summary", "resumen web")
 
 SOURCE_COLS: tuple[str, ...] = (
     "claim_id",

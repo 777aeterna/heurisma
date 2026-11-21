@@ -3,7 +3,7 @@
 `python3 -B <skill-dir>/scripts/validate_report.py report.md --level 2 --html report.html --json` prints one JSON object:
 
 ```json
-{"version": "0.8.0", "passed": false, "strict": false,
+{"version": "0.8.1", "passed": false, "strict": false,
  "errors":   [{"severity": "error",   "code": "P0-SHA", "file": "appendix/sources.csv", "line": null, "message": "…"}],
  "warnings": [{"severity": "warning", "code": "P1-ORPHAN", "file": "appendix/data/", "line": null, "message": "…"}]}
 ```
@@ -19,20 +19,21 @@ Codes are stable: a fix script can act on `code` without parsing the English mes
 | `STRUCT-TAGS` | error | No canonical calibration tag anywhere in the report. |
 | `STRUCT-HYPOTHESES` | error | Section 2 lacks explicit H₀ and H₁. |
 | `MATRIX` | error | The Claim-Evidence Matrix is missing, too small, too narrow, or a row has no tag. |
-| `P0-STRONG` | error | A `[Strong]` row rests only on weak sources (Tier 3, press, own computation, abstract-only), looked up in `sources.csv`. |
+| `P0-STRONG` | error | A `[Strong]` row rests only on weak sources (Tier 3, press, own computation, abstract-only), looked up in `sources.csv`, or on local tables whose cells inherit Tier 3 through `primary_source_id` in `appendix/data/sources_metadata.csv`. |
 | `P0-STRONG-CITE` | error | A `[Strong]` row has no `[@id]` citation. |
 | `P0-SHA` | error | A local file's recomputed SHA-256 differs from the one registered, or none is registered, or the file is missing. |
 | `P1-ORPHAN` | warning | A file in `appendix/data/` is not registered by exact path or hash. |
 | `P1-KIND` | error | `sources.csv` has no `kind` column, or a row has a blank or unknown kind. |
 | `P1-VERDICT` | error | The Calibrated Verdict has more than 3 sentences or more than 5 numbers. |
 | `P1-VERDICT-NUM` | warning / error | Verdict numbers absent from `output.txt`, or figures retyped instead of `{{num:key}}`. |
-| `P1-UNTRACED-NUM` | warning / error | Statistical number in a Section 4 table cell is absent from both `output.txt` and `numbers.json` (numeric closure violation). |
+| `P1-UNTRACED-NUM` | warning / error | Statistical number in a Section 4 table cell, or in a chart `title`/`caption`/`source` in `charts.json`, is absent from both `output.txt` and `numbers.json` (numeric closure violation). A bare `1,00×` / `1.00x` ratio baseline is exempt. |
 | `P1-NUM-COVERAGE` | warning | Most Section 4 figures from `output.txt` are typed by hand. |
 | `P1-ASOF` | error | The As-Of Date is in the future or earlier than the run start. |
 | `P1-RUN` | warning / error | A failed attempt is inherited from an earlier run, `attempted_utc` or `run.json` is missing, or the run start is unknown. |
-| `P2-SELECTION` | warning / error | Pre-intake provenance: a user-curated row without `retrieved_utc`, an unknown retrieval date above Tier 3, a local `user-curated` file declared Tier 1, an `intake.md` `user-curated` hash relabelled `agent-fetched`, an `agent-fetched` row with `retrieved_utc < run_started_utc` or lacking `download_log.csv`/`data_attempts.csv` proof, no Tier 1/2 (`data`/`literature`) agent-fetched counter-evidence outside the user's corpus, a claim resting only on user-curated documents (capped at `[Moderate]`, labelled "Selection bias: user-curated corpus"), or an unregistered file in `inbox/`. |
-| `P2-PREREG` | warning / error | `appendix/preregistration.json` is missing at Level 3, was edited after sealing, was sealed post-hoc (`post_hoc=true` or `sealed_utc < run_started_utc`), contains exact computed figures from `numbers.json` in `H0`/`H1` (HARKing), or differs from Section 2 hypotheses. |
+| `P2-SELECTION` | warning / error | Pre-intake provenance: a user-curated row without `retrieved_utc`, an unknown retrieval date above Tier 3, a local `user-curated` file declared Tier 1 or Tier 2, an `intake.md` `user-curated` hash relabelled `agent-fetched`, an `agent-fetched` row with `retrieved_utc < run_started_utc`, an `agent-fetched` `data` row lacking `download_log.csv`/`data_attempts.csv` proof, an `agent-fetched` `literature` row with no `used` attempt stamped after the run start that names its `claim_id` or URL, an `agent-fetched` Tier 1 `literature` row with no downloaded document and no `(web summary)` label (warning), no Tier 1/2 (`data`/`literature`) agent-fetched counter-evidence outside the user's corpus, a claim resting only on user-curated documents (capped at `[Moderate]`, labelled "Selection bias: user-curated corpus"), or an unregistered file in `inbox/`. |
+| `P2-PREREG` | warning / error | `appendix/preregistration.json` is missing at Level 3, was edited after sealing, was sealed post-hoc (`post_hoc=true` or `sealed_utc < run_started_utc`), contains exact computed figures from `numbers.json` in `H0`/`H1` (HARKing), or differs from Section 2 hypotheses; a file in `appendix/data/` that is absent from the sealed `known_artifacts`, `download_log.csv` and `intake.md` (added after sealing; warning). |
 | `P2-DOMAIN` | warning | A declared tier or kind contradicts the source's domain (e.g. Tier 1 on a newspaper). |
+| `SRC-TIER` | error | A `sources.csv` row's tier is not exactly `Tier 1`, `Tier 2` or `Tier 3` (a bare `3` or `T3` would slip past every tier rule). |
 | `SRC-OWN-TIER` | error | A row with `kind = own-computation` is declared Tier 1. |
 | `SRC-FULLTEXT` | warning | A source titled "full text" has a failed attempt logged for the same URL. |
 | `CITE-NONE` | error | Section 4 has no `[@id]` citations. |
@@ -42,14 +43,14 @@ Codes are stable: a fix script can act on `code` without parsing the English mes
 | `ATT-COLUMNS` | error | `data_attempts.csv` is unreadable or lacks canonical columns. |
 | `FIG-JSON` | error | `charts.json` is missing (when figures are placed), invalid JSON, or not strict JSON (NaN, Infinity). |
 | `FIG-SCHEMA` | error | A chart fails the schema (typo'd key, string or non-finite number, length mismatch, invalid date, observed `line` point after the report `As-Of Date`, unordered quantiles). |
-| `FIG-DESIGN` | warning | A design problem: near-identical bars, a fan chart's `last_label` without `observed_until`, or fan quantiles diverging at the `observed_until` anchor. |
+| `FIG-DESIGN` | warning | A design problem: near-identical bars, a fan chart's `last_label` without `observed_until`, fan quantiles diverging at the `observed_until` anchor, a fan called calibrated without a `calibration` block (`method`, `source_id`), or a first projected `p10` above the last observed value. |
 | `FIG-MARKER` | error | `{{fig:id}}` markers missing or pointing to an unknown chart. |
 | `FIG-UNPLACED` | warning | A chart in `charts.json` is not placed with a marker. |
 | `W2-NUM` | error | An unresolved `{{num:key}}` marker, or invalid `numbers.json`. |
 | `GATE-MISSING` | warning / error | A gate file is missing, empty, or under 400 characters. |
 | `GATE-MARKERS` | warning / error | A gate file lacks the markers its prompt fixes. |
 | `GATE-QA` | warning / error | `qa.md` has no `QA: PASS` and the report does not accept the FAIL. |
-| `GATE-BINDING` | warning / error | A gate's header is incomplete, its hash is stale (for `reviewer.md`, exempted once Section 5 has a closed Disposition Table), a quote does not match, or it is a self-review not declared in Section 3. |
+| `GATE-BINDING` | warning / error | A gate's header is incomplete, its hash is stale (for `reviewer.md`, exempted once Section 5 has a closed Disposition Table), a quote does not match, it is a self-review not declared in Section 3, or `reviewer.md` records an `ANALYSIS-SHA256` that `appendix/analysis.py` no longer matches and Section 5 has no *Post-review changes* subsection (checked whenever `reviewer.md` exists). |
 | `GATE-PRIVACY` | warning / error | A gate file quotes a home-directory path or an unquoted literal marker outside `QUOTE:` lines. |
 | `PRIV-HOME` | error | `report.md` or `report.html` contains a home-directory path. |
 | `HYG-FILES` | warning | Bytecode artifacts or 0-byte files in `appendix/`. |

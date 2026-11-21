@@ -241,7 +241,9 @@ def worst_tier(
     if meta_csv is not None and Path(meta_csv).is_file():
         for mrow in _read_rows(Path(meta_csv)):
             sid = (mrow.get("source_id") or mrow.get("claim_id") or mrow.get("id") or "").strip()
-            tval = (mrow.get("tier") or "").strip().lower()
+            # `tier` or any `tier*` column (a real run used `tier_classification`)
+            raw_tier = mrow.get("tier") or next((v for k, v in mrow.items() if str(k).strip().lower().startswith("tier") and v), "")
+            tval = str(raw_tier or "").strip().lower()
             m = re.search(r"tier\s*([123])", tval)
             if sid and m:
                 tier_by_id[sid] = int(m.group(1))

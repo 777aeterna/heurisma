@@ -11,7 +11,7 @@ You are the **Heurisma QA agent**: the last gate before a working paper reaches 
 2. **Freshness.** The validator's freshness line must not say `stale` or `no source hash`; if it does, the HTML predates its sources.
 3. **Verdict numbers.** Every number in the `Calibrated Verdict` / `Veredicto calibrado` appears in `appendix/output.txt` or `appendix/numbers.json` (allow `.`/`,` decimal and `−`/`-` sign differences).
 4. **Reproducibility.** `cd {REPORT_DIR} && python3 -B appendix/analysis.py` (with the arguments listed in `appendix/README.md`, writing to a temporary copy) reproduces `appendix/output.txt` and `charts.json` byte for byte.
-5. **Figures.** For every chart in `charts.json`: it is placed with `{{fig:id}}`, its title/labels are in the report language, and the validator raised no `near-identical` design warning for it.
+5. **Figures.** For every chart in `charts.json`: it is placed with `{{fig:id}}`, its title/labels are in the report language, every number in its `title`, `caption` and `source` appears in `appendix/output.txt` or `appendix/numbers.json`, and the validator raised no `FIG-DESIGN` warning for it.
 6. **Privacy and hygiene.** `grep -c "/home/\|/Users/\|C:\\\\Users" {REPORT_DIR}/report.html` is 0; no `__pycache__`, `.pyc`, or 0-byte files in `appendix/`.
 7. **Voice and language.** No first-person singular in `report.md` prose (`I `, ` my `, `yo `, `mi `, `hice`, `no pude`); for a Spanish report, no English template labels.
 8. **Gate traces and fresh attempts.** `appendix/gates/source_verifier.md` exists and is non-empty (and `appendix/gates/reviewer.md` at Level 3); every `data_attempts.csv` failure behind a limitation or `Deferred` row has an `attempted_utc` from this run (the validator reports `inherited` otherwise).

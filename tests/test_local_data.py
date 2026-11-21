@@ -473,14 +473,15 @@ class TestLocalData(unittest.TestCase):
                 appendix / "data_attempts.csv", "BCRA API", "offline", target="A3500", endpoint="GET https://api.example.org"
             )
             row = local_data.import_local(
-                root / "datos" / "a3500.csv", appendix / "data", appendix / "sources.csv", tier="Tier 2", title="A3500 local",
-                retrieved_utc="2026-11-01T00:00:00Z",  # a user file above Tier 3 needs its retrieval date (v0.7.0)
+                root / "datos" / "a3500.csv", appendix / "data", appendix / "sources.csv", tier="Tier 3", title="A3500 local",
+                retrieved_utc="2026-11-01T00:00:00Z",  # a local user-curated file stays Tier 3 (v0.8.1: never Tier 1/2)
             )
             marker = tvr._seed_charts(root)
             report = tvr._with_fig(
-                tvr.VALID_REPORT.replace("[@C1]", f"[@{row['claim_id']}]").replace(
-                    "Pure PHA films mineralize", f"Pure PHA films mineralize [@{row['claim_id']}]"
-                ),
+                tvr.VALID_REPORT.replace("[@C1]", f"[@{row['claim_id']}]")
+                .replace("Pure PHA films mineralize", f"Pure PHA films mineralize [@{row['claim_id']}]")
+                # a claim resting only on a local user-curated file (Tier 3) cannot be [Strong]
+                .replace("(Tier 1) | `[Strong]`", "(Tier 3) | `[Preliminary]`"),
                 marker,
             )
             (root / "report.md").write_text(report, encoding="utf-8")
