@@ -7,6 +7,7 @@ import argparse
 import csv
 import json
 import re
+import unicodedata
 import sys
 from pathlib import Path
 
@@ -186,9 +187,57 @@ def _find_charts_json(report_dir: Path, appendix_dir: Path, explicit: Path | Non
 
 HARDCODED_NUM_RE = re.compile(r"(?<![\w.@#{:-])(\d+[.,]\d+|\d{3,})(?![\w{])")
 MIN_TYPED_NUMBERS = 5  # below this many retyped numbers the coverage warning stays quiet
-MIN_MARKER_SHARE = 0.30
+MIN_MARKER_SHARE = 0.60
+MIN_TYPED_SUMMARY = 3  # C5: verdict + Section 1 must not retype 3+ output figures without any placeholder
+SUMMARY_NUM_RE = re.compile(r"(?<![\w.@#{:-])(\d+[.,]\d+|\d{2,})(?![\w{])")
+SECTION_REF_RE = re.compile(r"(?:§\s*|\b(?:Secci[oó]n|Section|Sec\.)\s+)\d+(?:\.\d+)*", re.IGNORECASE)
+LIMITATION_FALLBACKS: tuple[str, ...] = ("limitation", "limitación", "limitacion", "none", "ninguno", "n/a")
+HOME_PATH_RE = re.compile(r"/home/[^/\s]+/|/Users/[^/\s]+|[A-Za-z]:\\Users\\", re.IGNORECASE)
+GATE_MIN_CHARS = 400
+_REVIEWER_CATEGORIES = (
+    "Over-calibrated claims",
+    "Unattempted data shortcuts",
+    "Missing counter-evidence and controls",
+    "Interdisciplinary and forecasting flaws",
+    "Decisions inside the noise",
+    "Provenance contradictions",
+)
+# C1: the minimum shape each gate answer must have; mirrors the Output section of references/agents/*.md
+GATE_MARKERS: dict[str, list[tuple[str, str]]] = {
+    "source_verifier": [(f"check {n}", rf"^\s*{n}[.)]\s+(?:PASS|FAIL)\b") for n in range(1, 8)]
+    + [("SOURCE-VERIFIER: PASS|FAIL", r"^\s*SOURCE-VERIFIER:\s*(?:PASS|FAIL)\b")],
+    "reviewer": [(title, re.escape(title)) for title in _REVIEWER_CATEGORIES]
+    + [("MOST DAMAGING:", r"^\s*MOST DAMAGING:")],
+    "qa": [(f"check {n}", rf"^\s*{n}[.)]?\s+(?:PASS|FAIL)\b") for n in range(1, 9)]
+    + [("QA: PASS|FAIL", r"^\s*QA:\s*(?:PASS|FAIL)\b"), ("FAIL count: <n>", r"^\s*FAIL count:\s*\d+")],
+}
 GATE_FILES: tuple[str, ...] = ("source_verifier", "reviewer", "qa")
 DATE_RE = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
+
+
+_NAME_STOPWORDS = frozenset({"serie", "series", "datos", "data", "para", "from", "with", "sobre", "entre", "the"})
+
+
+def _name_tokens(text: str) -> set[str]:
+    folded = unicodedata.normalize("NFKD", text.lower()).encode("ascii", "ignore").decode()
+    return {w for w in re.findall(r"[a-z]{4,}", folded) if w not in _NAME_STOPWORDS}
+
+
+def _named_in_any(target: str, lines: list[str]) -> bool:
+    """True when one line mentions at least 2 (and at least half) of the target's significant words.
+
+    Reports paraphrase their data series ("Serie oficial del techo y piso" for "Serie diaria oficial del
+    techo/piso de la banda"), so an exact-substring test misses the very limitation it should catch.
+    """
+    want = _name_tokens(target)
+    if not want:
+        return False
+    for line in lines:
+        folded = unicodedata.normalize("NFKD", line.lower()).encode("ascii", "ignore").decode()
+        hits = sum(1 for w in want if w in folded)
+        if hits >= 2 and hits >= 0.5 * len(want):
+            return True
+    return False
 
 
 def _resolve_run_since(explicit: str | None, markdown_text: str) -> str:
@@ -514,11 +563,39 @@ def validate_report_full(
                         f"appendix/gates/{gate}.md is missing or empty; save the {gate.replace('_', '-')} gate output "
                         f"(or the manual checks that replaced it) there."
                     )
-                elif gate == "qa" and not re.search(r"^QA:\s*PASS\b", gtext, re.MULTILINE):
+                    continue
+                if len(gtext.strip()) < GATE_MIN_CHARS:
+                    gate_sink.append(
+                        f"appendix/gates/{gate}.md is under {GATE_MIN_CHARS} characters; save the gate's full answer, "
+                        f"not a placeholder."
+                    )
+                missing = [label for label, pattern in GATE_MARKERS[gate] if not re.search(pattern, gtext, re.MULTILINE | re.IGNORECASE)]
+                if missing:
+                    gate_sink.append(
+                        f"appendix/gates/{gate}.md is missing marker(s) its prompt requires: {', '.join(missing)} "
+                        f"(see references/agents/{gate.replace('_', '-')}.md, Output section)."
+                    )
+                if gate == "qa" and not re.search(r"^QA:\s*PASS\b", gtext, re.MULTILINE):
                     if "gates/qa.md" not in markdown_text:
                         gate_sink.append(
                             "appendix/gates/qa.md has no 'QA: PASS' line; fix the failed checks, or name each accepted "
                             "FAIL with its justification in the report (cite appendix/gates/qa.md in Section 7)."
+                        )
+
+            # C8: gate files are embedded in report.html, so they must not quote home paths or literal markers
+            if gates_dir.is_dir():
+                for gpath in sorted(gates_dir.glob("*.md")):
+                    gtext = gpath.read_text(encoding="utf-8", errors="replace")
+                    if HOME_PATH_RE.search(gtext):
+                        gate_sink_any = errors if level == 3 else warnings
+                        gate_sink_any.append(
+                            f"appendix/gates/{gpath.name} quotes a home-directory path; it is embedded in report.html, "
+                            f"so report counts instead (e.g. 'home-directory paths in report.html: 0')."
+                        )
+                    if re.search(r"\{\{(?:num|fig):", gtext):
+                        (errors if level == 3 else warnings).append(
+                            f"appendix/gates/{gpath.name} contains a literal {{{{num:…}}}}/{{{{fig:…}}}} marker; write "
+                            f"'number placeholder' or 'figure marker' instead."
                         )
 
             # P1: a limitation cannot rest on attempts inherited from an earlier run (needs attempted_utc column)
@@ -531,8 +608,20 @@ def validate_report_full(
                 except OSError:
                     att_cols, att_rows = [], []
                 since = _resolve_run_since(run_since, markdown_text)
-                if "attempted_utc" in att_cols and since:
+                inherit_sink = errors if level == 3 else warnings
+                if "attempted_utc" not in att_cols:
+                    inherit_sink.append(
+                        "appendix/data_attempts.csv has no attempted_utc column: every attempt is treated as inherited; "
+                        "add the column and re-run the rungs behind each limitation."
+                    )
+                elif not since:
+                    warnings.append("cannot determine run start; pass --run-since YYYY-MM-DD")
+                else:
                     ok_out = {"used", "ok", "success", "succeeded", "retrieved"}
+                    limits_text = _extract_section_slice(clean_text, section_positions, "Limitations & Open Questions")
+                    leaning_lines = [ln for ln in limits_text.splitlines() if ln.strip()] + [
+                        ln for ln in clean_text.splitlines() if re.search(r"\b(?:Deferred|Diferida)\b", ln, re.IGNORECASE)
+                    ]
                     fresh_targets: set[str] = set()
                     stale_targets: dict[str, str] = {}
                     for arow in att_rows:
@@ -543,16 +632,20 @@ def validate_report_full(
                         stamp = (arow.get("attempted_utc") or "").strip()[:10]
                         if stamp and stamp >= since:
                             fresh_targets.add(target)
-                        else:
+                            continue
+                        # C3: only failures that end in a limitation (no real fallback) or that the report leans on
+                        fallback = (arow.get("fallback_used") or "").strip().lower()
+                        ends_in_limitation = not fallback or fallback.startswith(LIMITATION_FALLBACKS)
+                        named = _named_in_any(target, leaning_lines)
+                        if ends_in_limitation or named:
                             stale_targets.setdefault(target, stamp or "no date")
                     for target, stamp in sorted(stale_targets.items()):
                         if target in fresh_targets:
                             continue
-                        msg = (
+                        inherit_sink.append(
                             f"Data attempt for '{target}' in appendix/data_attempts.csv is inherited from an earlier run "
                             f"({stamp} < run start {since}); re-run the rung in this session before relying on the limitation."
                         )
-                        (errors if level == 3 else warnings).append(msg)
 
             # V6: Hygiene warnings (__pycache__, .pyc, 0-byte files)
             pycache_found = False
@@ -583,16 +676,31 @@ def validate_report_full(
                             f"Calibrated Verdict number(s) not found literally in appendix/output.txt: {', '.join(missing_nums[:5])}."
                         )
 
-            # P3: figures that come from output.txt should come through {{num:key}} (numbers.json), not be retyped
+            # P3/C5: figures that come from output.txt should come through {{num:key}} (numbers.json), not be retyped
             if output_txt.is_file():
-                findings = _extract_section_slice(clean_text, section_positions, "Findings")
-                findings = re.sub(r"^#{1,6}\s.*$|\[@[^\]]+\]|\{\{[^}]+\}\}", "", findings, flags=re.MULTILINE)
                 out_txt = output_txt.read_text(encoding="utf-8", errors="replace")
-                typed = {
-                    t
-                    for t in HARDCODED_NUM_RE.findall(findings)
-                    if t in out_txt and not re.fullmatch(r"(?:19|20)\d\d", t)
-                }
+
+                def _typed_from_output(section_text: str, pattern: re.Pattern[str]) -> set[str]:
+                    body = re.sub(r"^#{1,6}\s.*$|\[@[^\]]+\]|\{\{[^}]+\}\}", "", section_text, flags=re.MULTILINE)
+                    body = SECTION_REF_RE.sub("", body)
+                    return {
+                        t
+                        for t in pattern.findall(body)
+                        if not re.fullmatch(r"(?:19|20)\d\d", t)
+                        and re.search(rf"(?<![\d.,]){re.escape(t)}(?!\d)", out_txt)
+                    }
+
+                summary = _extract_section_slice(clean_text, section_positions, "Executive Summary")
+                typed_summary = _typed_from_output(summary, SUMMARY_NUM_RE)
+                if len(typed_summary) >= MIN_TYPED_SUMMARY and not NUM_MARKER_RE.search(summary):
+                    (errors if level == 3 else warnings).append(
+                        f"Calibrated Verdict / Section 1 retypes {len(typed_summary)} figure(s) from appendix/output.txt "
+                        f"({', '.join(sorted(typed_summary)[:4])}) and uses no {{{{num:key}}}} placeholder; export them to "
+                        f"appendix/numbers.json and write {{{{num:key}}}}."
+                    )
+
+                findings = _extract_section_slice(clean_text, section_positions, "Findings")
+                typed = _typed_from_output(findings, HARDCODED_NUM_RE)
                 used = len(NUM_MARKER_RE.findall(markdown_text))
                 if len(typed) >= MIN_TYPED_NUMBERS and used / (used + len(typed)) < MIN_MARKER_SHARE:
                     warnings.append(

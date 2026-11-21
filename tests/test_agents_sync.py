@@ -34,5 +34,22 @@ class TestAgentsSync(unittest.TestCase):
             self.assertIn(f"appendix/gates/{trace}", text, msg=portable)
 
 
+class TestGateMarkersMatchPrompts(unittest.TestCase):
+    def test_validator_markers_are_named_in_the_prompts(self) -> None:
+        import sys
+
+        sys.path.insert(0, str(ROOT / "skills" / "heurisma" / "scripts"))
+        import validate_report
+
+        prompt_of = {"source_verifier": "source-verifier.md", "reviewer": "reviewer.md", "qa": "qa.md"}
+        for gate, markers in validate_report.GATE_MARKERS.items():
+            text = (PORTABLE / prompt_of[gate]).read_text(encoding="utf-8")
+            for label, _ in markers:
+                if label.startswith("check "):
+                    continue  # numbered check lines: the prompt defines the checks and the <#> line shape
+                key = label.split(":")[0] if ":" in label else label
+                self.assertIn(key, text, msg=f"{prompt_of[gate]} does not name validator marker {label!r}")
+
+
 if __name__ == "__main__":
     unittest.main()

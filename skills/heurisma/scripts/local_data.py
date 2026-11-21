@@ -6,9 +6,12 @@ Usage:
   python3 -B local_data.py preview <file> [--n 10] [--sheet NAME]
   python3 -B local_data.py register <file> --sources appendix/sources.csv --tier "Tier 1" --title "..." [--claim L1] [--as-of YYYY-MM-DD] [--lang en|es]
   python3 -B local_data.py import <file> --into appendix/data --sources appendix/sources.csv --tier "Tier 1" --title "..." [--lang en|es]
+  python3 -B local_data.py attempt --csv appendix/data_attempts.csv --target "..." --source "..." --query "..." --outcome "..." [--failure-reason "..."] [--fallback "..."]
 
-`import` copies the file into appendix/data/, registers the COPY (relative file:// URI + SHA-256) and logs the rung
-in appendix/data_attempts.csv in one step. Set HEURISMA_OFFLINE=1 to force the local-data rung (no network).
+`import` copies the file into appendix/data/, registers the COPY (project-relative path + SHA-256) and logs the rung
+in appendix/data_attempts.csv in one step. `register` stores a project-relative path for files inside the report folder
+and a file:/// URI only for files outside it. `attempt` logs any rung with a tool-stamped attempted_utc.
+Set HEURISMA_OFFLINE=1 to force the local-data rung (no network).
 
 Without explicit directories, inventory searches $HEURISMA_DATA_DIR, ./datos, ./data, and ./appendix/data.
 """
@@ -355,23 +358,34 @@ def next_local_id(sources_csv: str | Path) -> str:
     return f"L{max(used, default=0) + 1}"
 
 
+def append_attempt(
+    attempts_csv: str | Path,
+    target: str,
+    source: str,
+    query: str,
+    outcome: str,
+    failure_reason: str = "",
+    fallback: str = "",
+) -> dict[str, str]:
+    """Append one rung to data_attempts.csv with ``attempted_utc`` stamped by the tool, never typed by hand."""
+    row = {
+        "target_series": target,
+        "source_tried": source,
+        "query_or_endpoint": query,
+        "outcome": outcome,
+        "failure_reason": failure_reason,
+        "fallback_used": fallback,
+        "attempted_utc": utc_now(),
+    }
+    _append_row(Path(attempts_csv), ATTEMPT_COLS, row)
+    return row
+
+
 def log_offline_attempt(
     attempts_csv: str | Path, source: str, reason: str, target: str = "", endpoint: str = ""
 ) -> None:
     """Record a skipped online rung (HEURISMA_OFFLINE=1) in the canonical data_attempts.csv."""
-    _append_row(
-        Path(attempts_csv),
-        ATTEMPT_COLS,
-        {
-            "target_series": target,
-            "source_tried": source,
-            "query_or_endpoint": endpoint,
-            "outcome": "offline mode",
-            "failure_reason": reason,
-            "fallback_used": "",
-            "attempted_utc": utc_now(),
-        },
-    )
+    append_attempt(attempts_csv, target, source, endpoint, "offline mode", failure_reason=reason)
 
 
 def _find_registered(sources_csv: Path, url: str, sha: str) -> dict[str, str] | None:
@@ -457,18 +471,13 @@ def import_local(
         dest, sp, tier, title, claim_id=claim_id, data_as_of=data_as_of, lang=lang, relative_to=report_root
     )
     if not already:
-        _append_row(
+        append_attempt(
             sp.parent / "data_attempts.csv",
-            ATTEMPT_COLS,
-            {
-                "target_series": title,
-                "source_tried": f"{_LOCAL_LABEL.get(lang, _LOCAL_LABEL['en'])} ({src.name})",
-                "query_or_endpoint": rel_url,
-                "outcome": "used",
-                "failure_reason": "",
-                "fallback_used": f"local:{rel_url} sha256:{sha}",
-                "attempted_utc": utc_now(),
-            },
+            title,
+            f"{_LOCAL_LABEL.get(lang, _LOCAL_LABEL['en'])} ({src.name})",
+            rel_url,
+            "used",
+            fallback=f"local:{rel_url} sha256:{sha}",
         )
     return row
 
@@ -485,7 +494,10 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--n", type=int, default=10, help="Number of sample rows/lines to show.")
     b.add_argument("--sheet", default=None, help="Optional XLSX sheet name.")
 
-    c = sub.add_parser("register", help="Append a local file entry to sources.csv with file:// URI and sha256.")
+    c = sub.add_parser(
+        "register",
+        help="Append a local file to sources.csv (project-relative path + sha256; file:/// only outside the project).",
+    )
     c.add_argument("path", help="Path to local file.")
     c.add_argument("--sources", required=True, help="Path to appendix/sources.csv.")
     c.add_argument("--tier", default="Tier 3", help="Evidence tier (default: Tier 3).")
@@ -504,6 +516,15 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("--as-of", default="", help="Optional data_as_of date.")
     d.add_argument("--lang", choices=("en", "es"), default="en", help="Language of the registered title suffix.")
 
+    e = sub.add_parser("attempt", help="Log one cascade rung in data_attempts.csv with a tool-stamped attempted_utc.")
+    e.add_argument("--csv", default="appendix/data_attempts.csv", help="Path to appendix/data_attempts.csv.")
+    e.add_argument("--target", required=True, help="target_series (the series or document sought).")
+    e.add_argument("--source", required=True, help="source_tried (provider, mirror, or local inventory).")
+    e.add_argument("--query", required=True, help="query_or_endpoint (URL, variable id, keywords).")
+    e.add_argument("--outcome", required=True, help="outcome (e.g. 'HTTP 404', 'not found', 'used').")
+    e.add_argument("--failure-reason", default="", help="failure_reason (empty on success).")
+    e.add_argument("--fallback", default="", help="fallback_used (e.g. 'local:appendix/data/x.csv sha256:...').")
+
     args = ap.parse_args(argv)
     try:
         if args.cmd == "inventory":
@@ -515,7 +536,20 @@ def main(argv: list[str] | None = None) -> int:
         elif args.cmd == "preview":
             print(preview(args.path, args.n, args.sheet))
         elif args.cmd == "register":
-            print(register_local(args.path, args.sources, args.tier, args.title, args.claim, args.as_of, lang=args.lang))
+            report_root = Path(args.sources).resolve().parent.parent  # appendix/sources.csv -> report folder
+            print(
+                register_local(
+                    args.path, args.sources, args.tier, args.title, args.claim, args.as_of,
+                    lang=args.lang, relative_to=report_root,
+                )
+            )
+        elif args.cmd == "attempt":
+            print(
+                append_attempt(
+                    args.csv, args.target, args.source, args.query, args.outcome,
+                    failure_reason=args.failure_reason, fallback=args.fallback,
+                )
+            )
         else:
             print(
                 import_local(

@@ -1,6 +1,6 @@
-target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used
-"Site allocation protocol, baseline window, mentoring_hrs_wk definition",Local data inventory,local_data.py inventory data/,not found,"Only the CSV is supplied; no data dictionary or protocol",Local file kept at Tier 3; claims from it capped at [Preliminary]
-Individual-level engineer microdata,Online and local,Private organizational data; local_data.py inventory data/,not available,Only the data owner can supply it,"Site-level exact tests only; request listed in Section 7"
-Bloom Han & Liang (2024) full text,Publisher page,GET https://www.nature.com/articles/s41586-024-07500-2,HTTP 303,Redirects to a sign-in page,Open-access copy in Europe PMC (PMC11208135)
-Bloom Han & Liang (2024) full text,Europe PMC,GET https://www.ebi.ac.uk/europepmc/webservices/rest/PMC11208135/fullTextXML,used,,Full text read (Data availability statement not verified)
-Emanuel Harrington & Pallais (2023),NBER page,GET https://www.nber.org/papers/w31880,used,,Abstract read; full text not read
+target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used,attempted_utc
+"Site allocation protocol, baseline window, mentoring_hrs_wk definition",Local data inventory,local_data.py inventory data/,not found,Only the CSV is supplied; no data dictionary or protocol,Local file kept at Tier 3; claims from it capped at [Preliminary],2026-11-20
+Individual-level engineer microdata,Online and local,Private organizational data; local_data.py inventory data/,not available,Only the data owner can supply it,Site-level exact tests only; request listed in Section 7,2026-11-20
+Bloom Han & Liang (2024) full text,Publisher page,GET https://www.nature.com/articles/s41586-024-07500-2,HTTP 303,Redirects to a sign-in page,Open-access copy in Europe PMC (PMC11208135),2026-11-20
+Bloom Han & Liang (2024) full text,Europe PMC,GET https://www.ebi.ac.uk/europepmc/webservices/rest/PMC11208135/fullTextXML,used,,Full text read (Data availability statement not verified),2026-11-20
+Emanuel Harrington & Pallais (2023),NBER page,GET https://www.nber.org/papers/w31880,used,,Abstract read; full text not read,2026-11-20

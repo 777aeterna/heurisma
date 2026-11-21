@@ -154,7 +154,7 @@ class TestSvgCharts(unittest.TestCase):
         m = re.search(r'<rect[^>]*class="ref-label-bg"[^>]*fill="#ffffff"[^>]*fill-opacity="0\.\d+"[^>]*/>\s*<text[^>]*>Media 1997-2026</text>', svg)
         self.assertIsNotNone(m, msg=svg[-800:])
 
-    def test_last_data_marker_when_series_ends_before_axis_end(self) -> None:
+    def test_last_data_marker_on_line_chart(self) -> None:
         chart = {
             "id": "last_data",
             "type": "line",
@@ -168,16 +168,46 @@ class TestSvgCharts(unittest.TestCase):
         es = svg_charts.render_chart_svg(chart, lang="es")
         self.assertIn("Último dato: 2026-11", es)
         self.assertIn('data-last-data="x"', es)
-        en = svg_charts.render_chart_svg(chart, lang="en")
-        self.assertIn("Last data: 2026-11", en)
-        chart["x"]["last_label"] = "Nov 13, 2026"
-        self.assertIn("Last data: Nov 13, 2026", svg_charts.render_chart_svg(chart))
-        # off by default, and silent when the series reaches the end of the axis
+        self.assertIn("Last data: 2026-11", svg_charts.render_chart_svg(chart, lang="en"))
+        # a date string positions the marker at that date
+        chart["x"]["last_label"] = "2026-06-15"
+        self.assertIn("Last data: 2026-06-15", svg_charts.render_chart_svg(chart))
+        # off by default
         chart["x"].pop("last_label")
         self.assertNotIn("data-last-data", svg_charts.render_chart_svg(chart))
+        # C6: drawn whenever it falls inside the axis, even when the observed series reaches the end of it
         chart["x"]["last_label"] = True
         chart.pop("bands")
+        self.assertIn("data-last-data", svg_charts.render_chart_svg(chart))
+        # outside the axis: not drawn
+        chart["x"]["last_label"] = "2030-01-01"
         self.assertNotIn("data-last-data", svg_charts.render_chart_svg(chart))
+
+    def _fan(self, x: dict) -> dict:
+        q = {
+            "p10": [["2026-11-13", 1450], ["2027-12-31", 1500]],
+            "p25": [["2026-11-13", 1450], ["2027-12-31", 1700]],
+            "p50": [["2026-11-13", 1450], ["2027-12-31", 1900]],
+            "p75": [["2026-11-13", 1450], ["2027-12-31", 2100]],
+            "p90": [["2026-11-13", 1450], ["2027-12-31", 2500]],
+        }
+        return {"id": "proyeccion_fan", "type": "fan", "title": "Proyección", "x": x, "y": {"label": "ARS/USD"},
+                "quantiles": q}
+
+    def test_fan_last_label_needs_observed_until(self) -> None:
+        fan = self._fan({"type": "date", "last_label": True, "observed_until": "2026-11-13"})
+        svg = svg_charts.render_chart_svg(fan, lang="es")
+        self.assertIn('data-last-data="x"', svg)
+        self.assertIn("Último dato: 2026-11-13", svg)
+        # the observed date sits at the left edge of a fan: the label must open to the right, inside the plot
+        self.assertRegex(svg, r'<text[^>]*text-anchor="start"[^>]*>Último dato: 2026-11-13</text>')
+        self.assertEqual(svg_charts.chart_warnings(fan), [])
+        bare = self._fan({"type": "date", "last_label": True})
+        self.assertNotIn("data-last-data", svg_charts.render_chart_svg(bare))
+        self.assertTrue(any("fan chart has last_label but no observed_until" in w for w in svg_charts.chart_warnings(bare)))
+        dated = self._fan({"type": "date", "last_label": "2026-11-13"})
+        self.assertIn("Last data: 2026-11-13", svg_charts.render_chart_svg(dated))
+        self.assertEqual(svg_charts.chart_warnings(dated), [])
 
     def test_scatter_uses_nice_x_ticks_zero_line_and_highlight_point(self) -> None:
         chart = {

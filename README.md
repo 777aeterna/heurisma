@@ -10,7 +10,7 @@
   <a href="https://github.com/777aeterna/heurisma/actions/workflows/validate-skill.yml">
     <img src="https://github.com/777aeterna/heurisma/actions/workflows/validate-skill.yml/badge.svg" alt="CI Validation" />
   </a>
-  <img src="https://img.shields.io/badge/Version-v0.6.0-0072B2?style=flat-square" alt="Version v0.6.0" />
+  <img src="https://img.shields.io/badge/Version-v0.6.1-0072B2?style=flat-square" alt="Version v0.6.1" />
   <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=flat-square" alt="License: MIT" />
   <img src="https://img.shields.io/badge/Agent_Skills-Spec_Compliant-22D3EE?style=flat-square" alt="Agent Skills Spec" />
   <img src="https://img.shields.io/badge/Cross--Runtime-Antigravity_%7C_Claude_%7C_Codex_%7C_Gemini-0F172A?style=flat-square" alt="Cross-Runtime" />
@@ -25,7 +25,7 @@ Conventional **Deep Research** tools are primarily *retrieval and summarization 
 
 **Heurisma** (from Greek *heuriskein*, "to discover") forces an AI agent to **think and publish like a scientist**:
 
-| Dimension | Conventional Deep Research | Heurisma (`v0.6.0`) |
+| Dimension | Conventional Deep Research | Heurisma (`v0.6.1`) |
 | :--- | :--- | :--- |
 | **Before Searching** | Launches queries immediately | **Pre-Search Gate:** classifies scientific branch(es), `As-Of Date`, evidence standards, and depth level (`Level 0–3`) first |
 | **Hypotheses & Forecasts** | Implicit narrative confirmation | Explicit **$H_0$ / $H_1$ falsifiable hypotheses** + multi-scenario forecasting (*identities ≠ forecasts*) |
@@ -93,7 +93,7 @@ cp -r heurisma/skills/heurisma ~/.claude/skills/heurisma
 cp heurisma/agents/*.md ~/.claude/agents/
 ```
 
-Or download `heurisma-skill-v0.6.0.zip` from the [latest release](https://github.com/777aeterna/heurisma/releases/latest): it holds `heurisma/` (the skill) and `claude-agents/` (the subagent definitions).
+Or download `heurisma-skill-v0.6.1.zip` from the [latest release](https://github.com/777aeterna/heurisma/releases/latest): it holds `heurisma/` (the skill) and `claude-agents/` (the subagent definitions).
 
 ---
 
@@ -120,7 +120,7 @@ python3 -B skills/heurisma/scripts/validate_report.py examples/level2-study/repo
 
 ## Verification & Quality Assurance
 
-- **113/113 unit tests passing** across [`tests/test_local_data.py`](tests/test_local_data.py), [`tests/test_svg_charts.py`](tests/test_svg_charts.py), [`tests/test_render_report.py`](tests/test_render_report.py), [`tests/test_validate_report.py`](tests/test_validate_report.py), and [`tests/test_agents_sync.py`](tests/test_agents_sync.py).
+- **132/132 unit tests passing** across [`tests/test_local_data.py`](tests/test_local_data.py), [`tests/test_svg_charts.py`](tests/test_svg_charts.py), [`tests/test_render_report.py`](tests/test_render_report.py), [`tests/test_validate_report.py`](tests/test_validate_report.py), and [`tests/test_agents_sync.py`](tests/test_agents_sync.py).
 - **Subagents (optional):** portable prompts in [`skills/heurisma/references/agents/`](skills/heurisma/references/agents) and Claude Code definitions in [`agents/`](agents) (copy them to `~/.claude/agents/`): `heurisma-reviewer` (Opus), `heurisma-source-verifier` and `heurisma-qa` (Sonnet). The skill falls back to running the same checks inline when your runtime has no subagent tool. Either way, each gate's answer is saved to `appendix/gates/{source_verifier,reviewer,qa}.md` and checked by the validator.
 - **Cold-start subagent tests of the skill text:** each new rule is written only after its baseline failure is observed. Examples: own code registered as Tier 1 went from 3/3 to 0/3, and reusing an inherited "no such series" limitation went from the audited failure to 0/3.
 - **Skill TDD evals:** 4/4 RED baseline failures ([`evals/baselines/baseline-report.md`](evals/baselines/baseline-report.md)) → 6/6 GREEN passes ([`evals/results/green-eval-report.md`](evals/results/green-eval-report.md)), hardened further through two full external Claude audits (`v0.1 → v0.2 → v0.3`).

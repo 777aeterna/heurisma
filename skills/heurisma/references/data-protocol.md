@@ -50,7 +50,13 @@ Do not rely on undocumented manual `curl` commands that cannot be re-run. Create
    Multilateral REER,Central Bank XLS archive,GET /publicaciones/itcrm.xlsx,HTTP 403,WAF blocks default urllib User-Agent; retried with custom UA,Tier 1 XLSX retrieved on retry,2026-11-20T14:02:40Z
    Alternative CPI 2007–2015,Provincial statistics offices + local inventory,web search + local_data.py inventory,not found,No provincial series online; no local file matched,limitation (tag capped at [Preliminary]),2026-11-20T14:05:03Z
    ```
-   The first six columns are required; `attempted_utc` (ISO 8601 UTC) is required for every row this run writes — the template's `log_attempt` and `local_data.py import` fill it.
+   The first six columns are required; `attempted_utc` (ISO 8601 UTC) is required for every row this run writes. **Never type a row or its date by hand:** the template's `log_attempt`, `local_data.py import`, and `local_data.py attempt` (for web searches, catalogue browsing, or a local inventory done outside `fetch_data.py`) stamp it with the real UTC time:
+   ```bash
+   python3 -B <skill-dir>/scripts/local_data.py attempt --csv appendix/data_attempts.csv --target "Exchange-rate band (daily)" \
+       --source "BCRA API v4 catalogue (all pages)" --query "keywords: banda; techo; piso; band; ceiling; floor" \
+       --outcome "not found" --failure-reason "no matching variable" --fallback "limitation"
+   ```
+   A file without the `attempted_utc` column is treated as entirely inherited (error at Level 3, warning at Level 2), and only failures that end in a limitation (empty `fallback_used` or `limitation …`) or that Section 7 / a `Deferred` row leans on are checked.
    **Gates (`validate_report.py`):** `--level 2+` fails if `data_attempts.csv` exists without the canonical columns; `--level 3` fails if a Reviewer #2 critique is `Deferred` / `Diferida` without `data_attempts.csv` or a Section 3 Data Attempts table, and if a failure is only backed by inherited rows (see above).
 
    With `HEURISMA_OFFLINE=1`, an online rung is logged as `outcome = offline mode` and the rescuing local row reads `fallback_used = local:appendix/data/a3500.csv sha256:3f9a1c0b7d2e`.

@@ -297,6 +297,67 @@ class TestLocalData(unittest.TestCase):
             rows = self._read_csv_rows(att)
             self.assertRegex(rows[0]["attempted_utc"], r"^\d{4}-\d{2}-\d{2}T")
 
+    def test_attempt_cli_stamps_real_utc_on_new_and_legacy_files(self) -> None:
+        import csv as _csv
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            legacy = root / "legacy.csv"
+            legacy.write_text(
+                "target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used\nold,x,y,failed,z,\n",
+                encoding="utf-8",
+            )
+            for target_csv in (root / "new.csv", legacy):
+                for _ in range(2):
+                    res = subprocess.run(
+                        [sys.executable, "-B", str(SCRIPTS_DIR / "local_data.py"), "attempt", "--csv", str(target_csv),
+                         "--target", "Serie X", "--source", "BCRA API v4", "--query", "variable 1187",
+                         "--outcome", "HTTP 200", "--fallback", "local:appendix/data/x.csv sha256:abc123def456"],
+                        capture_output=True,
+                        text=True,
+                    )
+                    self.assertEqual(res.returncode, 0, msg=res.stderr)
+                with target_csv.open(encoding="utf-8", newline="") as fh:
+                    reader = _csv.DictReader(fh)
+                    self.assertEqual(len(reader.fieldnames), 7)
+                    rows = [r for r in reader if r["target_series"] == "Serie X"]
+                self.assertEqual(len(rows), 2)
+                for r in rows:
+                    self.assertRegex(r["attempted_utc"], r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+                    self.assertEqual(r["query_or_endpoint"], "variable 1187")
+                    self.assertEqual(r["fallback_used"], "local:appendix/data/x.csv sha256:abc123def456")
+
+    def test_append_attempt_returns_the_written_row(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            row = local_data.append_attempt(
+                Path(tmpdir) / "a.csv", "band", "BCRA", "catalogue all pages", "not found", failure_reason="no match"
+            )
+            self.assertEqual(row["failure_reason"], "no match")
+            self.assertEqual(row["fallback_used"], "")
+            self.assertRegex(row["attempted_utc"], r"Z$")
+
+    def test_register_cli_stores_project_relative_path_and_absolute_uri_outside(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir, tempfile.TemporaryDirectory() as elsewhere:
+            root = Path(tmpdir)
+            (root / "appendix" / "data").mkdir(parents=True)
+            inside = root / "appendix" / "data" / "ej.csv"
+            inside.write_text("a\n1\n", encoding="utf-8")
+            outside = Path(elsewhere) / "fuera.csv"
+            outside.write_text("b\n2\n", encoding="utf-8")
+            sources = root / "appendix" / "sources.csv"
+            for f in (inside, outside):
+                res = subprocess.run(
+                    [sys.executable, "-B", str(SCRIPTS_DIR / "local_data.py"), "register", str(f),
+                     "--sources", str(sources), "--tier", "Tier 2", "--title", f.stem],
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual(res.returncode, 0, msg=res.stderr)
+            rows = self._read_csv_rows(sources)
+            self.assertEqual(rows[0]["url"], "appendix/data/ej.csv")
+            self.assertTrue(rows[1]["url"].startswith("file:///"), msg=rows[1]["url"])
+            self.assertNotIn(str(root), rows[0]["url"])
+
     def test_preview_cli_reports_bad_json_and_empty_csv_without_traceback(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -425,7 +486,7 @@ class TestLocalData(unittest.TestCase):
             self.assertEqual(subprocess.run(cmd_r, capture_output=True, text=True).returncode, 0)
             res = subprocess.run(
                 [sys.executable, "-B", str(SCRIPTS_DIR / "validate_report.py"), str(root / "report.md"),
-                 "--level", "2", "--html", str(out), "--strict"],
+                 "--level", "2", "--html", str(out), "--strict", "--run-since", "2000-01-01"],
                 capture_output=True,
                 text=True,
             )

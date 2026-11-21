@@ -1,4 +1,5 @@
 import subprocess
+import re
 import sys
 import tempfile
 import unittest
@@ -80,13 +81,47 @@ Los ensayos europeos con infraestructura de retorno y depositos lograron mas del
 """
 
 
-def _seed_gates(root: Path, qa: str = "QA: PASS\n1 PASS - validator clean\n") -> None:
-    """Write the three appendix/gates/ traces (required at Level >= 2 since v0.6.0)."""
+GOOD_SOURCE_VERIFIER = """# Source-verification gate
+1. PASS — read vs. registered: C1 is titled as data and its retrieval is logged in download_log.csv.
+2. PASS — own computation: no row points at appendix code; nothing to reclassify.
+3. PASS — tag vs. weakest source: the only [Strong] row cites C1, a Tier 1 dataset that supports it.
+4. PASS — every [@id] exists in sources.csv and every source row is cited in Section 4.
+5. PASS — no data limitation, Deferred row or tag downgrade is declared in this draft.
+6. PASS — no local files in appendix/data/; nothing to register.
+7. PASS — Level 2 draft: no reviewer-introduced facts.
+PROPOSED data_attempts.csv ROWS: none
+SOURCE-VERIFIER: PASS
+"""
+
+GOOD_REVIEWER = """1. [1] Section 4 marine claim — tagged [Moderate] on two sites — add a third site or keep the tag.
+2. [3] Section 4 kinetics — no temperature control — rerun with the Q10 sensitivity.
+Coverage:
+1. Over-calibrated claims — 1 item
+2. Unattempted data shortcuts — none found
+3. Missing counter-evidence and controls — 1 item
+4. Interdisciplinary and forecasting flaws — none found
+5. Decisions inside the noise — none found
+6. Provenance contradictions — none found
+MOST DAMAGING: 2 — the kinetics result has no temperature control and drives the verdict.
+"""
+
+
+def _qa_text(status: str = "PASS", failed: tuple[int, ...] = ()) -> str:
+    lines = [f"QA: {status}" + (f" ({len(failed)} checks failed)" if failed else "")]
+    for n in range(1, 9):
+        verdict = "FAIL" if n in failed else "PASS"
+        lines.append(f"{n} {verdict} — evidence for check {n}: command run and its output recorded here in full.")
+    lines.append(f"FAIL count: {len(failed)}")
+    return "\n".join(lines) + "\n"
+
+
+def _seed_gates(root: Path, qa: str | None = None) -> None:
+    """Write complete appendix/gates/ traces in the shape the agent prompts fix (v0.6.1 markers)."""
     gates = root / "appendix" / "gates"
     gates.mkdir(parents=True, exist_ok=True)
-    (gates / "source_verifier.md").write_text("Source verifier: sources checked\n", encoding="utf-8")
-    (gates / "reviewer.md").write_text("Reviewer #2: critiques recorded\n", encoding="utf-8")
-    (gates / "qa.md").write_text(qa, encoding="utf-8")
+    (gates / "source_verifier.md").write_text(GOOD_SOURCE_VERIFIER, encoding="utf-8")
+    (gates / "reviewer.md").write_text(GOOD_REVIEWER, encoding="utf-8")
+    (gates / "qa.md").write_text(qa if qa is not None else _qa_text(), encoding="utf-8")
 
 
 def _seed_charts(root: Path) -> str:
@@ -250,8 +285,8 @@ One two three four five six
             self.assertTrue(any("data_attempts" in e.lower() or "attempt" in e.lower() for e in errs_missing_log), msg=errs_missing_log)
 
             (appendix / "data_attempts.csv").write_text(
-                "target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used\n"
-                "customs,Customs API,https://api.example.org,failed,HTTP 403,limitation\n",
+                "target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used,attempted_utc\n"
+                "customs,Customs API,https://api.example.org,failed,HTTP 403,limitation,2026-11-20T10:00:00Z\n",
                 encoding="utf-8",
             )
             self.assertEqual(validate_report.validate_report(with_deferred_no_log, level=3, report_dir=root), [])
@@ -693,7 +728,7 @@ One two three four five six
             )
             self.assertFalse(any("inherited" in x.lower() for x in errs3 + warns3), msg=errs3 + warns3)
 
-    def test_attempts_without_attempted_utc_column_are_not_checked(self) -> None:
+    def test_attempts_without_attempted_utc_column_count_as_inherited(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
             (root / "appendix" / "data_attempts.csv").write_text(
@@ -701,10 +736,96 @@ One two three four five six
                 "band,BCRA,https://x.org,failed,not found,\n",
                 encoding="utf-8",
             )
+            msg = "appendix/data_attempts.csv has no attempted_utc column"
+            errs3, _ = validate_report.validate_report_full(
+                self._l3_text(), level=3, report_dir=root, run_since="2026-11-20"
+            )
+            self.assertTrue(any(msg in e for e in errs3), msg=errs3)
+            errs2, warns2 = validate_report.validate_report_full(
+                self._cited("{{fig:fig_1}}"), level=2, report_dir=root, run_since="2026-11-20"
+            )
+            self.assertFalse(any(msg in e for e in errs2), msg=errs2)
+            self.assertTrue(any(msg in w for w in warns2), msg=warns2)
+
+    def test_fresh_dated_attempts_are_clean(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            (root / "appendix" / "data_attempts.csv").write_text(
+                self._ATT_HEAD + "band,BCRA,https://x.org,failed,not found,,2026-11-20T10:00:00Z\n", encoding="utf-8"
+            )
             errs3, warns3 = validate_report.validate_report_full(
                 self._l3_text(), level=3, report_dir=root, run_since="2026-11-20"
             )
-            self.assertFalse(any("inherited" in x.lower() for x in errs3 + warns3), msg=errs3 + warns3)
+            self.assertFalse(any("inherited" in x.lower() or "attempted_utc" in x for x in errs3 + warns3), msg=errs3 + warns3)
+
+    def test_unknown_run_start_warns_instead_of_skipping(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            (root / "appendix" / "data_attempts.csv").write_text(
+                self._ATT_HEAD + "band,BCRA,https://x.org,failed,not found,,2026-01-05\n", encoding="utf-8"
+            )
+            text = self._l3_text()
+            self.assertIsNone(re.search(r"\d{4}-\d{2}-\d{2}", "\n".join(text.splitlines()[:20])))
+            for level, body in ((2, self._cited("{{fig:fig_1}}")), (3, text)):
+                _, warns = validate_report.validate_report_full(body, level=level, report_dir=root)
+                self.assertTrue(any("cannot determine run start; pass --run-since YYYY-MM-DD" in w for w in warns), msg=warns)
+
+    # ---- v0.6.1 C3: only failures that back a limitation count ---------------------------------
+    def test_failed_row_with_real_fallback_is_not_inherited(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            (root / "appendix" / "data_attempts.csv").write_text(
+                self._ATT_HEAD
+                + "REM vintage 2025-10,BCRA xlsx,/rem-2025-10.xlsx,HTTP 404,no file,Official REM history file used,2026-11-19\n"
+                + "band,BCRA catalog,https://x.org,failed,not found,,2026-11-19\n"
+                + "fx floor,BCRA,https://y.org,failed,not found,limitation (press value),2026-11-19\n",
+                encoding="utf-8",
+            )
+            errs3, _ = validate_report.validate_report_full(
+                self._l3_text(), level=3, report_dir=root, run_since="2026-11-20"
+            )
+            inherited = [e for e in errs3 if "inherited" in e.lower()]
+            self.assertFalse(any("REM vintage" in e for e in inherited), msg=inherited)
+            self.assertTrue(any("'band'" in e for e in inherited), msg=inherited)
+            self.assertTrue(any("'fx floor'" in e for e in inherited), msg=inherited)
+
+    def test_band_series_paraphrased_in_deferred_row_still_counts(self) -> None:
+        """Audit v0.6 case: the band series had a real-looking fallback and a paraphrased Deferred row."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            (root / "appendix" / "data_attempts.csv").write_text(
+                self._ATT_HEAD
+                + "Serie diaria oficial del techo/piso de la banda,BCRA API v4,first 1000 variables,not found,"
+                "no series,Reconstrucción propia del techo con prensa,2026-11-19\n"
+                + "REM vintage 2025-10,BCRA xlsx,/rem-2025-10.xlsx,HTTP 404,no file,Base histórica del REM usada,2026-11-19\n",
+                encoding="utf-8",
+            )
+            text = self._cited("{{fig:fig_1}}") + """
+### Reviewer #2 Disposition
+| Flaw # | Reviewer Critique | Action | Evidence / Artifact |
+| :- | :- | :- | :- |
+| 9 | Serie oficial del techo y piso sin rungs completos | `Deferred` | data_attempts.csv |
+"""
+            errs3, _ = validate_report.validate_report_full(text, level=3, report_dir=root, run_since="2026-11-20")
+            inherited = [e for e in errs3 if "inherited" in e.lower()]
+            self.assertTrue(any("techo/piso" in e for e in inherited), msg=inherited)
+            self.assertFalse(any("REM vintage" in e for e in inherited), msg=inherited)
+
+    def test_failed_row_named_in_limitations_counts_even_with_fallback(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            (root / "appendix" / "data_attempts.csv").write_text(
+                self._ATT_HEAD
+                + "Cold water kinetics,Journal API,https://z.org,HTTP 403,paywall,abstract only,2026-11-19\n",
+                encoding="utf-8",
+            )
+            text = self._l3_text().replace(
+                "- **Methodological & Data Limitations:**",
+                "- **Methodological & Data Limitations:** Cold water kinetics could not be retrieved.",
+                1,
+            )
+            errs3, _ = validate_report.validate_report_full(text, level=3, report_dir=root, run_since="2026-11-20")
+            self.assertTrue(any("Cold water kinetics" in e and "inherited" in e.lower() for e in errs3), msg=errs3)
 
     def test_run_since_defaults_to_report_header_date(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -717,7 +838,7 @@ One two three four five six
             self.assertTrue(any("inherited" in w.lower() for w in warns), msg=warns)
 
     # ---- v0.6.0 Phase B: P2 subagent gate traces ----------------------------------------------
-    def _write_gates(self, root: Path, qa: str = "QA: PASS\n1 PASS - validator clean\n") -> None:
+    def _write_gates(self, root: Path, qa: str | None = None) -> None:
         _seed_gates(root, qa)
 
     def test_missing_gates_warn_at_level2_and_error_at_level3(self) -> None:
@@ -742,7 +863,7 @@ One two three four five six
     def test_qa_gate_without_pass_line_is_flagged_unless_accepted_in_report(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
-            self._write_gates(root, qa="QA: FAIL (1 checks failed)\n4 FAIL - reproducibility drift\n")
+            self._write_gates(root, qa=_qa_text("FAIL", failed=(4,)))
             errs3, _ = validate_report.validate_report_full(self._l3_text(), level=3, report_dir=root)
             self.assertTrue(any("QA: PASS" in e for e in errs3), msg=errs3)
             accepted = self._l3_text() + "\nAccepted QA FAIL (see appendix/gates/qa.md): drift is cosmetic.\n"
@@ -756,6 +877,54 @@ One two three four five six
             (root / "appendix" / "gates" / "source_verifier.md").write_text("  \n", encoding="utf-8")
             _, warns = validate_report.validate_report_full(self._cited("{{fig:fig_1}}"), level=2, report_dir=root)
             self.assertTrue(any("gates/source_verifier.md" in w for w in warns), msg=warns)
+
+    # ---- v0.6.1 C1: gate files must carry the markers their prompts fix ------------------------
+    def test_placeholder_gates_fail_and_name_the_missing_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            gates = root / "appendix" / "gates"
+            gates.mkdir(parents=True)
+            for name in ("source_verifier", "reviewer"):
+                (gates / f"{name}.md").write_text("x\n", encoding="utf-8")
+            (gates / "qa.md").write_text("QA: PASS\n", encoding="utf-8")
+            errs3, _ = validate_report.validate_report_full(self._l3_text(), level=3, report_dir=root)
+            self.assertTrue(any("source_verifier.md" in e and "SOURCE-VERIFIER: PASS|FAIL" in e for e in errs3), msg=errs3)
+            self.assertTrue(any("reviewer.md" in e and "Over-calibrated claims" in e for e in errs3), msg=errs3)
+            self.assertTrue(any("qa.md" in e and "FAIL count" in e for e in errs3), msg=errs3)
+            self.assertTrue(any("400 characters" in e for e in errs3), msg=errs3)
+
+    def test_complete_handwritten_gates_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            _seed_gates(root)
+            errs3, warns3 = validate_report.validate_report_full(self._l3_text(), level=3, report_dir=root)
+            self.assertFalse(any("gates/" in x for x in errs3 + warns3), msg=errs3 + warns3)
+
+    def test_qa_pass_without_the_eight_checks_is_an_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            _seed_gates(root, qa="QA: PASS\nFAIL count: 0\n" + "All good, everything checked carefully. " * 12)
+            errs3, _ = validate_report.validate_report_full(self._l3_text(), level=3, report_dir=root)
+            missing = [e for e in errs3 if "qa.md" in e]
+            self.assertTrue(any("check 1" in e and "check 8" in e for e in missing), msg=errs3)
+
+    # ---- v0.6.1 C8: gate files are embedded in the HTML, so they must not leak paths or markers -
+    def test_gate_with_home_path_or_literal_marker_is_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            _seed_gates(root, qa=_qa_text() + "Checked /home/usuario/x and {{num:spot}}.\n")
+            errs3, _ = validate_report.validate_report_full(self._l3_text(), level=3, report_dir=root)
+            self.assertTrue(any("qa.md" in e and "home-directory path" in e for e in errs3), msg=errs3)
+            self.assertTrue(any("qa.md" in e and "{{num:" in e for e in errs3), msg=errs3)
+            _, warns2 = validate_report.validate_report_full(self._cited("{{fig:fig_1}}"), level=2, report_dir=root)
+            self.assertTrue(any("home-directory path" in w for w in warns2), msg=warns2)
+
+    def test_gate_reporting_a_zero_count_passes_privacy(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            _seed_gates(root, qa=_qa_text() + "home-directory paths in report.html: 0\n")
+            errs3, warns3 = validate_report.validate_report_full(self._l3_text(), level=3, report_dir=root)
+            self.assertFalse(any("home-directory path" in x for x in errs3 + warns3), msg=errs3 + warns3)
 
     # ---- v0.6.0 Phase B: P3 numbers.json coverage ----------------------------------------------
     def _output_with(self, root: Path, numbers: list[str]) -> None:
@@ -785,6 +954,64 @@ One two three four five six
             report = self._cited("{{fig:fig_1}}").replace("Pure PHA films", f"Effects were {body} pure PHA films", 1)
             _, warns = validate_report.validate_report_full(report, level=2, report_dir=root)
             self.assertFalse(any("numbers.json" in w and "coverage" in w.lower() for w in warns), msg=warns)
+
+    # ---- v0.6.1 C5 ----------------------------------------------------------------------------
+    def test_nine_markers_sixteen_typed_in_section4_warns(self) -> None:
+        import json
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            typed = [f"{10 + i}.{i + 11}" for i in range(16)]
+            keyed = [f"{50 + i}.{i + 21}" for i in range(9)]
+            self._output_with(root, typed + keyed)
+            (root / "appendix" / "numbers.json").write_text(
+                json.dumps({f"k{i}": v for i, v in enumerate(keyed)}), encoding="utf-8"
+            )
+            body = ", ".join(typed) + "; " + ", ".join(f"{{{{num:k{i}}}}}" for i in range(9))
+            report = self._cited("{{fig:fig_1}}").replace("Pure PHA films", f"Effects {body} pure PHA films", 1)
+            _, warns = validate_report.validate_report_full(report, level=2, report_dir=root)
+            self.assertTrue(any("numbers.json coverage is low" in w for w in warns), msg=warns)
+
+    def test_section_numbers_are_not_counted_as_typed_figures(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            self._output_with(root, ["4.1", "4.2", "4.3", "4.4", "4.5", "4.6"])
+            report = self._cited("{{fig:fig_1}}").replace(
+                "Pure PHA films",
+                "See Section 4.1, Sección 4.2, § 4.3, §4.4, Section 4.5 and Sección 4.6 pure PHA films",
+                1,
+            )
+            _, warns = validate_report.validate_report_full(report, level=2, report_dir=root)
+            self.assertFalse(any("numbers.json coverage" in w for w in warns), msg=warns)
+
+    def test_typed_verdict_numbers_from_output_warn_then_error_at_level3(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            self._output_with(root, ["surcharge 0.35", "target 60", "years 3", "rate 12.75", "share 41.20"])
+            text = self._cited("{{fig:fig_1}}").replace(
+                "though pure marine-certified", "with a 12.75 rate and 41.20 share, though pure marine-certified", 1
+            )
+            msg = "Calibrated Verdict / Section 1"
+            _, warns2 = validate_report.validate_report_full(text, level=2, report_dir=root)
+            self.assertTrue(any(msg in w for w in warns2), msg=warns2)
+            l3 = text + self._l3_text()[len(self._cited("{{fig:fig_1}}")):]
+            errs3, _ = validate_report.validate_report_full(l3, level=3, report_dir=root, run_since="2026-11-20")
+            self.assertTrue(any(msg in e for e in errs3), msg=errs3)
+
+    def test_verdict_with_markers_does_not_warn(self) -> None:
+        import json
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
+            self._output_with(root, ["surcharge 0.35", "target 60", "rate 12.75", "share 41.20"])
+            (root / "appendix" / "numbers.json").write_text(
+                json.dumps({"s": "0.35", "t": "60", "r": "12.75", "h": "41.20"}), encoding="utf-8"
+            )
+            text = self._cited("{{fig:fig_1}}").replace("$0.35 surcharge", "${{num:s}} surcharge", 1).replace(
+                "a 60% reduction", "a {{num:t}}% reduction", 1
+            ).replace("though pure marine-certified", "with {{num:r}} and {{num:h}}, though pure marine-certified", 1)
+            _, warns = validate_report.validate_report_full(text, level=2, report_dir=root)
+            self.assertFalse(any("Calibrated Verdict / Section 1" in w for w in warns), msg=warns)
 
     def test_few_hardcoded_numbers_do_not_warn(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -84,7 +84,7 @@
   </style>
 </head>
 <body>
-  <!-- heurisma-sources: sha256:780fc69dfdcc -->
+  <!-- heurisma-sources: sha256:a3355bdad9a6 -->
   <article class="paper">
     <header class="title-block">
       <h1>Audit of Internal Pair-Programming Hours vs. Bug-Fix Throughput (12-Team Study)</h1>
@@ -360,33 +360,34 @@ def main() -&gt; None:
 if __name__ == &quot;__main__&quot;:
     main()
 </code></pre></details>
-<details class="appendix-item"><summary><code>appendix/gates/qa.md</code> (1,208 bytes)</summary><pre><code>QA: PASS
-1 PASS — `validate_report.py report.md --level 2 --html report.html --strict`: PASSED, no warnings (run by the maintainer on 2026-11-20 after these gate files were added and the HTML re-rendered).
+<details class="appendix-item"><summary><code>appendix/gates/qa.md</code> (1,234 bytes)</summary><pre><code>QA: PASS
+1 PASS — `validate_report.py report.md --level 2 --html report.html --strict`: PASSED, no warnings (run by the maintainer on 2026-11-20 with the v0.6.1 validator, after these gate files were rewritten in the v0.6.1 shape and the HTML re-rendered).
 2 PASS — the validator reports no `stale` or `no source hash` line.
 3 PASS — the Calibrated Verdict numbers are placeholders resolved from `appendix/numbers.json`.
 4 PASS — `python3 -B appendix/analysis.py` with the arguments in `appendix/README.md` reproduces `appendix/output.txt`, `charts.json` and `appendix/numbers.json` byte for byte.
 5 PASS — every chart in `charts.json` is placed with a figure marker, in the report language, with no near-identical-bars warning.
 6 PASS — home-directory paths in report.html: 0; no `__pycache__`, `.pyc` or 0-byte files in `appendix/`.
 7 PASS — no first-person singular in the prose; English report, English labels.
-8 PASS — `appendix/gates/source_verifier.md` is present (Level 2: no Reviewer #2 gate); `data_attempts.csv` has no `attempted_utc` column (written before v0.6.0), so the inherited-attempt check does not apply.
+8 PASS — `appendix/gates/source_verifier.md` is present with its seven check lines (Level 2: no Reviewer #2 gate); there is no `data_attempts.csv` because no rung failed.
+FAIL count: 0
 
 Manual record by the maintainer: this example predates the gate convention and no QA subagent was dispatched for it.
 </code></pre></details>
-<details class="appendix-item"><summary><code>appendix/gates/source_verifier.md</code> (1,017 bytes)</summary><pre><code># Source-verification gate — manual record (maintainer, 2026-11-20)
+<details class="appendix-item"><summary><code>appendix/gates/source_verifier.md</code> (1,128 bytes)</summary><pre><code># Source-verification gate — manual record (maintainer, 2026-11-20)
 
-This example predates the `appendix/gates/` convention (v0.6.0). No subagent output was saved at the time; this file records the provenance checks the maintainer ran by hand, against the seven checks of `references/agents/source-verifier.md`.
+This example predates the `appendix/gates/` convention. No subagent output was saved for it; this file records the provenance checks the maintainer ran by hand, in the shape fixed by `references/agents/source-verifier.md` (v0.6.1).
 
-VERDICT: PASS
+1. PASS — read vs. registered: no source claims &quot;full text&quot;; there is no `data_attempts.csv` because no rung failed.
+2. PASS — own computation: C2 (`appendix/analysis.py`) is `kind = own-computation`, Tier 2.
+3. PASS — tag vs. weakest source: the matrix rests on C1 (user-supplied CSV, Tier 2, declared origin: internal team records) and C2; no claim rests on Tier 3 or press.
+4. PASS — both ids are cited and every `[@id]` exists in `sources.csv`.
+5. PASS — the report declares no data limitation and no `Deferred` row.
+6. PASS — `appendix/data/` is absent; C1 is an internal, user-supplied dataset referenced by an `internal://` identifier, not a local file.
+7. PASS — Level 2: no Reviewer #2 pass, so no reviewer-introduced facts.
 
-- 1 · no source claims &quot;full text&quot;; there is no `data_attempts.csv` because no rung failed.
-- 2 · C2 (`appendix/analysis.py`) is `kind = own-computation`, Tier 2.
-- 3 · the matrix uses C1 (user-supplied CSV, Tier 2, declared origin: internal team records) and C2; no claim rests on Tier 3 or press.
-- 4 · both ids are cited and every `[@id]` exists in `sources.csv`.
-- 5 · the report declares no data limitation and no `Deferred` row.
-- 6 · `appendix/data/` is absent; C1 is an internal, user-supplied dataset referenced by an `internal://` identifier, not a local file.
-- 7 · Level 2: no Reviewer #2 pass, so no reviewer-introduced facts.
-
-PROPOSED data_attempts.csv ROWS: none.
+Problems: none
+PROPOSED data_attempts.csv ROWS: none
+SOURCE-VERIFIER: PASS
 </code></pre></details>
 <details class="appendix-item"><summary><code>appendix/numbers.json</code> (189 bytes)</summary><pre><code>{
   &quot;n_full&quot;: 12,

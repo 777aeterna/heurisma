@@ -74,6 +74,13 @@ Gather evidence ranked by the discipline's hierarchy (`Tier 1 > Tier 2 > Tier 3`
 - Never use Tier 3 press while an accessible Tier 1/2 series exists.
 - **Rehearse rung 3 offline:** with `HEURISMA_OFFLINE=1` set, `fetch_data.py` skips the network and logs each online rung as `offline mode`, so the report must stand on the local files (`local_data.offline_enabled()`).
 - `appendix/fetch_data.py` writes failures **directly** to `appendix/data_attempts.csv` with the canonical columns `target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used,attempted_utc` (see [references/data-protocol.md](references/data-protocol.md)).
+- **Log every attempt with a tool, never by hand:** `log_attempt()` inside `fetch_data.py`, or for searches done outside it (web search, catalogue browsing, local inventory):
+  ```bash
+  python3 -B <skill-dir>/scripts/local_data.py attempt --csv appendix/data_attempts.csv --target "<series>" \
+      --source "<provider>" --query "<URL, variable id or keywords>" --outcome "<HTTP 404 | not found | used>" \
+      [--failure-reason "..."] [--fallback "local:appendix/data/x.csv sha256:..."]
+  ```
+  Both stamp `attempted_utc` with the real UTC time. A row typed by hand, or an old row re-dated, defeats the inherited-attempts check.
 - **Inherited attempts do not count.** A failure logged by an earlier run (an undated row, or one dated before this run) proves only that it failed *then*. Re-run that rung now and log the new dated row before it supports a limitation, a `Deferred` critique or a downgrade; `validate_report.py` flags failures with no attempt in this run (error at Level 3).
 - **"No such series" needs the whole catalogue.** Before declaring that a provider does not publish a series, search every page of its catalogue with at least three keywords for the concept (including the institutional terms, e.g. `banda`/`techo`/`piso` for a currency band) and its statistics section, logging each search.
 - **Local data tier:** the tier the user declares for the file's origin (e.g., "downloaded from the statistics agency" → Tier 1, annotated "local copy supplied by the user"). Unknown origin → **Tier 3**, and no claim resting only on that file may carry `[Strong]`/`[Fuerte]`.

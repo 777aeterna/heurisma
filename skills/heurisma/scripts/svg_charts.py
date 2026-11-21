@@ -16,6 +16,7 @@ from __future__ import annotations
 import datetime as _dt
 import html
 import math
+import re
 from typing import Any
 
 # Okabe-Ito colorblind-safe palette + neutral slate for context
@@ -278,6 +279,36 @@ def _clip_points(
     return out
 
 
+_ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}(?:-\d{2})?$")
+
+
+def _last_data_position(
+    x_cfg: dict[str, Any],
+    parsed_series: list[tuple[str, list[tuple[float, float, str]], bool]],
+    is_date: bool,
+    synthetic: bool = False,
+) -> tuple[float, str] | None:
+    """Where the "last data" marker goes: (x value, label text), or None when it must not be drawn.
+
+    ``x.last_label`` may be a date (the marker sits there), ``true`` plus ``x.observed_until`` (sits there), or
+    ``true``/a text alone (sits on the last observed point). A fan chart's only series is the projected median,
+    so without a date it has no observed point to mark (``synthetic``).
+    """
+    opt = x_cfg.get("last_label")
+    if not opt:
+        return None
+    until = x_cfg.get("observed_until")
+    if isinstance(opt, str) and _ISO_DATE_RE.match(opt.strip()):
+        return _parse_x(opt.strip(), is_date), opt.strip()
+    if until:
+        label = opt if isinstance(opt, str) else str(until)
+        return _parse_x(until, is_date), label
+    if synthetic or not parsed_series:
+        return None
+    last_pt = max((p for _, pts, _ in parsed_series for p in pts), key=lambda p: p[0])
+    return last_pt[0], (opt if isinstance(opt, str) else last_pt[2])
+
+
 def _render_line_or_scatter(chart: dict[str, Any], is_scatter: bool = False, lang: str = "en") -> str:
     x_cfg = chart.get("x") or {}
     y_cfg = chart.get("y") or {}
@@ -420,20 +451,19 @@ def _render_line_or_scatter(chart: dict[str, Any], is_scatter: bool = False, lan
             f'<text x="{pad_l + plot_w / 2:.1f}" y="{height - 8}" text-anchor="middle" font-size="11" fill="#334155">{html.escape(x_label)}</text>'
         )
 
-    # R4: optional "last data" marker when the observed series stop before the end of the X axis
-    last_opt = x_cfg.get("last_label")
-    if last_opt and parsed_series:
-        last_pt = max((p for _, pts, _ in parsed_series for p in pts), key=lambda p: p[0])
-        if last_pt[0] < max_x - span_x * 0.01:
-            lx = x_px(last_pt[0])
-            shown = last_opt if isinstance(last_opt, str) else last_pt[2]
-            txt = _lang_dict(lang)["last_data"].format(x=shown)
-            els.append(
-                f'<line data-last-data="x" x1="{lx:.1f}" y1="{pad_t}" x2="{lx:.1f}" y2="{height - pad_b}" '
-                f'stroke="#94a3b8" stroke-dasharray="1,3" stroke-width="1"/>'
-                f'<text x="{lx - 4:.1f}" y="{height - pad_b - 6}" text-anchor="end" font-size="9.5" '
-                f'fill="#475569" style="{HALO_STYLE}">{html.escape(txt)}</text>'
-            )
+    # R4/C6: optional "last data" marker at the last observed date (x.last_label / x.observed_until)
+    last_pos = _last_data_position(x_cfg, parsed_series, is_date, synthetic=bool(chart.get("_fan")))
+    if last_pos is not None and min_x - span_x * 1e-9 <= last_pos[0] <= max_x + span_x * 1e-9:
+        lx = x_px(last_pos[0])
+        txt = _lang_dict(lang)["last_data"].format(x=last_pos[1])
+        fits_left = lx - 4 - len(txt) * 5.3 >= pad_l
+        tx, anchor = (lx - 4, "end") if fits_left else (lx + 4, "start")
+        els.append(
+            f'<line data-last-data="x" x1="{lx:.1f}" y1="{pad_t}" x2="{lx:.1f}" y2="{height - pad_b}" '
+            f'stroke="#94a3b8" stroke-dasharray="1,3" stroke-width="1"/>'
+            f'<text x="{tx:.1f}" y="{height - pad_b - 6}" text-anchor="{anchor}" font-size="9.5" '
+            f'fill="#475569" style="{HALO_STYLE}">{html.escape(txt)}</text>'
+        )
 
     # Shaded bands behind series
     for b_name, lo_pts, hi_pts, opacity in parsed_bands:
@@ -593,6 +623,7 @@ def _render_fan(chart: dict[str, Any], lang: str = "en") -> str:
     synth = dict(chart)
     synth["type"] = "line"
     synth["series"] = [{"name": i18n["median"], "points": q["p50"], "hide_markers": True}]
+    synth["_fan"] = True  # the only series is the projected median: last_label needs observed_until
     bands = list(chart.get("bands") or [])
     if "p10" in q and "p90" in q:
         bands.append({"name": "P10–P90", "lower": q["p10"], "upper": q["p90"], "opacity": 0.14})
@@ -644,8 +675,20 @@ def _spread_is_negligible(vals: list[float]) -> bool:
 
 
 def chart_warnings(chart: dict[str, Any], lang: str = "en") -> list[str]:
-    """Design warnings for a chart dict (the validator surfaces them). Currently: near-identical bars (G2)."""
-    if str(chart.get("type", "")).lower() != "bar":
+    """Design warnings for a chart dict (the validator surfaces them): near-identical bars (G2) and a fan chart
+    whose "last data" marker has no date to sit on (C6)."""
+    ctype = str(chart.get("type", "")).lower()
+    if ctype == "fan":
+        x_cfg = chart.get("x") or {}
+        opt = x_cfg.get("last_label")
+        has_date = isinstance(opt, str) and bool(_ISO_DATE_RE.match(opt.strip()))
+        if opt and not has_date and not x_cfg.get("observed_until"):
+            return [
+                f"Chart '{chart.get('id', '?')}': fan chart has last_label but no observed_until; add "
+                f"x.observed_until (the last observed date) or give last_label as a date."
+            ]
+        return []
+    if ctype != "bar":
         return []
     if chart.get("diff") or (chart.get("y") or {}).get("baseline") is not None:
         return []

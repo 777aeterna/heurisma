@@ -84,7 +84,7 @@
   </style>
 </head>
 <body>
-  <!-- heurisma-sources: sha256:29d544b10449 -->
+  <!-- heurisma-sources: sha256:a36ec5562482 -->
   <article class="paper">
     <header class="title-block">
       <h1>Hybrid Work (2 Days Remote) vs. Full-Time Office in Software Engineering: Retention, Output, and Seniority Heterogeneity</h1>
@@ -457,40 +457,47 @@ def main() -&gt; None:
 if __name__ == &quot;__main__&quot;:
     main()
 </code></pre></details>
-<details class="appendix-item"><summary><code>appendix/data_attempts.csv</code> (1,059 bytes)</summary><pre><code>target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used
-&quot;Site allocation protocol, baseline window, mentoring_hrs_wk definition&quot;,Local data inventory,local_data.py inventory data/,not found,&quot;Only the CSV is supplied; no data dictionary or protocol&quot;,Local file kept at Tier 3; claims from it capped at [Preliminary]
-Individual-level engineer microdata,Online and local,Private organizational data; local_data.py inventory data/,not available,Only the data owner can supply it,&quot;Site-level exact tests only; request listed in Section 7&quot;
-Bloom Han &amp; Liang (2024) full text,Publisher page,GET https://www.nature.com/articles/s41586-024-07500-2,HTTP 303,Redirects to a sign-in page,Open-access copy in Europe PMC (PMC11208135)
-Bloom Han &amp; Liang (2024) full text,Europe PMC,GET https://www.ebi.ac.uk/europepmc/webservices/rest/PMC11208135/fullTextXML,used,,Full text read (Data availability statement not verified)
-Emanuel Harrington &amp; Pallais (2023),NBER page,GET https://www.nber.org/papers/w31880,used,,Abstract read; full text not read
+<details class="appendix-item"><summary><code>appendix/data_attempts.csv</code> (1,130 bytes)</summary><pre><code>target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used,attempted_utc
+&quot;Site allocation protocol, baseline window, mentoring_hrs_wk definition&quot;,Local data inventory,local_data.py inventory data/,not found,Only the CSV is supplied; no data dictionary or protocol,Local file kept at Tier 3; claims from it capped at [Preliminary],2026-11-20
+Individual-level engineer microdata,Online and local,Private organizational data; local_data.py inventory data/,not available,Only the data owner can supply it,Site-level exact tests only; request listed in Section 7,2026-11-20
+Bloom Han &amp; Liang (2024) full text,Publisher page,GET https://www.nature.com/articles/s41586-024-07500-2,HTTP 303,Redirects to a sign-in page,Open-access copy in Europe PMC (PMC11208135),2026-11-20
+Bloom Han &amp; Liang (2024) full text,Europe PMC,GET https://www.ebi.ac.uk/europepmc/webservices/rest/PMC11208135/fullTextXML,used,,Full text read (Data availability statement not verified),2026-11-20
+Emanuel Harrington &amp; Pallais (2023),NBER page,GET https://www.nber.org/papers/w31880,used,,Abstract read; full text not read,2026-11-20
 </code></pre></details>
-<details class="appendix-item"><summary><code>appendix/gates/qa.md</code> (1,593 bytes)</summary><pre><code>QA: FAIL (1 checks failed)
-1 PASS — `validate_report.py report.md --level 2 --html report.html --strict`: PASSED, no warnings (run by the maintainer on 2026-11-20 after these gate files were added and the HTML re-rendered; the validator accepts the check-3 FAIL because Section 7 cites this file).
+<details class="appendix-item"><summary><code>appendix/gates/qa.md</code> (1,710 bytes)</summary><pre><code>QA: FAIL (1 checks failed)
+1 PASS — `validate_report.py report.md --level 2 --html report.html --strict`: PASSED, no warnings (run by the maintainer on 2026-11-20 with the v0.6.1 validator, after these gate files were rewritten in the v0.6.1 shape and the HTML re-rendered; the validator accepts the check-3 FAIL because Section 7 cites this file).
 2 PASS — the validator reports no `stale` or `no source hash` line.
 3 FAIL — the Calibrated Verdict quotes 7.20% and 4.80% (the quit rates reported by the external trial [@C2]); they appear in neither `appendix/output.txt` nor `appendix/numbers.json`. The other verdict figures are placeholders resolved from `appendix/numbers.json`. Accepted: the two figures are cited external results, not outputs of this analysis (justified in Section 7 of the report).
 4 PASS — `python3 -B appendix/analysis.py` with the arguments in `appendix/README.md` reproduces `appendix/output.txt`, `charts.json` and `appendix/numbers.json` byte for byte.
 5 PASS — every chart in `charts.json` is placed with a figure marker, in the report language, with no near-identical-bars warning.
 6 PASS — home-directory paths in report.html: 0; no `__pycache__`, `.pyc` or 0-byte files in `appendix/`.
 7 PASS — no first-person singular in the prose; English report, English labels.
-8 PASS — `appendix/gates/source_verifier.md` is present (Level 2: no Reviewer #2 gate); `data_attempts.csv` has no `attempted_utc` column (written before v0.6.0), so the inherited-attempt check does not apply.
+8 PASS — `appendix/gates/source_verifier.md` is present with its seven check lines (Level 2: no Reviewer #2 gate); every `data_attempts.csv` row carries `attempted_utc` = 2026-11-20, the day the attempts were made (date only: the exact times were not recorded).
+FAIL count: 1
 
 Manual record by the maintainer: this example predates the gate convention and no QA subagent was dispatched for it.
 </code></pre></details>
-<details class="appendix-item"><summary><code>appendix/gates/source_verifier.md</code> (1,481 bytes)</summary><pre><code># Source-verification gate — manual record (maintainer, 2026-11-20)
+<details class="appendix-item"><summary><code>appendix/gates/source_verifier.md</code> (1,896 bytes)</summary><pre><code># Source-verification gate — manual record (maintainer, 2026-11-20)
 
-This example predates the `appendix/gates/` convention (v0.6.0). No subagent output was saved at the time; this file records the provenance checks the maintainer ran by hand, against the seven checks of `references/agents/source-verifier.md`.
+This example predates the `appendix/gates/` convention. No subagent output was saved for it; this file records the provenance checks the maintainer ran by hand, in the shape fixed by `references/agents/source-verifier.md` (v0.6.1).
 
-VERDICT: FAIL (3 problems)
+1. FAIL — read vs. registered: C3&#x27;s title says &quot;published in Quarterly Journal of Economics 141(3), 2026&quot;, but `data_attempts.csv` only logs the NBER page (abstract read); C1&#x27;s `data_as_of = 2026-10` is not documented in any appendix file.
+2. FAIL — own computation: C4 (`appendix/analysis.py`) is `own-computation` at Tier 2, but the report&#x27;s own Tier 2 definition does not cover the report&#x27;s own code.
+3. PASS — tag vs. weakest source: no `[Strong]` tag; every claim resting on the Tier 3 CSV (C1) stays at `[Preliminary]`.
+4. PASS — every `[@id]` exists in `sources.csv` and every source row is cited.
+5. PASS — the limitations in Section 7 rest on `data_attempts.csv` rows for the online and local searches, dated 2026-11-20.
+6. PASS — the one local file (`appendix/data/hybrid_rct_sites.csv`) is registered as C1 with a project-relative path and its SHA-256.
+7. PASS — no reviewer-introduced fact entered the report.
 
-1. 6 · C3 · `sources.csv` says &quot;published in Quarterly Journal of Economics 141(3), 2026&quot;, but `data_attempts.csv` only logs the NBER page (abstract read) · log the retrieval of the journal page, or drop the publication detail from the title.
-2. 2 · C4 · own computation registered as Tier 2; the report&#x27;s own Tier 2 definition does not cover the report&#x27;s own code · state in Section 3 that own computations are capped at Tier 2 by convention, or move C4 to Tier 3.
-3. 5 · C1 · `data_as_of = 2026-10` is not documented in any file of the appendix · leave `data_as_of` empty or log where the date comes from.
+Problems:
+1. 1 · C3 · only the NBER page was read · log the retrieval of the journal page, or drop the publication detail from the title.
+2. 1 · C1 · `data_as_of` has no documented origin · leave it empty or log where the date comes from.
+3. 2 · C4 · own computation registered at Tier 2 without a definition covering it · state in Section 3 that own computations are capped at Tier 2 by convention, or move C4 to Tier 3.
+PROPOSED data_attempts.csv ROWS: none
 
-Checks passed: 1 (C2 is titled &quot;open-access full text&quot; and `data_attempts.csv` logs the successful Europe PMC retrieval), 3 (no `[Strong]` tag; claims from the Tier 3 CSV stay at `[Preliminary]`), 4 (every id is cited, every citation exists), 7 (no reviewer-introduced fact entered the report).
+These three problems are among the open critiques of the second Reviewer #2 pass on this example; they are recorded here rather than silently fixed.
 
-PROPOSED data_attempts.csv ROWS: none.
-
-These three items are among the open critiques of the second Reviewer #2 pass on this example (see the repository&#x27;s review notes); they are documented here rather than silently fixed.
+SOURCE-VERIFIER: FAIL (3 problems)
 </code></pre></details>
 <details class="appendix-item"><summary><code>appendix/numbers.json</code> (1,232 bytes)</summary><pre><code>{
   &quot;total_sites&quot;: 16,

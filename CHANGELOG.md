@@ -4,6 +4,30 @@ All notable changes to **Heurisma** will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-11-20 (Gates That Cannot Be Faked)
+
+Driven by the v0.6.0 audit. Several v0.6.0 checks could be satisfied without doing the work.
+
+### Fixed
+- **C1 — Gate files must carry their content, not just exist.** Each `appendix/gates/*.md` needs at least 400 characters plus the markers its prompt fixes:
+  - `source_verifier.md`: seven `<#>. PASS|FAIL` lines and `SOURCE-VERIFIER: PASS|FAIL`;
+  - `reviewer.md`: the six category titles and `MOST DAMAGING:`;
+  - `qa.md`: eight `<#> PASS|FAIL` lines, `QA: PASS|FAIL` and `FAIL count: <n>`.
+
+  The error names the missing marker. The three prompts now ask for this exact shape (`VERDICT:` became `SOURCE-VERIFIER:`), and a test keeps the validator and the prompts aligned.
+- **C2 — A `data_attempts.csv` without `attempted_utc` no longer switches the inherited-attempts check off.** It counts as entirely inherited: error at Level 3, warning at Level 2. A run with no determinable start date warns `cannot determine run start; pass --run-since YYYY-MM-DD`.
+- **C3 — Inherited-attempt check, fewer false alarms.** Only failures that end in a limitation count: an empty fallback, or one starting with `limitation`/`limitación`/`none`. So do failures that Section 7 or a `Deferred` row leans on, matched by shared words, because reports paraphrase their series names. On the audited run this cuts 21 errors to 10. The REM vintages whose official replacement was used drop out, and the exchange-rate band and floor are still caught.
+- **C4 — The date is stamped by a tool.** `local_data.py attempt` and the new `append_attempt()` write a row with the real `attempted_utc`, widening an older file if needed. `SKILL.md` and `data-protocol.md` say never to type attempt rows or their dates by hand.
+- **C5 — Retyped figures.** The Calibrated Verdict and Section 1 now fail if they retype 3 or more figures from `output.txt` without any placeholder: a warning at Level 2, an error at Level 3. For Section 4, the marker share required rose to 60 %. Section references such as `§ 4.3` or `Sección 4.3` are no longer counted as figures.
+- **C6 — `x.last_label` works on fan charts.** It accepts a date, or `true` together with `x.observed_until`. The marker is drawn wherever that date falls inside the axis; near the left edge its label opens to the right. A fan chart with `last_label` but no date draws nothing, and `chart_warnings` reports `fan chart has last_label but no observed_until`.
+- **C7 — `local_data.py register` (CLI).** Files inside the report folder are stored with a project-relative path; `file:///…` is kept only for files outside it. The docstring and help are corrected.
+- **C8 — Gate privacy.** Gate files are embedded in `report.html`, so a home-directory path or a literal `{{num:…}}` / `{{fig:…}}` in them is flagged: a warning at Level 2, an error at Level 3.
+
+### Changed
+- Examples:
+  - The gate records of both examples were rewritten in the v0.6.1 shape. They remain manual maintainer records. The showcase's source verifier still reports its 3 open provenance problems.
+  - The showcase's `data_attempts.csv` now carries `attempted_utc` with the date only: the attempts were made on 2026-11-20 and their exact times were not recorded.
+
 ## [0.6.0] - 2026-11-20 (Inherited Runs, Gate Traces & Numbers as a Rule)
 
 Driven by the audit of a v0.5.0 run. That run started from an earlier run's folder and kept a false "no official daily band series" limitation; it also discarded the official floor value as "inconsistent".

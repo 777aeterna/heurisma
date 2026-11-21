@@ -93,6 +93,9 @@ jobs:
           if grep -rn "/home/" examples/*/report.html; then echo "absolute path leaked into HTML"; exit 1; fi
           if grep -q "file://" /tmp/offline-run/appendix/sources.csv; then echo "relative local path stored as file:// URI"; exit 1; fi
           grep -q "attempted_utc" /tmp/offline-run/appendix/data_attempts.csv
+          python3 -B skills/heurisma/scripts/local_data.py attempt --csv /tmp/offline-run/appendix/data_attempts.csv \
+            --target "Serie X" --source "BCRA API v4" --query "variable 1187" --outcome "HTTP 200"
+          grep -Eq "Serie X,.*,[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]{8}Z" /tmp/offline-run/appendix/data_attempts.csv
 
       - name: Validator works in isolated mode and requires gate traces
         run: |

@@ -27,4 +27,7 @@ A numbered list. Each item, on one line:
 Rules for the list:
 - Every item must be answerable by the author with `Fixed`, `Refuted`, or `Deferred` (`Corregida`, `Refutada`, `Diferida`).
 - If you cite a fact, number, policy, or paper that is **not** already in `sources.csv`, prefix the item with `UNVERIFIED:`. The author must verify it in a Tier 1/2 source or exclude it; it never enters the report as Tier 3.
+- After the list, write a coverage block with one line per category, using these exact titles: `1. Over-calibrated claims — <k> items | none found`, then `2. Unattempted data shortcuts`, `3. Missing counter-evidence and controls`, `4. Interdisciplinary and forecasting flaws`, `5. Decisions inside the noise`, `6. Provenance contradictions`.
 - End with one line: `MOST DAMAGING: <item number> — <one sentence why>`.
+
+The validator checks this shape in `appendix/gates/reviewer.md`: the six category titles, the `MOST DAMAGING:` line, and at least 400 characters.
