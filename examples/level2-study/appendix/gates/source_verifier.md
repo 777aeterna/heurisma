@@ -1,3 +1,9 @@
+MODE: self-review
+REVIEWED-SHA256: 6bab03f0cacc299262cf911942f526038978f93b98068e73b8bec726552dcd05
+REVIEWED-UTC: 2026-11-21T12:27:08Z
+QUOTE: appendix/sources.csv:2: "C1,Internal 12-team pair-programming CSV"
+QUOTE: appendix/sources.csv:3: "C2,Own computation: sensitivity & bootstrap script"
+
 # Source-verification gate — manual record (maintainer, 2026-11-20)
 
 This example predates the `appendix/gates/` convention. No subagent output was saved for it; this file records the provenance checks the maintainer ran by hand, in the shape fixed by `references/agents/source-verifier.md` (v0.6.1).

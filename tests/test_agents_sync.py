@@ -34,6 +34,15 @@ class TestAgentsSync(unittest.TestCase):
             self.assertIn(f"appendix/gates/{trace}", text, msg=portable)
 
 
+class TestGateHeaderInPrompts(unittest.TestCase):
+    def test_each_prompt_asks_for_the_binding_header(self) -> None:
+        gate_of = {"reviewer.md": "reviewer", "source-verifier.md": "source_verifier", "qa.md": "qa"}
+        for portable, gate in gate_of.items():
+            text = (PORTABLE / portable).read_text(encoding="utf-8")
+            for field in ("MODE: subagent", "REVIEWED-SHA256:", "REVIEWED-UTC:", "QUOTE:", f"--gate-hash {gate}", "{SKILL_DIR}"):
+                self.assertIn(field, text, msg=f"{portable} must ask for {field!r}")
+
+
 class TestGateMarkersMatchPrompts(unittest.TestCase):
     def test_validator_markers_are_named_in_the_prompts(self) -> None:
         import sys

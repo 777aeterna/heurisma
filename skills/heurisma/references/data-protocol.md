@@ -40,7 +40,8 @@ Do not rely on undocumented manual `curl` commands that cannot be re-run. Create
    C3,Own Monte Carlo mixture (appendix/analysis.py),appendix/analysis.py,Tier 2,2026-11-20,2026-11,own-computation
    L1,Wholesale FX series — copy supplied by the user (local file, sha256 3f9a1c0b7d2e),appendix/data/a3500.csv,Tier 1,2026-11-20,2026-11,data
    ```
-   **`kind` (fill it for every row):** `data`, `literature`, `press`, or `own-computation`.
+   **`kind` (required on every row; the validator errors on a missing or unknown value):** `data`, `literature`, `press`, or `own-computation`.
+   **Local files:** `local_data.py import`/`register` also write a `sha256` column (12-hex prefix). `validate_report.py` **recomputes** the SHA-256 of every local file and of every file in `download_log.csv`; a file edited after it was registered is an error (`changed since it was registered`), so re-import instead of editing `appendix/data/` in place.
    - A row for the report's own code or output is `own-computation`, **Tier 2 at most**: it checks a derivation or a numerical result, it is never independent evidence about the world, and it cannot carry a `[Strong]` claim about the world on its own (`validate_report.py` errors on `own-computation` + Tier 1 and warns at Level 3 when a `[Strong]` row cites only own computations).
    - The title records what was actually read: `(abstract only)` when the full text was not retrievable. A row titled "full text"/"open access" with a failed attempt for the same URL in `data_attempts.csv` triggers a validator warning.
 2. Record every failed rung in **`appendix/data_attempts.csv`** with **exactly** these canonical columns (and summarize them in Section 3):
@@ -50,7 +51,7 @@ Do not rely on undocumented manual `curl` commands that cannot be re-run. Create
    Multilateral REER,Central Bank XLS archive,GET /publicaciones/itcrm.xlsx,HTTP 403,WAF blocks default urllib User-Agent; retried with custom UA,Tier 1 XLSX retrieved on retry,2026-11-20T14:02:40Z
    Alternative CPI 2007–2015,Provincial statistics offices + local inventory,web search + local_data.py inventory,not found,No provincial series online; no local file matched,limitation (tag capped at [Preliminary]),2026-11-20T14:05:03Z
    ```
-   The first six columns are required; `attempted_utc` (ISO 8601 UTC) is required for every row this run writes. **Never type a row or its date by hand:** the template's `log_attempt`, `local_data.py import`, and `local_data.py attempt` (for web searches, catalogue browsing, or a local inventory done outside `fetch_data.py`) stamp it with the real UTC time:
+   The first six columns are required; `attempted_utc` (full ISO 8601 UTC, e.g. `2026-11-20T14:02:11Z`) is required for every row this run writes. A bare date (`YYYY-MM-DD`) is accepted only in reconstructed historical records (such as repository examples where exact times were not logged); tools always stamp full ISO UTC. **Never type a row or its date by hand:** `fetch_lib.fetch` (inside `fetch_data.py`), `local_data.py import`, and `local_data.py attempt` (for web searches, catalogue browsing, or a local inventory done outside `fetch_data.py`) stamp it with the real UTC time:
    ```bash
    python3 -B <skill-dir>/scripts/local_data.py attempt --csv appendix/data_attempts.csv --target "Exchange-rate band (daily)" \
        --source "BCRA API v4 catalogue (all pages)" --query "keywords: banda; techo; piso; band; ceiling; floor" \
@@ -86,6 +87,12 @@ python3 -B <skill-dir>/scripts/local_data.py import datos/a3500.csv \
 
 `import` does the whole rung in one step: it copies the file into `appendix/data/` (refusing to overwrite a different file with the same name), registers the **copy** in `sources.csv` with the next free id (`L1`, `L2`, …), a project-relative path (`appendix/data/…`, no `file://` scheme) and its SHA-256, and appends the `data_attempts.csv` row with `fallback_used = local:<path> sha256:<hash>`. Re-running it adds nothing. `register` (same flags plus `--claim`) only appends the `sources.csv` row, for a file already inside `appendix/data/`; a file outside the report folder is stored as an absolute `file:///…` URI, so prefer `import`. `--lang es` writes the title suffix in Spanish (`archivo local`).
 
+**Whole folders (pre-flight intake, `SKILL.md` Stage 0 step 9):** `local_data.py intake <folder> --channel data|sources --selection user-curated|agent-fetched [--wishlist wishlist.txt] [--tier …] [--retrieved-utc …]` runs `preview` + `import` on every file, rejects ambiguous CSVs instead of guessing, copies documents to `appendix/corpus/` (`kind=literature`), and writes `appendix/intake.md`. Every `sources.csv` row it writes carries:
+- `selection`: `user-curated` (the user chose it), `agent-fetched` (you found it), or `third-party`;
+- `retrieved_utc`: when the file was obtained from its origin, or `unknown`. A user-curated row with `unknown` stays Tier 3, and the As-Of Date may not precede any `retrieved_utc`.
+
+A wish-list line is `name: keyword, keyword`; a name that no accepted file or column matches is reported as a gap.
+
 Rules:
 1. **Preview before use.** Check delimiter, decimal convention, units, header row, date encoding, and footer notes before any computation.
 2. **Copy, don't link.** Use `import` so the appendix holds the copy and `sources.csv` points at it with a relative URL — never at the user's absolute path (absolute paths leak the user's home directory into the report; the renderer shows only the file name and hash).
@@ -98,6 +105,7 @@ Rules:
    rows = read_table(Path("appendix/data/a3500.csv"))   # ';' + decimal comma ('1.234,5' -> 1234.5) + latin-1 handled
    itcrm = read_table(Path("appendix/data/itcrm.xlsx"))  # header row auto-detected; title rows and footer notes dropped
    ```
+   **CSV decimals are decided per column.** `read_table` reads each column as decimal-comma or decimal-point from its own cells (`3.1416` and `12,34` can sit in one file); a column that mixes the two raises `ValueError` with the first conflicting cells instead of guessing, and mostly-text columns and zero-padded identifiers (`00123`) stay text. Force text with `read_table(path, keep_strings=["zip"])` (CLI: `preview --keep-strings zip`). Run `local_data.py preview` first: it prints the detected format per column and `raw -> converted` for each cell that changes.
    Supported: CSV/TSV, XLSX/XLSM (shared strings, inline strings, booleans, sheets by name; Excel serial dates via `excel_date`), JSON (top-level list or `results`/`data`/`rows`/`items`). PDF, legacy XLS, and ODS are listed but must be converted first.
 4. **Tier of a local file** = the tier of its declared origin, annotated *"local copy supplied by the user"*. Unknown origin → **Tier 3**: claims resting only on that file may never carry `[Strong]`/`[Fuerte]`.
 5. **When local data rescues a failed rung**, write `fallback_used = local:<path> sha256:<hash>` in that rung's `data_attempts.csv` row.
@@ -116,11 +124,16 @@ Write `{{num:clean_r}}` in `report.md`; `render_report.py` substitutes it from `
 1. **Parse, Inspect & Separate Regimes:** Check sample size (n), missing values, duplicate keys, and units. When comparing volatility or means across time (e.g., across administrations or policy eras), **separate distinct structural regimes** (such as fixed pegs/crawling bands vs. floating regimes) in both tables and charts rather than pooling incompatible regimes silently.
 2. **Parametric + Robust Dispersion:** Compute **both** parametric (`mean`, `stdev`) and robust non-parametric (`median`, `IQR`, **MAD — Median Absolute Deviation**) statistics.
 3. **Outlier & Leverage Audit:** Flag observations beyond median ± 3 × IQR, median ± 3 × MAD / 0.6745, or |z| > 2.5.
-4. **Correlation, Lag Regressions & Bootstrap 95% CIs:**
+4. **Correlation, Lag Regressions & Bootstrap 95% CIs** (small-sample cautions below):
    - Compute both **Pearson r** and **Spearman rank ρ**, plus deterministic **Bootstrap 95% Confidence Intervals** (use block bootstrap for autocorrelated time series).
    - For time-series pass-through or lead-lag hypotheses, run OLS regression with lag terms and trend/regime controls (and state statistical power limits when n < 30).
+   **Small-sample cautions (state them in Section 4 when they apply):**
+   - **n < 30:** a percentile bootstrap is unstable and understates the width of the interval (with 4 units per arm it is meaningless). Prefer an **exact or permutation test**, or BCa intervals, and say how few units there are.
+   - **Effect size, not only p:** report the magnitude (difference, ratio or r) with its units next to every p-value; a tiny p on a tiny effect, or a large effect with p = 0.2, are different findings.
+   - **Multiple comparisons:** when several subgroups or outcomes are tested, say how many and apply a correction (Holm or Bonferroni) or label the extra tests exploratory; if every p sits at the exact-test floor, say that no correction can lower it.
+   - **Decisions inside the noise:** a threshold crossed by less than the Monte Carlo or seed interval is "not distinguishable", not a result.
 5. **Direct `charts.json` v2 Emission:**
-   - Inside `appendix/analysis.py`, build the `charts.json` payload directly from the computed Python arrays and write it to `charts.json`. Never copy-paste numbers by hand into a separate chart script.
+   - Inside `appendix/analysis.py`, build the `charts.json` payload directly from the computed Python arrays and write it with `json.dumps(payload, allow_nan=False, ensure_ascii=False, indent=1)`: a NaN or Infinity then fails loudly in the script instead of producing a figure with nonsense coordinates. `validate_report.py` checks every chart against the schema (unknown or misspelled keys, strings or non-finite numbers, group/value length mismatches, invalid dates, unordered fan quantiles). Never copy-paste numbers by hand into a separate chart script.
    - Use `"y": {"format": "percent"}` for ratios stored as fractions (0.5 → 50%), `"thousands"` or `"currency"` for large levels; axis labels follow the report language automatically.
 6. **Modularization & Appendix Hygiene:**
    - If the analysis exceeds **~300 lines**, split it into clean modular scripts inside `appendix/` (e.g., `01_ingest.py`, `02_regressions.py`, `03_projections.py`) orchestrated by `analysis.py`.
@@ -137,75 +150,28 @@ Write `{{num:clean_r}}` in `report.md`; `render_report.py` substitutes it from `
 
 from __future__ import annotations
 
-import csv
-import hashlib
+import json
 import math
-import os
 import random
 import statistics
-import urllib.request
-from datetime import datetime, timezone
+import sys
 from pathlib import Path
 from typing import Callable
 
 APPENDIX = Path(__file__).resolve().parent
-DATA_DIR = APPENDIX / "data"
-USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) research-script (+reproducible appendix)"
-ATTEMPT_COLS = ["target_series", "source_tried", "query_or_endpoint", "outcome", "failure_reason", "fallback_used",
-                "attempted_utc"]
-DOWNLOAD_COLS = ["file", "url", "retrieved_utc", "bytes", "sha256"]
+sys.path.insert(0, "<skill-dir>/scripts")  # or copy fetch_lib.py and local_data.py next to this script
+from fetch_lib import fetch  # noqa: E402  retries + backoff, UA, checksum, download_log.csv, dated attempts log
+
+# Downloading: one call per file. On success it writes appendix/data/<file> and a download_log.csv row with its
+# SHA-256; on failure (or with HEURISMA_OFFLINE=1) it returns None after logging a dated data_attempts.csv row.
+#   fetch("Wholesale FX", "Central Bank API v4", "https://api.example.org/v4/series.csv", "series.csv", APPENDIX)
+# Searches done outside this script (web search, catalogue browsing, local inventory) are logged with:
+#   python3 -B <skill-dir>/scripts/local_data.py attempt --csv appendix/data_attempts.csv --target ... --source ... --query ... --outcome ...
 
 
-def _append_csv(path: Path, cols: list[str], row: dict[str, object]) -> None:
-    """Append row; widen an inherited file that lacks a column (its old rows stay undated = inherited)."""
-    rows: list[dict[str, str]] = []
-    if path.exists() and path.stat().st_size:
-        with path.open(encoding="utf-8-sig", newline="") as fh:
-            reader = csv.DictReader(fh)
-            header = list(reader.fieldnames or [])
-            rows = list(reader)
-        cols = header + [c for c in cols if c not in header]
-    with path.open("w", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=cols, extrasaction="ignore", restval="")
-        writer.writeheader()
-        writer.writerows(rows + [row])
-
-
-def log_attempt(target: str, source: str, endpoint: str, outcome: str, reason: str, fallback: str = "") -> None:
-    """Append one failed rung to the canonical appendix/data_attempts.csv."""
-    _append_csv(APPENDIX / "data_attempts.csv", ATTEMPT_COLS, {
-        "target_series": target, "source_tried": source, "query_or_endpoint": endpoint,
-        "outcome": outcome, "failure_reason": reason, "fallback_used": fallback,
-        "attempted_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-    })
-
-
-def offline() -> bool:
-    """HEURISMA_OFFLINE=1 skips the network so the run must fall through to the local-data rung."""
-    return os.environ.get("HEURISMA_OFFLINE", "").strip().lower() in {"1", "true", "yes", "on"}
-
-
-def fetch(target: str, source: str, url: str, filename: str, timeout: int = 20) -> Path | None:
-    """Download url into appendix/data/; log success to download_log.csv or failure to data_attempts.csv."""
-    if offline():
-        log_attempt(target, source, f"GET {url}", "offline mode", "network disabled by HEURISMA_OFFLINE=1")
-        return None
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            payload = resp.read()
-    except Exception as exc:  # noqa: BLE001 - every failure must be logged, never swallowed
-        code = getattr(exc, "code", type(exc).__name__)
-        log_attempt(target, source, f"GET {url}", f"HTTP {code}" if isinstance(code, int) else str(code), str(exc))
-        return None
-    dest = DATA_DIR / filename
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_bytes(payload)
-    _append_csv(APPENDIX / "download_log.csv", DOWNLOAD_COLS, {
-        "file": filename, "url": url, "retrieved_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "bytes": len(payload), "sha256": hashlib.sha256(payload).hexdigest(),
-    })
-    return dest
+def write_json(path: Path, payload: object) -> None:
+    """Strict JSON for charts.json and numbers.json: a NaN or Infinity raises here instead of reaching the figures."""
+    path.write_text(json.dumps(payload, allow_nan=False, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
 
 
 def median_abs_deviation(vals: list[float]) -> tuple[float, float]:

@@ -1,3 +1,10 @@
+MODE: self-review
+REVIEWED-SHA256: 5be34406d96ad6ddd235bc91dcd3d1a4ceaad3481b4a2cd512cb3a7a9680110a
+REVIEWED-UTC: 2026-11-21T12:27:08Z
+QUOTE: appendix/sources.csv:2: "C1,"Multi-site engineering CSV"
+QUOTE: appendix/sources.csv:3: "Bloom, N., Han, R., & Liang, J. (2024)"
+QUOTE: appendix/data_attempts.csv:2: "Site allocation protocol, baseline window"
+
 # Source-verification gate — manual record (maintainer, 2026-11-20)
 
 This example predates the `appendix/gates/` convention. No subagent output was saved for it; this file records the provenance checks the maintainer ran by hand, in the shape fixed by `references/agents/source-verifier.md` (v0.6.1).

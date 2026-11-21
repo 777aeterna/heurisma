@@ -197,7 +197,7 @@ class TestLocalData(unittest.TestCase):
             res = subprocess.run(
                 [sys.executable, "-B", str(script_path), "inventory", str(root)],
                 capture_output=True,
-                text=True,
+                text=True, encoding="utf-8",
             )
             self.assertEqual(res.returncode, 0, msg=res.stderr)
             self.assertIn("series.csv", res.stdout)
@@ -314,7 +314,7 @@ class TestLocalData(unittest.TestCase):
                          "--target", "Serie X", "--source", "BCRA API v4", "--query", "variable 1187",
                          "--outcome", "HTTP 200", "--fallback", "local:appendix/data/x.csv sha256:abc123def456"],
                         capture_output=True,
-                        text=True,
+                        text=True, encoding="utf-8",
                     )
                     self.assertEqual(res.returncode, 0, msg=res.stderr)
                 with target_csv.open(encoding="utf-8", newline="") as fh:
@@ -350,7 +350,7 @@ class TestLocalData(unittest.TestCase):
                     [sys.executable, "-B", str(SCRIPTS_DIR / "local_data.py"), "register", str(f),
                      "--sources", str(sources), "--tier", "Tier 2", "--title", f.stem],
                     capture_output=True,
-                    text=True,
+                    text=True, encoding="utf-8",
                 )
                 self.assertEqual(res.returncode, 0, msg=res.stderr)
             rows = self._read_csv_rows(sources)
@@ -367,7 +367,7 @@ class TestLocalData(unittest.TestCase):
                 res = subprocess.run(
                     [sys.executable, "-B", str(SCRIPTS_DIR / "local_data.py"), "preview", str(root / name)],
                     capture_output=True,
-                    text=True,
+                    text=True, encoding="utf-8",
                 )
                 self.assertEqual(res.returncode, 1, msg=res.stdout + res.stderr)
                 self.assertNotIn("Traceback", res.stderr)
@@ -420,14 +420,14 @@ class TestLocalData(unittest.TestCase):
                 "--into", str(appendix / "data"), "--sources", str(appendix / "sources.csv"),
                 "--tier", "Tier 1", "--title", "X series",
             ]
-            res = subprocess.run(cmd, capture_output=True, text=True)
+            res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(res.returncode, 0, msg=res.stderr)
             self.assertTrue((appendix / "data" / "x.csv").is_file())
             # same name, different content -> readable error, exit 1, nothing overwritten
             other = root / "other" / "x.csv"
             other.parent.mkdir()
             other.write_text("a,b\n9,9\n", encoding="utf-8")
-            res2 = subprocess.run(cmd[:4] + [str(other)] + cmd[5:], capture_output=True, text=True)
+            res2 = subprocess.run(cmd[:4] + [str(other)] + cmd[5:], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(res2.returncode, 1)
             self.assertNotIn("Traceback", res2.stderr)
             self.assertEqual((appendix / "data" / "x.csv").read_text(encoding="utf-8"), "a,b\n1,2\n")
@@ -473,22 +473,27 @@ class TestLocalData(unittest.TestCase):
                 appendix / "data_attempts.csv", "BCRA API", "offline", target="A3500", endpoint="GET https://api.example.org"
             )
             row = local_data.import_local(
-                root / "datos" / "a3500.csv", appendix / "data", appendix / "sources.csv", tier="Tier 2", title="A3500 local"
+                root / "datos" / "a3500.csv", appendix / "data", appendix / "sources.csv", tier="Tier 2", title="A3500 local",
+                retrieved_utc="2026-11-01T00:00:00Z",  # a user file above Tier 3 needs its retrieval date (v0.7.0)
             )
             marker = tvr._seed_charts(root)
             report = tvr._with_fig(
-                tvr.VALID_REPORT.replace("Pure PHA films mineralize", f"Pure PHA films mineralize [@{row['claim_id']}]"), marker
+                tvr.VALID_REPORT.replace("[@C1]", f"[@{row['claim_id']}]").replace(
+                    "Pure PHA films mineralize", f"Pure PHA films mineralize [@{row['claim_id']}]"
+                ),
+                marker,
             )
             (root / "report.md").write_text(report, encoding="utf-8")
+            tvr._restamp_gates(root)  # the QA gate is bound to the final report
             out = root / "report.html"
             cmd_r = [sys.executable, "-B", str(SCRIPTS_DIR / "render_report.py"), str(root / "report.md"), "--out", str(out),
                      "--charts", str(root / "charts.json"), "--appendix", str(appendix)]
-            self.assertEqual(subprocess.run(cmd_r, capture_output=True, text=True).returncode, 0)
+            self.assertEqual(subprocess.run(cmd_r, capture_output=True, text=True, encoding="utf-8").returncode, 0)
             res = subprocess.run(
                 [sys.executable, "-B", str(SCRIPTS_DIR / "validate_report.py"), str(root / "report.md"),
                  "--level", "2", "--html", str(out), "--strict", "--run-since", "2000-01-01"],
                 capture_output=True,
-                text=True,
+                text=True, encoding="utf-8",
             )
             self.assertEqual(res.returncode, 0, msg=res.stderr + res.stdout)
             self.assertNotIn("/tmp/", out.read_text(encoding="utf-8").replace("/tmp/claude", ""))

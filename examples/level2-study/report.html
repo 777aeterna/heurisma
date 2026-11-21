@@ -84,7 +84,7 @@
   </style>
 </head>
 <body>
-  <!-- heurisma-sources: sha256:a3355bdad9a6 -->
+  <!-- heurisma-sources: sha256:7d35d52ea8e9 -->
   <article class="paper">
     <header class="title-block">
       <h1>Audit of Internal Pair-Programming Hours vs. Bug-Fix Throughput (12-Team Study)</h1>
@@ -128,6 +128,8 @@
 <li><strong>Domain Evidence Hierarchy:</strong> Tier 1 = controlled crossover experiments and audited normalized telemetry; Tier 2 = multi-sprint panels with headcount/severity covariates; Tier 3 = unadjusted single-week aggregate counts.
 </li>
 <li><strong>Analytical &amp; Data Provenance:</strong> All computations were executed in <a href="appendix/analysis.py"><code>appendix/analysis.py</code></a> <a href="#ref-2">[2]</a> (see <a href="appendix/README.md"><code>appendix/README.md</code></a>) on the supplied dataset <a href="#ref-1">[1]</a>, archiving verbatim output in <a href="appendix/output.txt"><code>appendix/output.txt</code></a>, key numbers in <a href="appendix/numbers.json"><code>appendix/numbers.json</code></a>, sources in <a href="appendix/sources.csv"><code>appendix/sources.csv</code></a>, and emitting <code>charts.json</code> directly.
+</li>
+<li><strong>Review Gates:</strong> The source-verification and QA gates of this example are manual maintainer records written without a subagent, so they are self-review (<code>MODE: self-review</code> in <code>appendix/gates/</code>), not independent review.
 </li>
 </ul>
 <div class="table-wrap"><table class="booktabs">
@@ -360,7 +362,13 @@ def main() -&gt; None:
 if __name__ == &quot;__main__&quot;:
     main()
 </code></pre></details>
-<details class="appendix-item"><summary><code>appendix/gates/qa.md</code> (1,234 bytes)</summary><pre><code>QA: PASS
+<details class="appendix-item"><summary><code>appendix/gates/qa.md</code> — self-review, not independent (1,490 bytes)</summary><pre><code>MODE: self-review
+REVIEWED-SHA256: bc8060313f2a6669b93659a285d8b16e7f0d46ce067732c47861626d46d64226
+REVIEWED-UTC: 2026-11-21T12:27:08Z
+QUOTE: report.md:6: &quot;- **Calibrated Verdict:** The supplied&quot;
+QUOTE: appendix/output.txt:1: &quot;Integrity: n=12, missing=0&quot;
+
+QA: PASS
 1 PASS — `validate_report.py report.md --level 2 --html report.html --strict`: PASSED, no warnings (run by the maintainer on 2026-11-20 with the v0.6.1 validator, after these gate files were rewritten in the v0.6.1 shape and the HTML re-rendered).
 2 PASS — the validator reports no `stale` or `no source hash` line.
 3 PASS — the Calibrated Verdict numbers are placeholders resolved from `appendix/numbers.json`.
@@ -373,7 +381,13 @@ FAIL count: 0
 
 Manual record by the maintainer: this example predates the gate convention and no QA subagent was dispatched for it.
 </code></pre></details>
-<details class="appendix-item"><summary><code>appendix/gates/source_verifier.md</code> (1,128 bytes)</summary><pre><code># Source-verification gate — manual record (maintainer, 2026-11-20)
+<details class="appendix-item"><summary><code>appendix/gates/source_verifier.md</code> — self-review, not independent (1,422 bytes)</summary><pre><code>MODE: self-review
+REVIEWED-SHA256: 6bab03f0cacc299262cf911942f526038978f93b98068e73b8bec726552dcd05
+REVIEWED-UTC: 2026-11-21T12:27:08Z
+QUOTE: appendix/sources.csv:2: &quot;C1,Internal 12-team pair-programming CSV&quot;
+QUOTE: appendix/sources.csv:3: &quot;C2,Own computation: sensitivity &amp; bootstrap script&quot;
+
+# Source-verification gate — manual record (maintainer, 2026-11-20)
 
 This example predates the `appendix/gates/` convention. No subagent output was saved for it; this file records the provenance checks the maintainer ran by hand, in the shape fixed by `references/agents/source-verifier.md` (v0.6.1).
 

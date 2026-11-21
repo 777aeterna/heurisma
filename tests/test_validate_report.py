@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import subprocess
+import hashlib
 import re
 import sys
 import tempfile
@@ -38,7 +41,7 @@ Thin-film PHA items avoid centuries-long microplastic persistence even when frag
 ## 6. Claim-Evidence Matrix
 | Claim | Discipline / Axis | Evidence & Source Tier | Confidence Tag | Key Falsifier / Condition |
 | :--- | :--- | :--- | :--- | :--- |
-| Thin-film PHA mineralizes enzymatically in aerobic seawater | Marine Chemistry | Peer-reviewed field & lab meta-analyses (Tier 1) | `[Strong]` | Blending with non-marine-degradable PLA/PBAT |
+| Thin-film PHA mineralizes enzymatically in aerobic seawater | Marine Chemistry | Peer-reviewed field & lab meta-analyses [@C1] (Tier 1) | `[Strong]` | Blending with non-marine-degradable PLA/PBAT |
 | Unretained $0.35 surcharge compresses small vendor profit margins | Micro-Economics | Foodservice margin data & resin spot pricing (Tier 2) | `[Moderate]` | Municipal bulk-purchasing subsidy or vendor fee retention |
 
 ## 7. Limitations & Open Questions
@@ -116,12 +119,38 @@ def _qa_text(status: str = "PASS", failed: tuple[int, ...] = ()) -> str:
 
 
 def _seed_gates(root: Path, qa: str | None = None) -> None:
-    """Write complete appendix/gates/ traces in the shape the agent prompts fix (v0.6.1 markers)."""
+    """Write complete appendix/gates/ traces in the shape the agent prompts fix (v0.6.1 markers + v0.7.0 header).
+
+    The header binds each gate to the files present now; call ``_restamp_gates(root)`` after changing them.
+    """
     gates = root / "appendix" / "gates"
     gates.mkdir(parents=True, exist_ok=True)
     (gates / "source_verifier.md").write_text(GOOD_SOURCE_VERIFIER, encoding="utf-8")
     (gates / "reviewer.md").write_text(GOOD_REVIEWER, encoding="utf-8")
     (gates / "qa.md").write_text(qa if qa is not None else _qa_text(), encoding="utf-8")
+    _restamp_gates(root)
+
+
+def _restamp_gates(root: Path) -> None:
+    """(Re)write the v0.7.0 binding header of every gate: MODE, REVIEWED-SHA256 of the current files, quotes."""
+    analysis = root / "appendix" / "analysis.py"
+    if not analysis.is_file():
+        analysis.parent.mkdir(parents=True, exist_ok=True)
+        analysis.write_text("print('ok')\n", encoding="utf-8")
+    first = analysis.read_text(encoding="utf-8").splitlines()[0]
+    for g in sorted((root / "appendix" / "gates").glob("*.md")):
+        body = "\n".join(
+            ln for ln in g.read_text(encoding="utf-8").splitlines()
+            if not re.match(r"^(MODE|REVIEWED-SHA256|REVIEWED-UTC|QUOTE):", ln)
+        ).lstrip("\n")
+        head = [
+            "MODE: subagent",
+            f"REVIEWED-SHA256: {validate_report.gate_hash(root, g.stem)}",
+            "REVIEWED-UTC: 2026-11-20T12:00:00Z",
+            f'QUOTE: appendix/analysis.py:1: "{first[:5]}"',
+            f'QUOTE: appendix/analysis.py:1: "{first}"',
+        ]
+        g.write_text("\n".join(head) + "\n\n" + body, encoding="utf-8")
 
 
 def _seed_charts(root: Path) -> str:
@@ -209,7 +238,7 @@ One two three four five six
 
     def test_strong_tag_on_tier3_source_fails(self) -> None:
         bad = VALID_REPORT.replace(
-            "| Thin-film PHA mineralizes enzymatically in aerobic seawater | Marine Chemistry | Peer-reviewed field & lab meta-analyses (Tier 1) | `[Strong]` | Blending with non-marine-degradable PLA/PBAT |",
+            "| Thin-film PHA mineralizes enzymatically in aerobic seawater | Marine Chemistry | Peer-reviewed field & lab meta-analyses [@C1] (Tier 1) | `[Strong]` | Blending with non-marine-degradable PLA/PBAT |",
             "| Forecast hits target | Economics | Press release roadmap (Tier 3) | `[Strong]` | Delay |",
         )
         errors = validate_report.validate_report(bad)
@@ -218,7 +247,7 @@ One two three four five six
     def test_strong_on_press_without_tier3_literal_fails(self) -> None:
         """Audit v0.2: [Strong] paired with 'nota de prensa' (without literal 'Tier 3') must FAIL."""
         bad = VALID_REPORT.replace(
-            "| Thin-film PHA mineralizes enzymatically in aerobic seawater | Marine Chemistry | Peer-reviewed field & lab meta-analyses (Tier 1) | `[Strong]` | Blending with non-marine-degradable PLA/PBAT |",
+            "| Thin-film PHA mineralizes enzymatically in aerobic seawater | Marine Chemistry | Peer-reviewed field & lab meta-analyses [@C1] (Tier 1) | `[Strong]` | Blending with non-marine-degradable PLA/PBAT |",
             "| Forecast hits target | Economics | Nota de prensa del diario local | `[Strong]` | Delay |",
         )
         errors = validate_report.validate_report(bad)
@@ -259,7 +288,7 @@ One two three four five six
             (appendix / "analysis.py").write_text("print('ok')\n", encoding="utf-8")
             (appendix / "output.txt").write_text("ok\n", encoding="utf-8")
             (appendix / "sources.csv").write_text(
-                "claim_id,source_title,url,tier,accessed_date,data_as_of\nC1,Study,https://example.org,Tier 1,2026-11-20,2025-12\n",
+                "claim_id,source_title,url,tier,accessed_date,data_as_of,kind\nC1,Study,https://example.org,Tier 1,2026-11-20,2025-12,literature\n",
                 encoding="utf-8",
             )
             cited_valid = _with_fig(
@@ -289,6 +318,7 @@ One two three four five six
                 "customs,Customs API,https://api.example.org,failed,HTTP 403,limitation,2026-11-20T10:00:00Z\n",
                 encoding="utf-8",
             )
+            _restamp_gates(root)
             self.assertEqual(validate_report.validate_report(with_deferred_no_log, level=3, report_dir=root), [])
 
     def test_html_validation_flag(self) -> None:
@@ -321,10 +351,10 @@ One two three four five six
             valid_file.write_text(VALID_REPORT, encoding="utf-8")
             invalid_file.write_text("# Incomplete Report\nNo sections here.\n", encoding="utf-8")
 
-            res_ok = subprocess.run([sys.executable, "-B", str(script_path), str(valid_file)], capture_output=True, text=True)
+            res_ok = subprocess.run([sys.executable, "-B", str(script_path), str(valid_file)], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(res_ok.returncode, 0, msg=res_ok.stderr)
 
-            res_bad = subprocess.run([sys.executable, "-B", str(script_path), str(invalid_file)], capture_output=True, text=True)
+            res_bad = subprocess.run([sys.executable, "-B", str(script_path), str(invalid_file)], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(res_bad.returncode, 1)
 
     def test_level2_fails_without_fig_markers_or_unknown_fig_id(self) -> None:
@@ -337,8 +367,8 @@ One two three four five six
             (appendix / "analysis.py").write_text("print('ok')\n", encoding="utf-8")
             (appendix / "output.txt").write_text("ok 60\n", encoding="utf-8")
             (appendix / "sources.csv").write_text(
-                "claim_id,source_title,url,tier,accessed_date,data_as_of\n"
-                "C1,Primary Study,https://example.org/c1,Tier 1,2026-11-20,2026-11\n",
+                "claim_id,source_title,url,tier,accessed_date,data_as_of,kind\n"
+                "C1,Primary Study,https://example.org/c1,Tier 1,2026-11-20,2026-11,literature\n",
                 encoding="utf-8",
             )
             (appendix / "charts.json").write_text(
@@ -371,8 +401,8 @@ One two three four five six
             (appendix / "analysis.py").write_text("print('ok')\n", encoding="utf-8")
             (appendix / "output.txt").write_text("ok 60\n", encoding="utf-8")
             (appendix / "sources.csv").write_text(
-                "claim_id,source_title,url,tier,accessed_date,data_as_of\n"
-                "C1,Primary Study,https://example.org/c1,Tier 1,2026-11-20,2026-11\n",
+                "claim_id,source_title,url,tier,accessed_date,data_as_of,kind\n"
+                "C1,Primary Study,https://example.org/c1,Tier 1,2026-11-20,2026-11,literature\n",
                 encoding="utf-8",
             )
             # No citations in Section 4 -> MUST fail at Level 2
@@ -444,8 +474,8 @@ One two three four five six
 
             # 1) file:// without sha256 -> ERROR
             (appendix / "sources.csv").write_text(
-                "claim_id,source_title,url,tier,accessed_date,data_as_of\n"
-                f"C1,Local Copy,{local_csv.resolve().as_uri()},Tier 2,2026-11-20,2026-11\n",
+                "claim_id,source_title,url,tier,accessed_date,data_as_of,kind\n"
+                f"C1,Local Copy,{local_csv.resolve().as_uri()},Tier 2,2026-11-20,2026-11,data\n",
                 encoding="utf-8",
             )
             errs, _ = validate_report.validate_report_full(report_with_cite, level=2, report_dir=root)
@@ -453,8 +483,8 @@ One two three four five six
 
             # 2) file:// WITH sha256 -> passes sources check, but orphan dummy.json -> WARNING
             (appendix / "sources.csv").write_text(
-                "claim_id,source_title,url,tier,accessed_date,data_as_of\n"
-                f"C1,Local Copy (sha256 abc123def456),{local_csv.resolve().as_uri()},Tier 2,2026-11-20,2026-11\n",
+                "claim_id,source_title,url,tier,accessed_date,data_as_of,kind\n"
+                f"C1,Local Copy (sha256 {hashlib.sha256(local_csv.read_bytes()).hexdigest()[:12]}),{local_csv.resolve().as_uri()},Tier 2,2026-11-20,2026-11,data\n",
                 encoding="utf-8",
             )
             errs2, warns2 = validate_report.validate_report_full(report_with_cite, level=2, report_dir=root)
@@ -478,8 +508,8 @@ One two three four five six
             (appendix / "analysis.py").write_text("print('ok')\n", encoding="utf-8")
             (appendix / "output.txt").write_text("ok 60\n", encoding="utf-8")
             (appendix / "sources.csv").write_text(
-                "claim_id,source_title,url,tier,accessed_date,data_as_of\n"
-                "C1,Study,https://example.org/c1,Tier 1,2026-11-20,2026-11\n",
+                "claim_id,source_title,url,tier,accessed_date,data_as_of,kind\n"
+                "C1,Study,https://example.org/c1,Tier 1,2026-11-20,2026-11,literature\n",
                 encoding="utf-8",
             )
             (pycache / "analysis.cpython-312.pyc").write_bytes(b"\x00\x00")
@@ -503,8 +533,8 @@ One two three four five six
         (appendix / "analysis.py").write_text("print('ok')\n", encoding="utf-8")
         (appendix / "output.txt").write_text("ok 60\n", encoding="utf-8")
         (appendix / "sources.csv").write_text(
-            "claim_id,source_title,url,tier,accessed_date,data_as_of\n"
-            "C1,Primary Study,https://example.org/c1,Tier 1,2026-11-20,2026-11\n",
+            "claim_id,source_title,url,tier,accessed_date,data_as_of,kind\n"
+            "C1,Primary Study,https://example.org/c1,Tier 1,2026-11-20,2026-11,literature\n",
             encoding="utf-8",
         )
         charts = [
@@ -540,8 +570,11 @@ One two three four five six
     def test_level2_without_any_charts_json_errors(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = self._l2_dir(Path(tmpdir), None)
-            errs = validate_report.validate_report(self._cited(), level=2, report_dir=root)
+            errs = validate_report.validate_report(self._cited("{{fig:fig_1}}"), level=2, report_dir=root)
             self.assertTrue(any("charts.json not found" in e for e in errs), msg=errs)
+            # a table-only study (no figure markers) needs no charts.json (v0.7.0)
+            errs_tables = validate_report.validate_report(self._cited(), level=2, report_dir=root)
+            self.assertFalse(any("charts.json" in e for e in errs_tables), msg=errs_tables)
 
     def test_charts_json_in_appendix_is_still_found(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -603,7 +636,7 @@ One two three four five six
         with tempfile.TemporaryDirectory() as tmpdir:
             root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
             with (root / "appendix" / "sources.csv").open("a", encoding="utf-8") as fh:
-                fh.write("C2,Second Study,https://example.org/c2,Tier 1,2026-11-20,2026-11\n")
+                fh.write("C2,Second Study,https://example.org/c2,Tier 1,2026-11-20,2026-11,literature\n")
             r2 = self._cited("{{fig:fig_1}}")
             errs2, warns2 = validate_report.validate_report_full(r2, level=2, report_dir=root)
             self.assertFalse(any("C2" in e for e in errs2), msg=errs2)
@@ -630,7 +663,7 @@ One two three four five six
             [sys.executable, "-B", str(SCRIPTS_DIR / "render_report.py"), str(root_report), "--out", str(out),
              "--charts", str(root / "charts.json"), "--appendix", str(root / "appendix")],
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8",
         )
         self.assertEqual(res.returncode, 0, msg=res.stderr)
         return out
@@ -658,7 +691,7 @@ One two three four five six
                 [sys.executable, "-I", "-B", str(SCRIPTS_DIR / "validate_report.py"), str(root / "report.md"),
                  "--level", "2", "--html", str(html)],
                 capture_output=True,
-                text=True,
+                text=True, encoding="utf-8",
             )
             out = (res.stdout + res.stderr).lower()
             self.assertTrue("stale" in out or "out of date" in out, msg=out)
@@ -668,8 +701,8 @@ One two three four five six
             root = self._l2_dir(Path(tmpdir), "root", n_charts=1)
             sources = root / "appendix" / "sources.csv"
             sources.write_text(
-                "claim_id,source_title,url,tier,accessed_date,data_as_of\n"
-                "C1,Local table,appendix/data/x.csv,Tier 2,2026-11-20,2026-11\n",
+                "claim_id,source_title,url,tier,accessed_date,data_as_of,kind\n"
+                "C1,Local table,appendix/data/x.csv,Tier 2,2026-11-20,2026-11,data\n",
                 encoding="utf-8",
             )
             errs = validate_report.validate_report(self._cited("{{fig:fig_1}}"), level=2, report_dir=root)
@@ -1074,7 +1107,7 @@ One two three four five six
                 encoding="utf-8",
             )
             report = self._cited("{{fig:fig_1}}").replace(
-                "Peer-reviewed field & lab meta-analyses (Tier 1)", "Own simulation [@C1] (Tier 2)", 1
+                "Peer-reviewed field & lab meta-analyses [@C1] (Tier 1)", "Own simulation [@C1] (Tier 2)", 1
             )
             disp = """
 ### Reviewer #2 Disposition
@@ -1083,11 +1116,10 @@ One two three four five six
 | 1 | Cold water kinetics missing | `Fixed` | Added Q10 sensitivity in appendix/analysis.py |
 """
             _seed_gates(root)
-            _, warns2 = validate_report.validate_report_full(report, level=2, report_dir=root)
-            self.assertFalse(any("own-computation" in w for w in warns2), msg=warns2)
-            errs3, warns3 = validate_report.validate_report_full(report + disp, level=3, report_dir=root)
-            self.assertEqual(errs3, [], msg=errs3)
-            self.assertTrue(any("own-computation" in w and "[Strong]" in w for w in warns3), msg=warns3)
+            errs2, _ = validate_report.validate_report_full(report, level=2, report_dir=root)
+            self.assertTrue(any("[Strong]" in e and "weak source" in e for e in errs2), msg=errs2)
+            errs3, _ = validate_report.validate_report_full(report + disp, level=3, report_dir=root)
+            self.assertTrue(any("[Strong]" in e and "weak source" in e and "C1" in e for e in errs3), msg=errs3)
 
 
     def test_validator_surfaces_chart_design_warnings(self) -> None:

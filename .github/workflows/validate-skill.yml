@@ -8,19 +8,37 @@ on:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.9", "3.12", "3.13"]
+        exclude:
+          - os: ubuntu-latest
+            python-version: "3.9"
+        include:
+          - os: ubuntu-24.04
+            python-version: "3.9"
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.os != 'ubuntu-latest' && matrix.os != 'ubuntu-24.04' }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTHONUTF8: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.12
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
 
       - name: Validate SKILL.md frontmatter, portability, and relative links
         run: |
-          python3 -B - <<'EOF'
+          python -B - <<'EOF'
           import re
           from pathlib import Path
 
@@ -32,6 +50,7 @@ jobs:
           assert fields.get("name") == "heurisma", f"Unexpected skill name: {fields.get('name')}"
           desc = fields.get("description", "")
           assert desc.startswith("Use when"), f"Description must start with 'Use when': {desc}"
+          assert "3.9" in fields.get("compatibility", ""), f"Missing Python 3.9 compatibility: {fields.get('compatibility')}"
           assert len(fm) <= 1024, f"Frontmatter exceeds 1024 chars ({len(fm)})"
 
           forbidden = ("search_web", "TypeName", "skills/heurisma/scripts")
@@ -49,61 +68,71 @@ jobs:
           print(f"Frontmatter, portability & links OK (len={len(fm)} chars)")
           EOF
 
-      - name: Run local-data, SVG engine, renderer, and validator unit tests
-        run: python3 -B -m unittest discover -s tests -v
+      - name: Run full unit test suite
+        run: python -B -m unittest discover -s tests -v
 
-      - name: Check Claude Code agent definitions mirror the portable prompts
-        run: python3 -B -m unittest tests.test_agents_sync -v
+      - name: Check mutation detection rate (100% required)
+        run: python -B tests/mutation_report.py --min-rate 1.0
 
-      - name: Smoke-test local_data.py inventory
-        run: python3 -B skills/heurisma/scripts/local_data.py inventory examples/level2-study/appendix
-
-      - name: Run Level 2 showcase analysis, render working-paper HTML, and validate deliverables
+      - name: Smoke-test local_data.py inventory and validator --json
         run: |
-          python3 -B examples/level2-study/appendix/analysis.py \
-            --charts-out examples/level2-study/charts.json \
-            --numbers-out examples/level2-study/appendix/numbers.json \
-            > examples/level2-study/appendix/output.txt
-          python3 -B skills/heurisma/scripts/render_report.py examples/level2-study/report.md \
-            --out examples/level2-study/report.html \
-            --charts examples/level2-study/charts.json \
-            --appendix examples/level2-study/appendix
-          python3 -B skills/heurisma/scripts/validate_report.py examples/level1-brief-example.md --level 1
-          python3 -B skills/heurisma/scripts/validate_report.py examples/level2-study/report.md \
-            --level 2 --html examples/level2-study/report.html --strict
-          python3 -B examples/showcase-hybrid-work/appendix/analysis.py \
-            --charts-out examples/showcase-hybrid-work/charts.json \
-            --numbers-out examples/showcase-hybrid-work/appendix/numbers.json \
-            > examples/showcase-hybrid-work/appendix/output.txt
-          python3 -B skills/heurisma/scripts/render_report.py examples/showcase-hybrid-work/report.md \
-            --out examples/showcase-hybrid-work/report.html \
-            --charts examples/showcase-hybrid-work/charts.json \
-            --appendix examples/showcase-hybrid-work/appendix
-          python3 -B skills/heurisma/scripts/validate_report.py examples/showcase-hybrid-work/report.md \
-            --level 2 --html examples/showcase-hybrid-work/report.html --strict
+          python -B skills/heurisma/scripts/local_data.py inventory examples/level2-study/appendix
+          python -B skills/heurisma/scripts/validate_report.py examples/level2-study/report.md \
+            --level 2 --html examples/level2-study/report.html --strict --json | python -B -c \
+            'import json, sys; d = json.load(sys.stdin); assert d["passed"] is True, d; print("JSON smoke OK:", d["version"])'
+
+      - name: Validate examples with --strict and --reproduce
+        run: |
+          python -B skills/heurisma/scripts/validate_report.py examples/level1-brief-example.md --level 1
+          for d in level2-study showcase-hybrid-work; do
+            python -B skills/heurisma/scripts/validate_report.py examples/$d/report.md \
+              --level 2 --html examples/$d/report.html --strict --reproduce
+          done
 
       - name: Offline rehearsal of the local-data rung and privacy check
         run: |
-          rm -rf /tmp/offline-run && mkdir -p /tmp/offline-run/datos
-          printf 'fecha;valor\n2026-01-01;1459,42\n' > /tmp/offline-run/datos/serie.csv
-          HEURISMA_OFFLINE=1 python3 -B skills/heurisma/scripts/local_data.py import /tmp/offline-run/datos/serie.csv \
-            --into /tmp/offline-run/appendix/data --sources /tmp/offline-run/appendix/sources.csv \
+          WORK="${RUNNER_TEMP:-/tmp}/offline-run"
+          rm -rf "$WORK" && mkdir -p "$WORK/datos"
+          printf 'fecha;valor\n2026-01-01;1459,42\n' > "$WORK/datos/serie.csv"
+          HEURISMA_OFFLINE=1 python -B skills/heurisma/scripts/local_data.py import "$WORK/datos/serie.csv" \
+            --into "$WORK/appendix/data" --sources "$WORK/appendix/sources.csv" \
             --tier "Tier 2" --title "Serie local" --lang es
-          grep -q "local:appendix/data/serie.csv" /tmp/offline-run/appendix/data_attempts.csv
+          grep -q "local:appendix/data/serie.csv" "$WORK/appendix/data_attempts.csv"
           if grep -rn "/home/" examples/*/report.html; then echo "absolute path leaked into HTML"; exit 1; fi
-          if grep -q "file://" /tmp/offline-run/appendix/sources.csv; then echo "relative local path stored as file:// URI"; exit 1; fi
-          grep -q "attempted_utc" /tmp/offline-run/appendix/data_attempts.csv
-          python3 -B skills/heurisma/scripts/local_data.py attempt --csv /tmp/offline-run/appendix/data_attempts.csv \
+          if grep -q "file://" "$WORK/appendix/sources.csv"; then echo "relative local path stored as file:// URI"; exit 1; fi
+          grep -q "attempted_utc" "$WORK/appendix/data_attempts.csv"
+          python -B skills/heurisma/scripts/local_data.py attempt --csv "$WORK/appendix/data_attempts.csv" \
             --target "Serie X" --source "BCRA API v4" --query "variable 1187" --outcome "HTTP 200"
-          grep -Eq "Serie X,.*,[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]{8}Z" /tmp/offline-run/appendix/data_attempts.csv
+          grep -Eq "Serie X,.*,[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]{8}Z" "$WORK/appendix/data_attempts.csv"
 
       - name: Validator works in isolated mode and requires gate traces
         run: |
           for d in level2-study showcase-hybrid-work; do
-            python3 -I -B skills/heurisma/scripts/validate_report.py examples/$d/report.md \
-              --level 2 --html examples/$d/report.html --strict
+            python -I -B skills/heurisma/scripts/validate_report.py examples/$d/report.md \
+              --level 2 --html examples/$d/report.html --strict --reproduce
           done
-          rm -rf /tmp/gate-check && cp -r examples/level2-study /tmp/gate-check && rm /tmp/gate-check/appendix/gates/qa.md
-          if python3 -B skills/heurisma/scripts/validate_report.py /tmp/gate-check/report.md --level 2 --strict; then
+          GATE_WORK="${RUNNER_TEMP:-/tmp}/gate-check"
+          rm -rf "$GATE_WORK" && cp -r examples/level2-study "$GATE_WORK" && rm "$GATE_WORK/appendix/gates/qa.md"
+          if python -B skills/heurisma/scripts/validate_report.py "$GATE_WORK/report.md" --level 2 --strict; then
             echo "missing appendix/gates/qa.md was not reported"; exit 1
           fi
+
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install development linters (dev CI only; skill remains zero-dependency)
+        run: python -m pip install --upgrade pip && pip install ruff mypy
+
+      - name: Run ruff
+        run: ruff check skills/heurisma/scripts tests
+
+      - name: Run mypy
+        run: mypy skills/heurisma/scripts

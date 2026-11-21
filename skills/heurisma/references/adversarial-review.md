@@ -20,7 +20,7 @@ Before drafting `## 5. Counter-Evidence & Alternative Explanations`, answer thes
 When an inquiry is classified as **Level 3** and your runtime provides a subagent tool (e.g., `Agent` in Claude Code, `invoke_subagent` in Antigravity, or equivalent fresh-context agent dispatch):
 
 ### Step 1: Dispatch Reviewer #2
-Draft your initial synthesis covering Stages 0–3, then dispatch a fresh-context subagent—preferably on a high-reasoning model—using the prompt in [agents/reviewer.md](agents/reviewer.md) (Section 3 below). Save its full answer, unchanged, to `appendix/gates/reviewer.md` (the validator requires it at Level 3).
+Draft your initial synthesis covering Stages 0–3, then dispatch a fresh-context subagent—preferably on a high-reasoning model—using the prompt in [agents/reviewer.md](agents/reviewer.md) (Section 3 below). Save its full answer, unchanged, to `appendix/gates/reviewer.md` (the validator requires it at Level 3). Before dispatching, run `python3 -B <skill-dir>/scripts/validate_report.py report.md --gate-hash reviewer` and give the reviewer `{SKILL_DIR}` so it can record the hash in its `REVIEWED-SHA256:` header line; without a subagent tool, run the six categories yourself and write `MODE: self-review`.
 
 ### Step 2: STRICT Rule — Verify in Tier 1/2 or Exclude Reviewer-Introduced Facts
 Reviewer #2 can hallucinate or misstate facts just like any model. If Reviewer #2 introduces a new statistic, policy detail, historical date, or external agreement (e.g., a currency swap, regulatory clause, or clinical trial) to critique your draft:

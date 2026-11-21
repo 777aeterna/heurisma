@@ -23,8 +23,11 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import unquote
 
-# Ensure sibling svg_charts.py can be imported when invoked as a script
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+# Ensure sibling modules can be imported when invoked as a script (including under python -I)
+_SCRIPTS_DIR = str(Path(__file__).resolve().parent)
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
+from contracts import __version__  # noqa: E402
 import svg_charts  # noqa: E402
 
 TAG_MAP: dict[str, tuple[str, str]] = {
@@ -52,6 +55,7 @@ I18N: dict[str, dict[str, str]] = {
         "appendices": "Appendices &amp; Reproducible Artifacts",
         "external_files": "External Data &amp; Large Files (Linked, Not Embedded)",
         "external_artifact": "external artifact",
+        "self_review": "self-review, not independent",
         "additional_figures": "Additional Figures",
         "credit": "Prepared with Heurisma",
         "data_as_of": "data as of",
@@ -73,6 +77,7 @@ I18N: dict[str, dict[str, str]] = {
         "appendices": "Apéndices y artefactos reproducibles",
         "external_files": "Datos externos y archivos grandes (enlazados, no incrustados)",
         "external_artifact": "artefacto externo",
+        "self_review": "auto-revisión, no independiente",
         "additional_figures": "Figuras adicionales",
         "credit": "Preparado con Heurisma",
         "data_as_of": "datos al",
@@ -223,6 +228,41 @@ def _load_sources(appendix_dir: Path | None) -> list[dict[str, str]]:
         return []
 
 
+_BALANCED_URL = r"((?:[^()\s]|\([^()]*\))*)"
+_LINK_RE = re.compile(r"(?<!!)\[([^\]]+)\]\(" + _BALANCED_URL + r"\)")
+_IMAGE_RE = re.compile(r"!\[([^\]]*)\]\(" + _BALANCED_URL + r"\)")
+_AUTOLINK_RE = re.compile(r"&lt;(https?://(?:(?!&gt;)\S)+)&gt;")
+_SAFE_SCHEMES = {"http", "https", "mailto"}
+_FENCED_SEGMENT_RE = re.compile(r"(^```.*?^```[ \t]*$)", re.MULTILINE | re.DOTALL)
+
+
+def _is_safe_url(escaped_url: str) -> bool:
+    """Allow http(s), mailto, #fragments and relative paths; reject javascript:, data:, vbscript:, protocol-relative."""
+    u = re.sub(r"[\x00-\x20]", "", html.unescape(escaped_url))
+    if not u or u.startswith("//"):
+        return False
+    m = re.match(r"([A-Za-z][A-Za-z0-9+.\-]*):", u)
+    return m is None or m.group(1).lower() in _SAFE_SCHEMES
+
+
+def _split_table_cells(row: str) -> list[str]:
+    """Split a Markdown table row on unescaped pipes; ``\\|`` stays inside its cell."""
+    inner = row.strip()
+    inner = inner[1:] if inner.startswith("|") else inner
+    inner = inner[:-1] if inner.endswith("|") and not inner.endswith("\\|") else inner
+    return [c.replace("\\|", "|").strip() for c in re.split(r"(?<!\\)\|", inner)]
+
+
+def _substitute_markers(report_md: str, nums: dict[str, Any]) -> str:
+    """Replace {{num:key}} outside fenced code blocks (the validator ignores fenced code too)."""
+    parts = _FENCED_SEGMENT_RE.split(report_md)
+    for i in range(0, len(parts), 2):  # even parts are outside fences
+        parts[i] = NUM_MARKER_RE.sub(
+            lambda m: _typographic_minus(str(nums[m.group(1)])) if m.group(1) in nums else m.group(0), parts[i]
+        )
+    return "".join(parts)
+
+
 def _format_inline(text: str, tracker: _CitationTracker | None = None) -> str:
     escaped = html.escape(text)
     # Strip backticks around canonical epistemic tags so they render as small-caps tags
@@ -252,7 +292,7 @@ def _format_inline(text: str, tracker: _CitationTracker | None = None) -> str:
         url_spans.append(m.group(0))
         return f"\x00URL{len(url_spans) - 1}\x00"
 
-    escaped = re.sub(r"\]\([^)]*\)|https?://[^\s<>)\"]+", _stash_url, escaped)
+    escaped = re.sub(r"\]\((?:[^()\s]|\([^()]*\))*\)|https?://[^\s<>)\"]+", _stash_url, escaped)
     escaped = _apply_scientific_notation(escaped)
     for idx, url_text in enumerate(url_spans):
         escaped = escaped.replace(f"\x00URL{idx}\x00", url_text)
@@ -269,9 +309,17 @@ def _format_inline(text: str, tracker: _CitationTracker | None = None) -> str:
 
     escaped = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", escaped)
     escaped = re.sub(r"\*([^*]+)\*", r"<em>\1</em>", escaped)
-    escaped = re.sub(
-        r"\[([^\]]+)\]\(([^)]+)\)",
-        lambda m: f'<a href="{m.group(2)}">{m.group(1)}</a>',
+    escaped = _AUTOLINK_RE.sub(
+        lambda m: f'<a href="{m.group(1)}">{m.group(1)}</a>' if _is_safe_url(m.group(1)) else m.group(1), escaped
+    )
+    escaped = _IMAGE_RE.sub(
+        lambda m: (
+            f'<img src="{m.group(2)}" alt="{m.group(1)}" loading="lazy">' if _is_safe_url(m.group(2)) else m.group(1)
+        ),
+        escaped,
+    )
+    escaped = _LINK_RE.sub(
+        lambda m: f'<a href="{m.group(2)}">{m.group(1)}</a>' if _is_safe_url(m.group(2)) else m.group(1),
         escaped,
     )
 
@@ -402,7 +450,7 @@ def _markdown_to_paper_html(
         nonlocal in_table, table_buf
         if not in_table:
             return
-        rows = [[c.strip() for c in r.strip().strip("|").split("|")] for r in table_buf]
+        rows = [_split_table_cells(r) for r in table_buf]
         out.append('<div class="table-wrap"><table class="booktabs">')
         if rows:
             out.append("<thead><tr>" + "".join(f"<th>{_format_inline(c, tracker)}</th>" for c in rows[0]) + "</tr></thead>")
@@ -591,7 +639,7 @@ def _render_appendices(appendix_dir: Path | None, i18n: dict[str, str]) -> str:
         if path.is_dir() or "__pycache__" in path.parts or path.suffix == ".pyc":
             continue
         rel = path.relative_to(appendix_dir)
-        rel_str = html.escape(str(rel))
+        rel_str = html.escape(rel.as_posix())
         size = path.stat().st_size
 
         in_data_dir = "data" in rel.parts
@@ -601,9 +649,15 @@ def _render_appendices(appendix_dir: Path | None, i18n: dict[str, str]) -> str:
         )
 
         if is_allowed_text and size <= MAX_APPENDIX_FILE_BYTES:
-            content = html.escape(_redact_local_paths(path.read_text(encoding="utf-8", errors="replace")))
+            raw_text = path.read_text(encoding="utf-8", errors="replace")
+            content = html.escape(_redact_local_paths(raw_text))
+            label = (
+                f" — {i18n['self_review']}"
+                if is_gate_trace and re.search(r"^\s*MODE:\s*self-review\b", raw_text, re.MULTILINE)
+                else ""
+            )
             embedded.append(
-                f'<details class="appendix-item"><summary><code>appendix/{rel_str}</code> ({size:,} bytes)</summary>'
+                f'<details class="appendix-item"><summary><code>appendix/{rel_str}</code>{label} ({size:,} bytes)</summary>'
                 f"<pre><code>{content}</code></pre></details>"
             )
         else:
@@ -637,7 +691,7 @@ def compute_source_hash(
     def _file_sha(path: Path) -> str:
         return hashlib.sha256(path.read_bytes()).hexdigest()
 
-    entries: list[tuple[str, str]] = [("report.md", _file_sha(report_md))]
+    entries: list[tuple[str, str]] = [("renderer-version", __version__), ("report.md", _file_sha(report_md))]
     if charts is not None and charts.is_file():
         entries.append(("charts.json", _file_sha(charts)))
     in_appendix = False
@@ -651,7 +705,7 @@ def compute_source_hash(
         if not in_appendix:
             entries.append(("numbers.json", _file_sha(numbers)))
     if appendix_dir is not None and appendix_dir.is_dir():
-        for fp in sorted(appendix_dir.rglob("*")):
+        for fp in sorted(appendix_dir.rglob("*"), key=lambda p: p.relative_to(appendix_dir).parts):
             if not fp.is_file() or "__pycache__" in fp.parts or fp.suffix == ".pyc":
                 continue
             entries.append((f"appendix/{fp.relative_to(appendix_dir).as_posix()}", _file_sha(fp)))
@@ -686,10 +740,7 @@ def render_html(
     if numbers:
         nums.update(numbers)
     if nums:
-        report_md = NUM_MARKER_RE.sub(
-            lambda m: _typographic_minus(str(nums[m.group(1)])) if m.group(1) in nums else m.group(0),
-            report_md,
-        )
+        report_md = _substitute_markers(report_md, nums)
 
     title, meta_line, abstract_text, change, explicit_abstract = _extract_metadata(report_md)
     sources = _load_sources(appendix_dir)
@@ -849,7 +900,11 @@ def render_html(
 
 
 def main(argv: list[str] | None = None) -> int:
+    for _stream in (sys.stdout, sys.stderr):
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description="Render a Heurisma Markdown report into a working-paper HTML + SVG document.")
+    parser.add_argument("--version", action="version", version=f"render_report.py {__version__}")
     parser.add_argument("report_path", type=Path, help="Input Markdown report path.")
     parser.add_argument("--out", type=Path, required=True, help="Output HTML file path.")
     parser.add_argument("--charts", type=Path, default=None, help="Optional JSON file defining charts (v2 or v1 schema).")
@@ -889,7 +944,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(rendered, encoding="utf-8")
-    body_only = re.sub(r'<section class="appendices">.*?</section>', "", rendered, flags=re.DOTALL)  # quoted files
+    body_only = re.sub(  # quoted appendix files and code blocks are text, not markers
+        r'<section class="appendices">.*?</section>|<(?:pre|code)\b[^>]*>.*?</(?:pre|code)>', "", rendered, flags=re.DOTALL
+    )
     for key in sorted(set(NUM_MARKER_RE.findall(body_only))):
         print(
             f"Warning: unresolved marker '{{{{num:{key}}}}}' left literal in the HTML (no such key in numbers.json); "

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import subprocess
 import sys
@@ -134,7 +136,7 @@ class TestRenderReport(unittest.TestCase):
             res = subprocess.run(
                 [sys.executable, "-B", str(script_path), str(md_path), "--out", str(out_path), "--charts", str(charts_path)],
                 capture_output=True,
-                text=True,
+                text=True, encoding="utf-8",
             )
             self.assertEqual(res.returncode, 0, msg=res.stderr)
             self.assertTrue(out_path.is_file())
@@ -285,7 +287,7 @@ La productividad sectorial puede elevar el tipo de cambio de equilibrio (`[Preli
             [sys.executable, "-B", str(SCRIPTS_DIR / "render_report.py"), str(root / "report.md"), "--out", str(out_path),
              "--charts", str(root / "charts.json"), "--appendix", str(root / "appendix")] + (extra or []),
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8",
         )
         self.assertEqual(res.returncode, 0, msg=res.stderr)
         return out_path
@@ -358,7 +360,7 @@ La productividad sectorial puede elevar el tipo de cambio de equilibrio (`[Preli
             res = subprocess.run(
                 [sys.executable, "-B", str(SCRIPTS_DIR / "render_report.py"), str(md), "--out", str(out)],
                 capture_output=True,
-                text=True,
+                text=True, encoding="utf-8",
             )
             self.assertEqual(res.returncode, 0, msg=res.stderr)
             self.assertIn("no_existe", res.stderr)
@@ -375,7 +377,7 @@ La productividad sectorial puede elevar el tipo de cambio de equilibrio (`[Preli
                 [sys.executable, "-B", str(SCRIPTS_DIR / "render_report.py"), str(md), "--out", str(root / "r.html"),
                  "--appendix", str(root / "appendix")],
                 capture_output=True,
-                text=True,
+                text=True, encoding="utf-8",
             )
             self.assertEqual(res.returncode, 0, msg=res.stderr)
             self.assertNotIn("unresolved", res.stderr.lower())
@@ -444,6 +446,18 @@ La productividad sectorial puede elevar el tipo de cambio de equilibrio (`[Preli
             self.assertIn("<code>appendix/gates/qa.md</code>", rendered)
             self.assertIn("QA: PASS", rendered)
             self.assertNotIn("external artifact", rendered.split('class="appendices"', 1)[1].lower())
+
+    def test_self_review_gate_is_labelled_in_the_appendix(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            appendix = Path(tmpdir) / "appendix"
+            (appendix / "gates").mkdir(parents=True)
+            (appendix / "gates" / "qa.md").write_text("MODE: self-review\nQA: PASS\n", encoding="utf-8")
+            (appendix / "gates" / "source_verifier.md").write_text("MODE: subagent\nok\n", encoding="utf-8")
+            en = render_report.render_html(SAMPLE_MD, charts=SAMPLE_CHARTS, appendix_dir=appendix)
+            self.assertIn("<code>appendix/gates/qa.md</code> — self-review, not independent", en)
+            self.assertNotIn("source_verifier.md</code> — self-review", en)
+            es = render_report.render_html(SAMPLE_MD, charts=SAMPLE_CHARTS, appendix_dir=appendix, lang="es")
+            self.assertIn("— auto-revisión, no independiente", es)
 
     def test_local_copy_label_localized_es(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

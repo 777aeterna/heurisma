@@ -1,3 +1,9 @@
+MODE: self-review
+REVIEWED-SHA256: bc8060313f2a6669b93659a285d8b16e7f0d46ce067732c47861626d46d64226
+REVIEWED-UTC: 2026-11-21T12:27:08Z
+QUOTE: report.md:6: "- **Calibrated Verdict:** The supplied"
+QUOTE: appendix/output.txt:1: "Integrity: n=12, missing=0"
+
 QA: PASS
 1 PASS — `validate_report.py report.md --level 2 --html report.html --strict`: PASSED, no warnings (run by the maintainer on 2026-11-20 with the v0.6.1 validator, after these gate files were rewritten in the v0.6.1 shape and the HTML re-rendered).
 2 PASS — the validator reports no `stale` or `no source hash` line.

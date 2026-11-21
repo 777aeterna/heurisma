@@ -16,8 +16,15 @@ from __future__ import annotations
 import datetime as _dt
 import html
 import math
+from pathlib import Path
 import re
+import sys
 from typing import Any
+
+_SCRIPTS_DIR = str(Path(__file__).resolve().parent)
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
+from contracts import __version__ as __version__  # noqa: E402
 
 # Okabe-Ito colorblind-safe palette + neutral slate for context
 OKABE_ITO: tuple[str, ...] = (
@@ -168,16 +175,40 @@ def _format_date_ordinal(ord_val: float, span_days: float) -> str:
     return f"{d.year}-{d.month:02d}"
 
 
+def _to_float(value: Any) -> float | None:
+    """A finite float from a number or an unambiguous numeric string ("3.5", "3,5"); None otherwise (never raises)."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, str):
+        text = value.strip().replace(",", ".") if re.fullmatch(r"[+-]?\d+(?:,\d+)?(?:\.\d+)?", value.strip()) else value.strip()
+        try:
+            value = float(text)
+        except ValueError:
+            return None
+    try:
+        f = float(value)
+    except (TypeError, ValueError):
+        return None
+    return f if math.isfinite(f) else None
+
+
 def _extract_xy_points(raw_points: list[Any], is_date: bool) -> list[tuple[float, float, str]]:
+    """(x, y, label) triples; points whose y is missing, non-numeric or non-finite are dropped, never rendered."""
     out: list[tuple[float, float, str]] = []
     for idx, pt in enumerate(raw_points):
         if isinstance(pt, (list, tuple)) and len(pt) >= 2:
-            out.append((_parse_x(pt[0], is_date), float(pt[1]), str(pt[0])))
+            xv, yv, lbl = pt[0], pt[1], str(pt[0])
         elif isinstance(pt, dict):
             xv = pt.get("x", idx)
             yv = pt.get("y", pt.get("value", 0.0))
             lbl = str(pt.get("label", xv))
-            out.append((_parse_x(xv, is_date), float(yv), lbl))
+        else:
+            continue
+        y = _to_float(yv)
+        x = _parse_x(xv, is_date)
+        if y is None or not math.isfinite(x):
+            continue
+        out.append((x, y, lbl))
     return out
 
 
@@ -639,14 +670,14 @@ def _parse_bar_data(chart: dict[str, Any]) -> tuple[list[str], list[tuple[str, l
     raw_series = chart.get("series") or []
     if groups and raw_series and "values" in raw_series[0]:
         group_labels = [str(g) for g in groups]
-        series_list = [
-            (str(s.get("name", f"S{i + 1}")), [float(v) for v in s.get("values") or []])
+        series_list: list[tuple[str, list[float]]] = [
+            (str(s.get("name", f"S{i + 1}")), [(f if (f := _to_float(v)) is not None else 0.0) for v in s.get("values") or []])
             for i, s in enumerate(raw_series)
         ]
         return group_labels, series_list, False
     if raw_series and "value" in raw_series[0]:
         group_labels = [str(s.get("label", f"#{i + 1}")) for i, s in enumerate(raw_series)]
-        return group_labels, [("", [float(s.get("value", 0.0)) for s in raw_series])], True
+        return group_labels, [("", [(_to_float(s.get("value", 0.0)) or 0.0) for s in raw_series])], True
     return None
 
 
@@ -712,7 +743,7 @@ def chart_warnings(chart: dict[str, Any], lang: str = "en") -> list[str]:
 
 def _bar_legend(series_list: list[tuple[str, list[float]]], width: int, pad_r: int) -> list[str]:
     els: list[str] = []
-    lx = width - pad_r
+    lx: float = float(width - pad_r)
     ly = 16
     for s_idx in range(len(series_list) - 1, -1, -1):
         s_name = html.escape(series_list[s_idx][0])
@@ -949,8 +980,156 @@ def _wrap_svg(chart: dict[str, Any], width: int, height: int, elements: list[str
     )
 
 
+CHART_TYPES = ("line", "scatter", "bar", "fan")
+CHART_KEYS = (
+    "id", "type", "title", "caption", "source", "x", "y", "series", "groups", "bands", "annotations",
+    "reference_lines", "quantiles", "highlight", "diff", "points", "x_label", "y_label",
+)
+X_KEYS = ("type", "label", "format", "min", "max", "last_label", "observed_until")
+Y_KEYS = ("label", "format", "scale", "baseline")
+FAN_ORDER = ("p10", "p25", "p50", "p75", "p90")
+KEY_ALIASES = {  # frequent mistakes, mapped to the real key before falling back to fuzzy matching
+    "categories": "groups", "category": "groups", "labels": "groups", "datasets": "series", "data": "series",
+    "xlabel": "x_label", "ylabel": "y_label", "quantile": "quantiles", "reference_line": "reference_lines",
+    "refs": "reference_lines", "annotation": "annotations", "band": "bands",
+}
+
+
+def _valid_date(value: Any) -> bool:
+    import calendar
+
+    m = re.fullmatch(r"(\d{4})-(\d{2})(?:-(\d{2}))?", str(value).strip())
+    if not m:
+        return False
+    year, month = int(m.group(1)), int(m.group(2))
+    if not 1 <= month <= 12 or year < 1:
+        return False
+    return m.group(3) is None or 1 <= int(m.group(3)) <= calendar.monthrange(year, month)[1]
+
+
+def validate_charts_schema(chart: dict[str, Any]) -> list[str]:
+    """Schema problems of one chart dict (empty list = fine): unknown/typo'd keys, wrong types, non-finite or string
+    numbers, group/value length mismatches, invalid dates, unordered fan quantiles. Messages name the exact location."""
+    import difflib
+
+    if not isinstance(chart, dict):
+        return ["Chart entry is not an object."]
+    cid = chart.get("id", "?")
+    out: list[str] = []
+
+    def add(msg: str) -> None:
+        out.append(f"Chart '{cid}': {msg}")
+
+    ctype = str(chart.get("type", "line")).lower()
+    if ctype not in CHART_TYPES:
+        add(f"unknown type '{ctype}' (use {', '.join(CHART_TYPES)}).")
+    for key in chart:
+        if key not in CHART_KEYS:
+            close = [KEY_ALIASES[key]] if key in KEY_ALIASES else difflib.get_close_matches(key, CHART_KEYS, n=1, cutoff=0.5)
+            hint = f" (did you mean '{close[0]}'?)" if close else ""
+            add(f"unknown key '{key}'{hint}.")
+    x_cfg, y_cfg = chart.get("x") or {}, chart.get("y") or {}
+    for name, cfg, allowed in (("x", x_cfg, X_KEYS), ("y", y_cfg, Y_KEYS)):
+        if not isinstance(cfg, dict):
+            add(f"'{name}' must be an object.")
+            continue
+        for key in cfg:
+            if key not in allowed:
+                close = difflib.get_close_matches(key, allowed, n=1, cutoff=0.5)
+                add(f"unknown key '{name}.{key}'" + (f" (did you mean '{name}.{close[0]}'?)." if close else "."))
+    is_date = isinstance(x_cfg, dict) and str(x_cfg.get("type", "")).lower() == "date"
+
+    def check_number(value: Any, where: str) -> None:
+        if isinstance(value, str):
+            add(f"{value!r} is a string, not a number (at {where}); write it as a number.")
+        elif isinstance(value, bool) or not isinstance(value, (int, float)):
+            add(f"value {value!r} at {where} is not a number.")
+        elif not math.isfinite(value):
+            add(f"non-finite value {value} at {where}; drop the point or fix the computation (strict JSON has no NaN).")
+
+    def check_points(points: Any, where: str) -> None:
+        if not isinstance(points, list):
+            add(f"{where} must be a list of [x, y] points.")
+            return
+        for i, pt in enumerate(points):
+            loc = f"{where}[{i}]"
+            if isinstance(pt, (list, tuple)) and len(pt) >= 2:
+                xv, yv = pt[0], pt[1]
+            elif isinstance(pt, dict) and ("y" in pt or "value" in pt):
+                xv, yv = pt.get("x", i), pt.get("y", pt.get("value"))
+            else:
+                add(f"{loc} must be [x, y] (or an object with x and y).")
+                continue
+            check_number(yv, loc)
+            if is_date and not isinstance(xv, (int, float)) and not _valid_date(xv):
+                add(f"invalid date {str(xv)!r} at {loc} (use YYYY-MM or YYYY-MM-DD).")
+            elif not is_date and not isinstance(xv, (int, float, str)):
+                add(f"x value {xv!r} at {loc} is not a number or label.")
+            elif isinstance(xv, float) and not math.isfinite(xv):
+                add(f"non-finite x value at {loc}.")
+
+    if ctype in ("line", "scatter"):
+        series = chart.get("series") or []
+        points = chart.get("points")
+        if not series and not points:
+            add("no data: 'series' (or v1 'points') is empty.")
+        for si, s in enumerate(series):
+            check_points(s.get("points") if isinstance(s, dict) else None, f"series[{si}].points")
+        if points:
+            check_points(points, "points")
+        for bi, b in enumerate(chart.get("bands") or []):
+            check_points(b.get("lower"), f"bands[{bi}].lower")
+            check_points(b.get("upper"), f"bands[{bi}].upper")
+    elif ctype == "bar":
+        series, groups = chart.get("series") or [], chart.get("groups")
+        if not series:
+            add("no data: 'series' is empty.")
+        elif groups:
+            for si, s in enumerate(series):
+                values = s.get("values") if isinstance(s, dict) else None
+                if not isinstance(values, list):
+                    add(f"series[{si}] needs 'values' (one per group).")
+                    continue
+                if len(values) != len(groups):
+                    add(f"{len(groups)} groups but series[{si}] has {len(values)} values.")
+                for vi, v in enumerate(values):
+                    check_number(v, f"series[{si}].values[{vi}]")
+        else:
+            for si, s in enumerate(series):
+                if not isinstance(s, dict) or "value" not in s:
+                    add(f"series[{si}] needs 'value' (flat bar chart) or define 'groups' with 'values'.")
+                else:
+                    check_number(s["value"], f"series[{si}].value")
+    elif ctype == "fan":
+        quantiles = chart.get("quantiles") or {}
+        if "p50" not in quantiles:
+            add("fan chart needs a p50 (median) series in 'quantiles'.")
+        for key in quantiles:
+            if key not in FAN_ORDER:
+                add(f"unknown quantile '{key}' (use {', '.join(FAN_ORDER)}).")
+            else:
+                check_points(quantiles[key], f"quantiles.{key}")
+        present = [k for k in FAN_ORDER if k in quantiles and isinstance(quantiles[k], list)]
+        for lo, hi in zip(present, present[1:]):
+            by_x = {str(p[0]): p[1] for p in quantiles[hi] if isinstance(p, (list, tuple)) and len(p) >= 2}
+            for p in quantiles[lo]:
+                if isinstance(p, (list, tuple)) and len(p) >= 2 and str(p[0]) in by_x:
+                    a, b = _to_float(p[1]), _to_float(by_x[str(p[0])])
+                    if a is not None and b is not None and a > b:
+                        add(f"quantile {lo} exceeds {hi} at {p[0]} ({a:g} > {b:g}); quantiles must be ordered.")
+                        break
+    return out
+
+
 def render_chart_svg(chart: dict[str, Any], lang: str = "en") -> str:
-    """Dispatch chart dict (v2 or v1 schema) to the appropriate SVG renderer."""
+    """Dispatch chart dict (v2 or v1 schema) to the appropriate SVG renderer; bad data renders as an empty figure."""
+    try:
+        return _render_chart_svg(chart, lang)
+    except (ValueError, TypeError, KeyError, IndexError, AttributeError, ZeroDivisionError, OverflowError):
+        return _empty_svg(chart, lang=lang)
+
+
+def _render_chart_svg(chart: dict[str, Any], lang: str) -> str:
     ctype = str(chart.get("type", "line")).lower()
     if ctype == "bar":
         return _render_bar(chart, lang=lang)

@@ -21,6 +21,7 @@
 ## 3. Methodology & Evidence Standards
 - **Domain Evidence Hierarchy:** Tier 1 = controlled crossover experiments and audited normalized telemetry; Tier 2 = multi-sprint panels with headcount/severity covariates; Tier 3 = unadjusted single-week aggregate counts.
 - **Analytical & Data Provenance:** All computations were executed in [`appendix/analysis.py`](appendix/analysis.py) [@C2] (see [`appendix/README.md`](appendix/README.md)) on the supplied dataset [@C1], archiving verbatim output in [`appendix/output.txt`](appendix/output.txt), key numbers in [`appendix/numbers.json`](appendix/numbers.json), sources in [`appendix/sources.csv`](appendix/sources.csv), and emitting `charts.json` directly.
+- **Review Gates:** The source-verification and QA gates of this example are manual maintainer records written without a subagent, so they are self-review (`MODE: self-review` in `appendix/gates/`), not independent review.
 
 | Target Variable | Source Tried | Method | Outcome | Fallback |
 | :- | :- | :- | :- | :- |

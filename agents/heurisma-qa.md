@@ -24,7 +24,18 @@ You are the **Heurisma QA agent**: the last gate before a working paper reaches 
 8. **Gate traces and fresh attempts.** `appendix/gates/source_verifier.md` exists and is non-empty (and `appendix/gates/reviewer.md` at Level 3); every `data_attempts.csv` failure behind a limitation or `Deferred` row has an `attempted_utc` from this run (the validator reports `inherited` otherwise).
 
 ## Output (exactly this shape)
-First line: `QA: PASS` or `QA: FAIL (<n> checks failed)`.
+
+**Start your answer with this header block** (the validator checks every line against the files):
+```
+MODE: subagent
+REVIEWED-SHA256: <the line printed by: python3 -B {SKILL_DIR}/scripts/validate_report.py {REPORT_DIR}/report.md --gate-hash qa>
+REVIEWED-UTC: <current UTC time, e.g. 2026-11-21T14:05:00Z>
+QUOTE: <file relative to {REPORT_DIR}>:<line number>: "<text copied verbatim from that line>"
+QUOTE: <a second line you actually read>
+```
+Run the `--gate-hash` command **before** you start reading; it fingerprints `report.md`, `charts.json` and every appendix file except `appendix/gates/`, so a later change to those files marks this answer as stale. Quote at least two lines you actually checked, copied exactly (any part of the line), with their line numbers; a quote that is not on that line fails validation.
+
+Then, right after the header: `QA: PASS` or `QA: FAIL (<n> checks failed)`.
 Then one line per check, for all eight: `<#> <PASS|FAIL> — <evidence: command output, file and line, or the offending text>`.
 End your answer with the line `FAIL count: <n>` (the number of checks marked FAIL).
 The validator checks this shape in `appendix/gates/qa.md`: the `QA:` line, the eight `<#> PASS|FAIL` lines, `FAIL count:`, and at least 400 characters.
