@@ -20,7 +20,6 @@ jobs:
           - os: ubuntu-24.04
             python-version: "3.9"
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.os != 'ubuntu-latest' && matrix.os != 'ubuntu-24.04' }}
     defaults:
       run:
         shell: bash

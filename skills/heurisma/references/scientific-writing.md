@@ -32,8 +32,8 @@ Every major claim in Section 1, Section 4, and **every row** of Section 6 (`Clai
 3. **Math Without LaTeX:**
    - Write symbols in Unicode: `H₀`, `H₁`, `ρ`, `Δ`, `≤`, `≥`, `±`, `×`, `≈`, `σ`, `μ`, `x²`. The working paper has no LaTeX engine.
    - The renderer converts residual inline math (`$H_0$` → H<sub>0</sub>, `$x^2$` → x<sup>2</sup>, `$\Delta$` → Δ) as a safety net and never touches currency (`$1.563`, `$1,200–$1,400`), but the validator warns on any LaTeX left in the HTML.
-4. **Key Numbers from `appendix/numbers.json` (Level 2+):**
-   - Every figure in the Calibrated Verdict, Section 1 and the Section 4 tables that comes from `appendix/output.txt` is written as `{{num:key}}`, never retyped: a retyped number silently goes stale when the analysis changes. The validator warns when five or more Section 4 figures from `output.txt` are typed by hand and placeholders cover less than 30 % of them.
+4. **Key Numbers from `appendix/numbers.json` & Numeric Closure (Level 2+):**
+   - Every figure in the Calibrated Verdict, Section 1 and the Section 4 tables that comes from `appendix/output.txt` is written as `{{num:key}}`, never retyped: a retyped number silently goes stale when the analysis changes. Every statistical number in a Section 4 table cell must appear in `appendix/output.txt` or `appendix/numbers.json` (`P1-UNTRACED-NUM` warns at Level 2 and errors at Level 3 on hand-typed statistics absent from both). The validator also warns when five or more Section 4 figures from `output.txt` are typed by hand and placeholders cover less than 30 % of them.
    - Write `{{num:key}}` instead of retyping a computed value; the renderer substitutes it from `appendix/numbers.json` and prints negative values with a typographic minus (`−16,6 %`). An unknown key is a validator **error**, and any `{{…}}` left in the HTML is an error. Without placeholders, the validator warns when a verdict number is absent from `appendix/output.txt`.
 5. **Inline Figure Placement (`{{fig:chart_id}}`):**
    - Place `{{fig:chart_id}}` on its own line in Section 4 or Section 5 immediately after the paragraph that discusses that figure.

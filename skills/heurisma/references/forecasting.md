@@ -37,10 +37,12 @@ Never present a single point forecast for an uncertain complex system. Construct
 | **Upside / Accelerated Case** | Concrete observable **trigger conditions** (what must happen first), quantification of the transmission channel, and probability range. |
 | **Downside / Regime-Break Case** | Concrete **stress triggers** (e.g., reserve threshold breach, supply bottleneck, regulatory delay), historical base rate of similar breaks, and magnitude calibrated from historical analogies. |
 
-### 4. Calibration Against Historical Forecast Errors
+### 4. Calibration Against Historical Forecast Errors vs. Parametric Scenario Bands
 Point forecasts and institutional consensus surveys (e.g., central bank market expectations surveys, IEA/industry roadmaps) systematically understate tail risk and regime shifts:
 - When citing consensus or survey forecasts, inspect or compute their **historical forecast error** (MAE, RMSE, or directional hit rate at 6-, 12-, and 24-month horizons) if historical vintages exist.
 - Width of scenario intervals should reflect empirical historical forecast errors rather than narrow within-regime linear trend bands.
+- **Honest labeling of fan charts (`Parametric scenario bands` vs. `Calibrated fan`):** if projection quantiles (`p10..p90`) are generated from deterministic or parametric scenario assumptions (e.g., compound annual growth rates $g \in \{1.5\%, 3.0\%, 4.5\%\}$ or fixed stress multipliers) rather than empirical out-of-sample forecast residuals (historical MAE/RMSE), title and caption the figure as **"Parametric scenario bands"** (*"Bandas de escenarios paramétricos"*) — **never** *"Calibrated fan"* or *"Empirically calibrated bands"*.
+- **Anchor convergence at $t = 0$ (`x.observed_until`):** in every fan chart that starts at the last observed period (`x.observed_until`), all quantiles (`p10`, `p25`, `p50`, `p75`, `p90`) must share the exact same realized value at that anchor date (`max - min == 0`); uncertainty bands open only for future horizons ($t > 0$). The validator warns (`FIG-DESIGN`) if fan quantiles diverge at `observed_until`.
 
 ### 5. Epistemic Tag Ceiling for Forecasts
 - Pure accounting/physical conservation bounds conditional on explicit assumptions: up to **`[Strong]`** or **`[Moderate]`** *strictly as conditional bounds* (`"If X holds, Y must exceed Z"`).

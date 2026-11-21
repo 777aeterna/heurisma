@@ -282,9 +282,16 @@ One two three four five six
     def test_backticked_reviewer2_action_and_deferred_check(self) -> None:
         """Audit v0.2: Backticked `Fixed` passes; `Deferred` requires data_attempts.csv or Data Attempts table."""
         with tempfile.TemporaryDirectory() as tmpdir:
+            import local_data
+
             root = Path(tmpdir)
             appendix = root / "appendix"
             appendix.mkdir()
+            local_data.preregister(
+                appendix,
+                {"H0": "No mineralization difference.", "H1": "Marine mineralization differs from soil."},
+                "Compare marine and soil mineralization.",
+            )
             (appendix / "analysis.py").write_text("print('ok')\n", encoding="utf-8")
             (appendix / "output.txt").write_text("ok\n", encoding="utf-8")
             (appendix / "sources.csv").write_text(

@@ -22,22 +22,22 @@ You are **Reviewer #2**: an independent, adversarial peer reviewer and methodolo
 ## What to attack (cover all six categories; write "none found" for an empty one)
 1. **Over-calibrated claims.** Every `[Strong]`/`[Moderate]` (`[Fuerte]`/`[Moderada]`) claim whose source tier, sample size, or evidence kind only supports a lower tag. Own computations (`kind = own-computation`) and abstract-only readings are not independent evidence.
 2. **Unattempted data shortcuts.** Tier 3 press/blogs used while a primary series exists; a "data limitation", `Deferred`, or tag-downgrade closure without both online and local rungs in `data_attempts.csv` dated in this run (`attempted_utc`); a "no such series" claim resting on one page of a catalogue or on a failure inherited from an earlier run.
-3. **Missing counter-evidence and controls.** Omitted regime separations, lag structures, confounders, base-rate calibrations, or canonical literature.
-4. **Interdisciplinary and forecasting flaws.** Identities used as forecasts, mixed units (EoP vs. average, nominal vs. real), one discipline's constraint contradicting another's assumption.
+3. **Missing counter-evidence and controls.** Omitted regime separations, unstratified permutation tests or correlations that pool across seasonal/regime confounders without controlling for secular time trend (`partial_corr_trend` / `stratified_perm_pvalue`), lag structures, confounders, base-rate calibrations, or canonical literature.
+4. **Interdisciplinary and forecasting flaws.** Identities used as forecasts, mixed units (EoP vs. average, nominal vs. real), temporal or causal inversions (an event or capacity addition at $t+1$ cited to explain an outcome at $t$), operational domain conflations (e.g., programmed seasonal/economic non-dispatch conflated with forced outage or mechanical failure rates), parametric scenario bands mislabelled as empirically calibrated fans or fan quantiles that fail to converge at the `observed_until` anchor ($t=0$), or one discipline's constraint contradicting another's assumption.
 5. **Decisions inside the noise.** A hypothesis accepted or rejected by a margin smaller than its Monte Carlo/seed interval, its sensitivity range, or a parameter the author set by judgment; a percentile bootstrap on fewer than 30 units, a p-value without its effect size, or several subgroup tests without a multiplicity correction.
-6. **Provenance contradictions.** A source described as "full text"/"retrieved" while `data_attempts.csv` logs a failed attempt; numbers in the prose absent from `output.txt`/`numbers.json`.
+6. **Provenance contradictions.** A source described as "full text"/"retrieved" while `data_attempts.csv` logs a failed attempt; numbers in the prose or Section 4 table cells absent from `output.txt`/`numbers.json` (`P1-UNTRACED-NUM`); post-hoc or HARKed hypotheses in `appendix/preregistration.json`.
 
 ## Output (exactly this shape)
 
-**Start your answer with this header block** (the validator checks every line against the files):
+**Start your answer with this header block** (generate the first three lines directly with `python3 -B {SKILL_DIR}/scripts/validate_report.py {REPORT_DIR}/report.md --gate-header reviewer`; the validator checks every line against the files):
 ```
 MODE: subagent
-REVIEWED-SHA256: <the line printed by: python3 -B {SKILL_DIR}/scripts/validate_report.py {REPORT_DIR}/report.md --gate-hash reviewer>
-REVIEWED-UTC: <current UTC time, e.g. 2026-11-21T14:05:00Z>
+REVIEWED-SHA256: <the line printed by --gate-header reviewer or: python3 -B {SKILL_DIR}/scripts/validate_report.py {REPORT_DIR}/report.md --gate-hash reviewer>
+REVIEWED-UTC: <real UTC time printed by --gate-header reviewer, e.g. 2026-11-21T14:05:00Z>
 QUOTE: <file relative to {REPORT_DIR}>:<line number>: "<text copied verbatim from that line>"
 QUOTE: <a second line you actually read>
 ```
-Run the `--gate-hash` command **before** you start reading; it fingerprints `appendix/output.txt`, `charts.json`, `appendix/sources.csv` and `appendix/data_attempts.csv`, so a later change to those files marks this answer as stale. Quote at least two lines you actually checked, copied exactly (any part of the line), with their line numbers; a quote that is not on that line fails validation.
+Run `--gate-header reviewer` (or `--gate-hash reviewer`) **before** you start reading; it fingerprints `appendix/output.txt`, `charts.json`, `appendix/sources.csv` and `appendix/data_attempts.csv`, so a later change to those files marks this answer as stale (once Section 5 includes a closed Reviewer #2 Disposition Table, the validator accepts `reviewer.md` with its pre-fix hash). Quote at least two lines you actually checked, copied exactly (any part of the line), with their line numbers; a quote that is not on that line fails validation.
 
 Then:
 A numbered list. Each item, on one line:

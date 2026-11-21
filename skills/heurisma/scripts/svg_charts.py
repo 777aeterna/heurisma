@@ -706,19 +706,39 @@ def _spread_is_negligible(vals: list[float]) -> bool:
 
 
 def chart_warnings(chart: dict[str, Any], lang: str = "en") -> list[str]:
-    """Design warnings for a chart dict (the validator surfaces them): near-identical bars (G2) and a fan chart
-    whose "last data" marker has no date to sit on (C6)."""
+    """Design warnings for a chart dict (the validator surfaces them): near-identical bars (G2), a fan chart
+    whose "last data" marker has no date to sit on (C6), or a fan chart whose quantiles diverge at observed_until."""
     ctype = str(chart.get("type", "")).lower()
     if ctype == "fan":
+        warns: list[str] = []
         x_cfg = chart.get("x") or {}
         opt = x_cfg.get("last_label")
         has_date = isinstance(opt, str) and bool(_ISO_DATE_RE.match(opt.strip()))
-        if opt and not has_date and not x_cfg.get("observed_until"):
-            return [
+        obs_until = str(x_cfg.get("observed_until") or "").strip()
+        if opt and not has_date and not obs_until:
+            warns.append(
                 f"Chart '{chart.get('id', '?')}': fan chart has last_label but no observed_until; add "
                 f"x.observed_until (the last observed date) or give last_label as a date."
-            ]
-        return []
+            )
+        if obs_until:
+            quantiles = chart.get("quantiles") or {}
+            anchor_vals: list[float] = []
+            for qk in FAN_ORDER:
+                pts = quantiles.get(qk)
+                if not isinstance(pts, list):
+                    continue
+                for pt in pts:
+                    if isinstance(pt, (list, tuple)) and len(pt) >= 2 and str(pt[0]).strip() == obs_until:
+                        fv = _to_float(pt[1])
+                        if fv is not None:
+                            anchor_vals.append(fv)
+            if len(anchor_vals) >= 2 and (max(anchor_vals) - min(anchor_vals)) > 1e-6:
+                warns.append(
+                    f"Chart '{chart.get('id', '?')}': fan chart quantiles diverge at observed_until anchor "
+                    f"'{obs_until}' ({min(anchor_vals):g} to {max(anchor_vals):g}); anchor all quantiles to the "
+                    f"last observed value."
+                )
+        return warns
     if ctype != "bar":
         return []
     if chart.get("diff") or (chart.get("y") or {}).get("baseline") is not None:
@@ -1007,9 +1027,9 @@ def _valid_date(value: Any) -> bool:
     return m.group(3) is None or 1 <= int(m.group(3)) <= calendar.monthrange(year, month)[1]
 
 
-def validate_charts_schema(chart: dict[str, Any]) -> list[str]:
+def validate_charts_schema(chart: dict[str, Any], as_of_date: str | None = None) -> list[str]:
     """Schema problems of one chart dict (empty list = fine): unknown/typo'd keys, wrong types, non-finite or string
-    numbers, group/value length mismatches, invalid dates, unordered fan quantiles. Messages name the exact location."""
+    numbers, group/value length mismatches, invalid dates, unordered fan quantiles, or line points after As-Of Date."""
     import difflib
 
     if not isinstance(chart, dict):
@@ -1038,6 +1058,8 @@ def validate_charts_schema(chart: dict[str, Any]) -> list[str]:
                 close = difflib.get_close_matches(key, allowed, n=1, cutoff=0.5)
                 add(f"unknown key '{name}.{key}'" + (f" (did you mean '{name}.{close[0]}'?)." if close else "."))
     is_date = isinstance(x_cfg, dict) and str(x_cfg.get("type", "")).lower() == "date"
+    has_observed_until = isinstance(x_cfg, dict) and bool(str(x_cfg.get("observed_until") or "").strip())
+    as_of_norm = as_of_date.strip() if isinstance(as_of_date, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", as_of_date.strip()) else None
 
     def check_number(value: Any, where: str) -> None:
         if isinstance(value, str):
@@ -1063,6 +1085,11 @@ def validate_charts_schema(chart: dict[str, Any]) -> list[str]:
             check_number(yv, loc)
             if is_date and not isinstance(xv, (int, float)) and not _valid_date(xv):
                 add(f"invalid date {str(xv)!r} at {loc} (use YYYY-MM or YYYY-MM-DD).")
+            elif is_date and ctype == "line" and not has_observed_until and as_of_norm and not isinstance(xv, (int, float)):
+                xs = str(xv).strip()
+                pt_norm = f"{xs}-01" if len(xs) == 7 else xs
+                if pt_norm > as_of_norm:
+                    add(f"line chart series point date '{xs}' is after the report As-Of Date '{as_of_norm}'.")
             elif not is_date and not isinstance(xv, (int, float, str)):
                 add(f"x value {xv!r} at {loc} is not a number or label.")
             elif isinstance(xv, float) and not math.isfinite(xv):

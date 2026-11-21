@@ -87,9 +87,9 @@ python3 -B <skill-dir>/scripts/local_data.py import datos/a3500.csv \
 
 `import` does the whole rung in one step: it copies the file into `appendix/data/` (refusing to overwrite a different file with the same name), registers the **copy** in `sources.csv` with the next free id (`L1`, `L2`, …), a project-relative path (`appendix/data/…`, no `file://` scheme) and its SHA-256, and appends the `data_attempts.csv` row with `fallback_used = local:<path> sha256:<hash>`. Re-running it adds nothing. `register` (same flags plus `--claim`) only appends the `sources.csv` row, for a file already inside `appendix/data/`; a file outside the report folder is stored as an absolute `file:///…` URI, so prefer `import`. `--lang es` writes the title suffix in Spanish (`archivo local`).
 
-**Whole folders (pre-flight intake, `SKILL.md` Stage 0 step 9):** `local_data.py intake <folder> --channel data|sources --selection user-curated|agent-fetched [--wishlist wishlist.txt] [--tier …] [--retrieved-utc …]` runs `preview` + `import` on every file, rejects ambiguous CSVs instead of guessing, copies documents to `appendix/corpus/` (`kind=literature`), and writes `appendix/intake.md`. Every `sources.csv` row it writes carries:
+**Whole folders (pre-flight intake, `SKILL.md` Stage 0 step 9):** `local_data.py intake <folder> --channel data|sources --selection user-curated|agent-fetched [--wishlist wishlist.txt] [--tier …] [--retrieved-utc …]` runs `preview` + `import` on every file, rejects ambiguous CSVs instead of guessing, copies documents to `appendix/corpus/` (`kind=literature`), and merges a `## Channel: <data|sources>` section idempotently into `appendix/intake.md` (running `--channel data` and `--channel sources` sequentially preserves both channels). Every `sources.csv` row it writes carries:
 - `selection`: `user-curated` (the user chose it), `agent-fetched` (you found it), or `third-party`;
-- `retrieved_utc`: when the file was obtained from its origin, or `unknown`. A user-curated row with `unknown` stays Tier 3, and the As-Of Date may not precede any `retrieved_utc`.
+- `retrieved_utc`: when the file was obtained from its origin, or `unknown`. A local `user-curated` row with `unknown` stays **Tier 3**, and even with a dated `--retrieved-utc` a local `user-curated` file is capped at **Tier 2** (never `Tier 1` without a live online download in `download_log.csv`). Hashes recorded as `user-curated` in `appendix/intake.md` cannot be relabelled `agent-fetched` in `sources.csv`, every `agent-fetched` row requires `retrieved_utc >= run_started_utc` plus proof in `download_log.csv` or `data_attempts.csv`, and counter-evidence outside a user-curated corpus must include at least one `agent-fetched` **Tier 1 or Tier 2** (`data` or `literature`) source.
 
 A wish-list line is `name: keyword, keyword`; a name that no accepted file or column matches is reported as a gap.
 
@@ -101,21 +101,23 @@ Rules:
    import sys; from pathlib import Path
    sys.path.insert(0, str(Path(__file__).resolve().parent))  # sibling helpers (e.g. common.py) import under any cwd
    sys.path.insert(0, "<skill-dir>/scripts")      # or copy local_data.py into appendix/ for full portability
-   from local_data import read_table, excel_date
+   from local_data import read_table, excel_date, worst_tier
    rows = read_table(Path("appendix/data/a3500.csv"))   # ';' + decimal comma ('1.234,5' -> 1234.5) + latin-1 handled
    itcrm = read_table(Path("appendix/data/itcrm.xlsx"))  # header row auto-detected; title rows and footer notes dropped
    ```
-   **CSV decimals are decided per column.** `read_table` reads each column as decimal-comma or decimal-point from its own cells (`3.1416` and `12,34` can sit in one file); a column that mixes the two raises `ValueError` with the first conflicting cells instead of guessing, and mostly-text columns and zero-padded identifiers (`00123`) stay text. Force text with `read_table(path, keep_strings=["zip"])` (CLI: `preview --keep-strings zip`). Run `local_data.py preview` first: it prints the detected format per column and `raw -> converted` for each cell that changes.
+   **CSV decimals and missing-value sentinels are decided per column.** `read_table` ignores `NA_SENTINELS` (`""`, `"na"`, `"n/a"`, `"null"`, `"none"`, `"nan"`, `"—"`, `"-"`) when inferring a column's numeric format and converts sentinel cells to `None` in numeric columns (so a numeric column with `NA` cells is never downgraded to strings). Each column is read as decimal-comma or decimal-point from its own non-sentinel cells (`3.1416` and `12,34` can sit in one file); a column that mixes the two raises `ValueError` with the first conflicting cells instead of guessing, and mostly-text columns and zero-padded identifiers (`00123`) stay text. Force text with `read_table(path, keep_strings=["zip"])` (CLI: `preview --keep-strings zip`). Run `local_data.py preview` first: it prints the detected format per column and `raw -> converted` for each cell that changes.
    Supported: CSV/TSV, XLSX/XLSM (shared strings, inline strings, booleans, sheets by name; Excel serial dates via `excel_date`), JSON (top-level list or `results`/`data`/`rows`/`items`). PDF, legacy XLS, and ODS are listed but must be converted first.
-4. **Tier of a local file** = the tier of its declared origin, annotated *"local copy supplied by the user"*. Unknown origin → **Tier 3**: claims resting only on that file may never carry `[Strong]`/`[Fuerte]`.
+4. **Tier of a local file & mixed-source tables (`worst_tier`).** A local user-supplied file with documented institutional origin and retrieval date is **Tier 2 at most** (annotated *"local copy supplied by the user"*); unknown origin → **Tier 3**, and claims resting only on that file may never carry `[Strong]`/`[Fuerte]`. When a table or composite series combines rows from multiple sources (tracked by a `primary_source_id` or `source_id` column), call `worst_tier(rows, source_col="primary_source_id", meta_csv=Path("appendix/sources.csv"))` so the table and its Claim-Evidence Matrix row inherit the weakest contributing tier (`Tier 3` > `Tier 2` > `Tier 1`).
 5. **When local data rescues a failed rung**, write `fallback_used = local:<path> sha256:<hash>` in that rung's `data_attempts.csv` row.
 
-### §1.D Key Numbers (`appendix/numbers.json`)
-`analysis.py` exports **every figure the prose quotes from `output.txt`** — the Calibrated Verdict, Section 1 and the Section 4 tables — as named values:
+### §1.D Key Numbers (`appendix/numbers.json`) & Numeric Closure (`P1-UNTRACED-NUM`)
+`analysis.py` exports **every figure the prose or Section 4 tables quote from `output.txt`** — the Calibrated Verdict, Section 1 and all Section 4 statistical cells — as named values:
 ```json
 {"clean_r": "-0.7742", "full_r": "+0.9804", "n_clean": 11}
 ```
-Write `{{num:clean_r}}` in `report.md`; `render_report.py` substitutes it from `appendix/numbers.json` (or `--numbers <file>`). A number retyped by hand silently goes stale when the analysis changes. `validate_report.py --level 2` warns when five or more Section 4 numbers that appear in `output.txt` are typed by hand and fewer than 30 % of the figures use `{{num:key}}`; without any placeholder it also warns when a Calibrated Verdict number is missing from `output.txt`.
+Write `{{num:clean_r}}` in `report.md`; `render_report.py` substitutes it from `appendix/numbers.json` (or `--numbers <file>`).
+- **Numeric closure (`P1-UNTRACED-NUM`):** every statistical number in a Section 4 table cell (means, medians, p-values, correlations, percentages, rates, capacity figures) must appear in `appendix/output.txt` or `appendix/numbers.json`. Any hand-typed statistic in a Section 4 table absent from both is flagged by `validate_report.py` (warning at Level 2, error at Level 3). Never type ad-hoc calculations in prose or copy numbers from Reviewer #2 notes into a Section 4 table without computing them in `analysis.py`.
+- `validate_report.py --level 2` also warns when five or more Section 4 numbers that appear in `output.txt` are typed by hand and fewer than 30 % of the figures use `{{num:key}}`; without any placeholder it warns when a Calibrated Verdict number is missing from `output.txt`.
 
 ---
 
@@ -124,16 +126,17 @@ Write `{{num:clean_r}}` in `report.md`; `render_report.py` substitutes it from `
 1. **Parse, Inspect & Separate Regimes:** Check sample size (n), missing values, duplicate keys, and units. When comparing volatility or means across time (e.g., across administrations or policy eras), **separate distinct structural regimes** (such as fixed pegs/crawling bands vs. floating regimes) in both tables and charts rather than pooling incompatible regimes silently.
 2. **Parametric + Robust Dispersion:** Compute **both** parametric (`mean`, `stdev`) and robust non-parametric (`median`, `IQR`, **MAD — Median Absolute Deviation**) statistics.
 3. **Outlier & Leverage Audit:** Flag observations beyond median ± 3 × IQR, median ± 3 × MAD / 0.6745, or |z| > 2.5.
-4. **Correlation, Lag Regressions & Bootstrap 95% CIs** (small-sample cautions below):
+4. **Correlation, Partial Correlation, Stratified Permutation & Bootstrap 95% CIs** (small-sample cautions below):
    - Compute both **Pearson r** and **Spearman rank ρ**, plus deterministic **Bootstrap 95% Confidence Intervals** (use block bootstrap for autocorrelated time series).
+   - **Control for secular trend and seasonal/regime confounders:** when two trending time series or seasonal panels are correlated, report the **partial correlation controlling for time trend** (`partial_corr_trend(x, y, t)`) alongside the raw correlation, and permute **within strata** (e.g. season, policy regime, or seniority cell via `stratified_perm_pvalue`) rather than pooling incompatible strata into an unstratified permutation test.
    - For time-series pass-through or lead-lag hypotheses, run OLS regression with lag terms and trend/regime controls (and state statistical power limits when n < 30).
    **Small-sample cautions (state them in Section 4 when they apply):**
-   - **n < 30:** a percentile bootstrap is unstable and understates the width of the interval (with 4 units per arm it is meaningless). Prefer an **exact or permutation test**, or BCa intervals, and say how few units there are.
+   - **n < 30:** a percentile bootstrap is unstable and understates the width of the interval (with 4 units per arm it is meaningless). Prefer an **exact or stratified permutation test**, or BCa intervals, and say how few units there are.
    - **Effect size, not only p:** report the magnitude (difference, ratio or r) with its units next to every p-value; a tiny p on a tiny effect, or a large effect with p = 0.2, are different findings.
    - **Multiple comparisons:** when several subgroups or outcomes are tested, say how many and apply a correction (Holm or Bonferroni) or label the extra tests exploratory; if every p sits at the exact-test floor, say that no correction can lower it.
    - **Decisions inside the noise:** a threshold crossed by less than the Monte Carlo or seed interval is "not distinguishable", not a result.
 5. **Direct `charts.json` v2 Emission:**
-   - Inside `appendix/analysis.py`, build the `charts.json` payload directly from the computed Python arrays and write it with `json.dumps(payload, allow_nan=False, ensure_ascii=False, indent=1)`: a NaN or Infinity then fails loudly in the script instead of producing a figure with nonsense coordinates. `validate_report.py` checks every chart against the schema (unknown or misspelled keys, strings or non-finite numbers, group/value length mismatches, invalid dates, unordered fan quantiles). Never copy-paste numbers by hand into a separate chart script.
+   - Inside `appendix/analysis.py`, build the `charts.json` payload directly from the computed Python arrays and write it with `json.dumps(payload, allow_nan=False, ensure_ascii=False, indent=1)`: a NaN or Infinity then fails loudly in the script instead of producing a figure with nonsense coordinates. `validate_report.py` checks every chart against the schema (unknown or misspelled keys, strings or non-finite numbers, group/value length mismatches, invalid dates, observed `"line"` chart points dated after the report `As-Of Date` when `x.observed_until` is unset, unordered fan quantiles, and `"fan"` quantiles that fail to converge at the `x.observed_until` anchor). Never copy-paste numbers by hand into a separate chart script.
    - Use `"y": {"format": "percent"}` for ratios stored as fractions (0.5 → 50%), `"thousands"` or `"currency"` for large levels; axis labels follow the report language automatically.
 6. **Modularization & Appendix Hygiene:**
    - If the analysis exceeds **~300 lines**, split it into clean modular scripts inside `appendix/` (e.g., `01_ingest.py`, `02_regressions.py`, `03_projections.py`) orchestrated by `analysis.py`.
@@ -206,6 +209,39 @@ def ranks(vals: list[float]) -> list[float]:
 
 def spearman_rho(xs: list[float], ys: list[float]) -> float:
     return pearson_r(ranks(xs), ranks(ys))
+
+
+def partial_corr_trend(xs: list[float], ys: list[float], ts: list[float] | None = None) -> float:
+    """Partial Pearson r(x, y | t) removing shared linear time trend t (defaults to 0..n-1)."""
+    t_idx = [float(i) for i in range(len(xs))] if ts is None else ts
+    rxt, ryt, rxy = pearson_r(xs, t_idx), pearson_r(ys, t_idx), pearson_r(xs, ys)
+    denom = math.sqrt(max(0.0, (1.0 - rxt * rxt) * (1.0 - ryt * ryt)))
+    return (rxy - rxt * ryt) / denom if denom > 1e-12 else 0.0
+
+
+def stratified_perm_pvalue(
+    strata: dict[str, tuple[list[float], list[float]]],
+    n_perm: int = 5000,
+    seed: int = 42,
+) -> tuple[float, float]:
+    """Two-sided stratified permutation test of mean(treated) - mean(control) permuting within each stratum."""
+    rng = random.Random(seed)
+    weights = {k: len(a) + len(b) for k, (a, b) in strata.items() if a and b}
+    total_n = sum(weights.values()) or 1
+    obs = sum(weights[k] * (statistics.fmean(a) - statistics.fmean(b)) for k, (a, b) in strata.items() if k in weights) / total_n
+    extreme = 0
+    for _ in range(n_perm):
+        stat = 0.0
+        for k, (a, b) in strata.items():
+            if k not in weights:
+                continue
+            pooled = list(a) + list(b)
+            rng.shuffle(pooled)
+            na = len(a)
+            stat += weights[k] * (statistics.fmean(pooled[:na]) - statistics.fmean(pooled[na:]))
+        if abs(stat / total_n) >= abs(obs) - 1e-12:
+            extreme += 1
+    return obs, (extreme + 1) / (n_perm + 1)
 
 
 def bootstrap_ci_corr(

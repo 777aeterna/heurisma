@@ -651,6 +651,8 @@ def _render_appendices(appendix_dir: Path | None, i18n: dict[str, str]) -> str:
         if is_allowed_text and size <= MAX_APPENDIX_FILE_BYTES:
             raw_text = path.read_text(encoding="utf-8", errors="replace")
             content = html.escape(_redact_local_paths(raw_text))
+            if is_gate_trace:
+                content = content.replace("{{", "&#123;&#123;")
             label = (
                 f" — {i18n['self_review']}"
                 if is_gate_trace and re.search(r"^\s*MODE:\s*self-review\b", raw_text, re.MULTILINE)

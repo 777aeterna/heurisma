@@ -168,6 +168,9 @@ def _convert_cell(s: str, comma: bool) -> Any:
         return s
 
 
+NA_SENTINELS: frozenset[str] = frozenset({"", "na", "n/a", "null", "none", "nan", "—", "-"})
+
+
 def _analyze_csv_columns(
     headers: list[str], body: list[list[str]], delim: str, keep: Any = False
 ) -> dict[str, dict[str, Any]]:
@@ -175,7 +178,11 @@ def _analyze_csv_columns(
     cols: dict[str, dict[str, Any]] = {}
     pending: list[str] = []
     for ci, name in enumerate(headers):
-        cells = [r[ci].strip() for r in body if ci < len(r) and r[ci].strip()]
+        cells = [
+            r[ci].strip()
+            for r in body
+            if ci < len(r) and r[ci].strip().lower() not in NA_SENTINELS
+        ]
         classes = [_cell_class(c) for c in cells]
         numeric = [c for c in classes if c != _TEXT]
         keep_col = keep is True or (not isinstance(keep, bool) and name in set(keep or ()))
@@ -215,9 +222,40 @@ def _analyze_csv_columns(
 
 def _to_number(v: str, decimal_comma: bool) -> Any:
     s = v.strip()
-    if not s:
+    if s.lower() in NA_SENTINELS:
         return None
     return _convert_cell(s, decimal_comma)
+
+
+def worst_tier(
+    rows: list[dict[str, Any]],
+    source_col: str = "primary_source_id",
+    meta_csv: str | Path | None = None,
+) -> str:
+    """Return the weakest evidence tier across ``rows`` by looking up ``source_col`` IDs in ``meta_csv``.
+
+    IDs may be separated by ``;`` or ``,``. Unknown IDs or missing metadata conservatively return ``"Tier 3"``.
+    """
+    rank = {"tier 1": 1, "tier 2": 2, "tier 3": 3}
+    tier_by_id: dict[str, int] = {}
+    if meta_csv is not None and Path(meta_csv).is_file():
+        for mrow in _read_rows(Path(meta_csv)):
+            sid = (mrow.get("source_id") or mrow.get("claim_id") or mrow.get("id") or "").strip()
+            tval = (mrow.get("tier") or "").strip().lower()
+            m = re.search(r"tier\s*([123])", tval)
+            if sid and m:
+                tier_by_id[sid] = int(m.group(1))
+    worst = 0
+    for row in rows:
+        raw = str(row.get(source_col) or "").strip()
+        if not raw:
+            continue
+        for token in re.split(r"[;,]", raw):
+            sid = token.strip()
+            if not sid:
+                continue
+            worst = max(worst, tier_by_id.get(sid, 3))
+    return f"Tier {worst}" if worst in rank.values() else "Tier 3"
 
 
 DEFAULT_MAX_BYTES = 100 * 1024 * 1024  # 100 MB default per-file cap (override with HEURISMA_MAX_BYTES)
@@ -813,45 +851,90 @@ def intake(
         if not any(w in haystack for w in words):
             gaps.append(name)
 
-    lines = [
-        "# Intake report", "",
+    section_header = f"## Channel: {channel} (`{folder.name}/`)"
+    sec_lines = [
+        section_header,
+        "",
         f"- folder: `{folder.name}/` · channel: {channel} · selection: {selection} · retrieved_utc: {retrieved_utc}",
-        f"- run at: {utc_now()} (local_data.py intake)", "",
-        "## Files", "",
+        f"- run at: {utc_now()} (local_data.py intake)",
+        "",
+        "### Files",
+        "",
     ]
     for a in accepted:
-        lines.append(f"- accepted: {a['file']} -> [@{a['claim_id']}] (sha256 {a['sha256']})")
+        sec_lines.append(f"- accepted: {a['file']} -> [@{a['claim_id']}] (sha256 {a['sha256']})")
         for col, fmt in a["formats"].items():
-            lines.append(f"  - {col}: {fmt}")
+            sec_lines.append(f"  - {col}: {fmt}")
     for rel, why in rejected:
-        lines.append(f"- rejected: {rel} — {why}")
+        sec_lines.append(f"- rejected: {rel} — {why}")
     if wishlist:
-        lines += ["", "## Gaps (wish-list items no accepted file covers)", ""]
-        lines += [f"- {g}" for g in gaps] or ["- none"]
-    lines += [
-        "", "Uploading a file never raises its tier: without an origin URL, a retrieval date and a hash it stays Tier 3.",
-    ]
+        sec_lines += ["", "### Gaps (wish-list items no accepted file covers)", ""]
+        sec_lines += [f"- {g}" for g in gaps] or ["- none"]
+    sec_block = "\n".join(sec_lines)
+    footer = "Uploading a file never raises its tier: without an origin URL, a retrieval date and a hash it stays Tier 3."
     appendix.mkdir(parents=True, exist_ok=True)
-    (appendix / "intake.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    intake_md = appendix / "intake.md"
+    if intake_md.is_file():
+        existing = intake_md.read_text(encoding="utf-8")
+        body_no_footer = existing.replace(footer, "").strip()
+        sec_re = re.compile(
+            rf"^## Channel:\s*{re.escape(channel)}\b.*?(?=^## Channel:|\Z)",
+            flags=re.MULTILINE | re.DOTALL,
+        )
+        if sec_re.search(body_no_footer):
+            merged = sec_re.sub(sec_block + "\n\n", body_no_footer).strip()
+        elif body_no_footer.startswith("# Intake report"):
+            merged = body_no_footer + "\n\n" + sec_block
+        else:
+            merged = "# Intake report\n\n" + sec_block
+        intake_md.write_text(merged + "\n\n" + footer + "\n", encoding="utf-8")
+    else:
+        intake_md.write_text("# Intake report\n\n" + sec_block + "\n\n" + footer + "\n", encoding="utf-8")
     return {"accepted": accepted, "rejected": rejected, "gaps": gaps}
 
 
 def _prereg_digest(record: dict[str, Any]) -> str:
-    body = {k: record[k] for k in ("sealed_utc", "hypotheses", "plan")}
+    keys = ("sealed_utc", "hypotheses", "plan", "known_artifacts", "post_hoc")
+    body = {k: record[k] for k in keys if k in record}
     return hashlib.sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
 
 
-def preregister(appendix: str | Path, hypotheses: dict[str, str], plan: str) -> dict[str, Any]:
+def preregister(
+    appendix: str | Path,
+    hypotheses: dict[str, str],
+    plan: str,
+    allow_post_hoc: bool = False,
+) -> dict[str, Any]:
     """Seal H0/H1/... and the analysis plan in ``appendix/preregistration.json`` before looking at the data.
 
-    Refuses to overwrite an existing seal: a plan that moves after the data is no longer a preregistration.
+    Refuses to overwrite an existing seal, records ``known_artifacts`` present in ``appendix/``, and refuses
+    post-hoc sealing if ``output.txt`` or ``numbers.json`` already exist unless ``allow_post_hoc=True``.
     """
-    path = Path(appendix) / "preregistration.json"
+    app = Path(appendix)
+    path = app / "preregistration.json"
     if path.exists():
         raise ValueError(f"{path} already exists; a preregistration is sealed once (explain any change in Section 3)")
     if not hypotheses.get("H0") or not hypotheses.get("H1"):
         raise ValueError("preregister needs at least H0 and H1")
-    record: dict[str, Any] = {"sealed_utc": utc_now(), "hypotheses": hypotheses, "plan": plan}
+    post_hoc_files = [name for name in ("output.txt", "numbers.json") if (app / name).is_file()]
+    if post_hoc_files and not allow_post_hoc:
+        raise ValueError(
+            f"Cannot seal preregistration after analysis outputs already exist ({', '.join(post_hoc_files)}); "
+            f"run prereg in Stage 1 before analysis.py (or pass --allow-post-hoc to mark it post-hoc)."
+        )
+    known_artifacts: dict[str, str] = {}
+    if app.is_dir():
+        for fp in sorted(app.rglob("*"), key=lambda p: p.relative_to(app).parts):
+            if fp.is_file() and "__pycache__" not in fp.parts and fp.suffix != ".pyc":
+                known_artifacts[fp.relative_to(app).as_posix()] = sha12(fp)
+    record: dict[str, Any] = {
+        "sealed_utc": utc_now(),
+        "hypotheses": hypotheses,
+        "plan": plan,
+        "known_artifacts": known_artifacts,
+    }
+    if post_hoc_files:
+        record["post_hoc"] = True
     record["sha256"] = _prereg_digest(record)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(record, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
@@ -922,6 +1005,7 @@ def main(argv: list[str] | None = None) -> int:
     h.add_argument("--h1", required=True)
     h.add_argument("--h2", default="")
     h.add_argument("--plan", required=True)
+    h.add_argument("--allow-post-hoc", action="store_true", help="Allow sealing after output.txt/numbers.json exist (marks post_hoc=true).")
 
     f = sub.add_parser("run-start", help="Stamp appendix/run.json with the run start (Stage 0); idempotent.")
     f.add_argument("--appendix", default="appendix", help="Appendix directory (default: appendix).")
@@ -954,7 +1038,7 @@ def main(argv: list[str] | None = None) -> int:
             hyp = {"H0": args.h0, "H1": args.h1}
             if args.h2:
                 hyp["H2"] = args.h2
-            print(preregister(args.appendix, hyp, args.plan))
+            print(preregister(args.appendix, hyp, args.plan, allow_post_hoc=args.allow_post_hoc))
         elif args.cmd == "run-start":
             print(run_start(args.appendix, force=args.force))
         elif args.cmd == "attempt":

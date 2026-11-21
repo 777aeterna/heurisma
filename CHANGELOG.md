@@ -4,6 +4,25 @@ All notable changes to **Heurisma** will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-11-21 (Semantic Integrity, Frictionless Gates & Temporal/Chart Guards)
+
+Driven by lessons from a full Level 3 cold-run evaluation of v0.7.0. Closes six semantic bypasses (`M20`–`M25`, bringing mutation detection from **19/25** to **25/25**), eliminates gate-workflow friction (`--gate-header`, closed-loop Reviewer #2 hash exemption, `QUOTE:` marker escaping), and hardens data ingestion and temporal/fan chart rules.
+
+### Added
+- **Six new adversarial mutations (`M20`–`M25`) in `tests/mutations.py`:** local `user-curated` Tier laundering (`M20`), backdated `agent-fetched` timestamps (`M21`), Tier 3 press-only counter-evidence (`M22`), observed `line` chart plotting dates past `As-Of Date` (`M23`), HARKing in `preregistration.json` (`M24`), and hand-typed Section 4 table statistics absent from `output.txt`/`numbers.json` (`M25`). `mutation_report.py --min-rate 1.0` catches **25/25**.
+- **Numeric closure (`P1-UNTRACED-NUM`):** `validate_report.py` cross-checks statistical numbers in Section 4 table cells against `appendix/output.txt` and `appendix/numbers.json` (warning at Level 2, error at Level 3), excluding years, section references, citations, tiers, and engineering labels.
+- **Gate-header CLI (`--gate-header <source_verifier|reviewer|qa> [--mode subagent|self-review]`):** emits `MODE`, `REVIEWED-SHA256`, and real UTC `REVIEWED-UTC` directly so gate timestamps are never typed by hand.
+- **Mixed-source tier helper (`local_data.worst_tier`):** computes the weakest contributing tier across rows in composite tables.
+- **Statistical helpers in `references/data-protocol.md`:** documented `partial_corr_trend` (partial correlation controlling for secular time trend) and `stratified_perm_pvalue` (within-stratum permutation test).
+
+### Changed
+- **Pre-intake & selection provenance (`local_data.py`, `validate_report.py`):** `NA_SENTINELS` (`""`, `"na"`, `"n/a"`, `"null"`, `"none"`, `"nan"`, `"—"`, `"-"`) are ignored during per-column CSV decimal inference and converted to `None`; `intake()` merges `## Channel: <channel>` sections idempotently into `appendix/intake.md`; `check_selection()` caps local `user-curated` files at Tier 2, blocks relabelling `intake.md` `user-curated` hashes to `agent-fetched`, requires `retrieved_utc >= run_started_utc` plus `download_log.csv`/`data_attempts.csv` proof for `agent-fetched`, and requires at least one Tier 1/2 (`data`/`literature`) `agent-fetched` source for counter-evidence.
+- **Preregistration anti-post-hoc & anti-HARKing (`local_data.py`, `validate_report.py`):** `preregister()` records `known_artifacts` and rejects sealing after `output.txt`/`numbers.json` exist (unless `--allow-post-hoc`); `check_preregistration()` requires `appendix/preregistration.json` at Level 3, flags `post_hoc=true` and `sealed_utc < run_started_utc`, and flags exact computed decimals from `numbers.json` inside `H0`/`H1`.
+- **Frictionless gates (`validate_report.py`, `render_report.py`):** `_check_gate_binding()` exempts stale-hash warnings on `reviewer.md` once Section 5 has a closed Reviewer #2 Disposition Table (allowing `--strict` without re-signing `reviewer.md`); `GATE-PRIVACY` ignores `QUOTE:` lines when checking for literal `{{num:}}`/`{{fig:}}` markers, and `render_report.py` escapes `{{` → `&#123;&#123;` inside embedded gate `<pre><code>` blocks.
+- **Temporal & fan chart guards (`svg_charts.py`, `validate_report.py`):** `validate_charts_schema(..., as_of_date=...)` rejects observed `line` chart points dated after the report `As-Of Date` when `x.observed_until` is unset; `chart_warnings()` warns when `fan` quantiles diverge at the `x.observed_until` anchor.
+- **Protocol, forecasting & agent prompts (`SKILL.md`, `references/`, `agents/`):** updated to match all v0.8.0 checks, including explicit *Parametric scenario bands* vs. *Calibrated fan* labeling (`references/forecasting.md`) and temporal/causal inversion + operational domain conflation checks in Reviewer #2 Category 4.
+- **CI & branding:** removed `continue-on-error` from macOS/Windows jobs in `.github/workflows/validate-skill.yml` after 10/10 green runs; replaced repository banner with `assets/banner.jpeg`.
+
 ## [0.7.0] - 2026-11-21 (Epistemic Linter, Bound Gates & Pre-Intake)
 
 Driven by an external code-executing audit of v0.6.1, which demonstrated that several v0.6.1 checks inspected surface form rather than ground truth. Every P0, P1, and P2 finding is addressed, and mutation detection rose from an honest baseline of **4/19** to **19/19** (`python3 -B tests/mutation_report.py --min-rate 1.0`).

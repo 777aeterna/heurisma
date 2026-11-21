@@ -236,6 +236,117 @@ def m19_home_path_in_report(ws: Path) -> None:
     _edit(ws, "report.md", "## 7. Limitations", "Data read from /home/alice/secret/datos.csv.\n\n## 7. Limitations")
 
 
+def m20_tier_laundering_local_user_curated(ws: Path) -> None:
+    """A user-curated local file in appendix/data/ is upgraded to Tier 1 with a dated retrieved_utc."""
+    def fn(rows: list[dict[str, str]], cols: list[str]) -> tuple[list[dict[str, str]], list[str]]:
+        cols = cols + [c for c in ("selection", "retrieved_utc") if c not in cols]
+        for r in rows:
+            if (r.get("claim_id") or "").strip() == "C1":
+                r["tier"] = "Tier 1"
+                r["selection"] = "user-curated"
+                r["retrieved_utc"] = "2026-11-20T09:00:00Z"
+            else:
+                r["selection"] = "agent-fetched"
+                r["retrieved_utc"] = "2026-11-20T12:00:00Z"
+        return rows, cols
+
+    _rewrite_csv(ws, "appendix/sources.csv", fn)
+
+
+def m21_forged_agent_fetched_before_run_start(ws: Path) -> None:
+    """An agent-fetched data row has retrieved_utc earlier than run_started_utc and no download_log."""
+    (ws / "appendix" / "run.json").write_text(
+        json.dumps({"run_started_utc": "2026-11-20T15:07:48Z"}), encoding="utf-8"
+    )
+
+    def fn(rows: list[dict[str, str]], cols: list[str]) -> tuple[list[dict[str, str]], list[str]]:
+        cols = cols + [c for c in ("selection", "retrieved_utc") if c not in cols]
+        for r in rows:
+            if (r.get("claim_id") or "").strip() == "C2":
+                r["selection"] = "agent-fetched"
+                r["retrieved_utc"] = "2026-11-20T15:05:00Z"
+            else:
+                r["selection"] = "third-party"
+                r["retrieved_utc"] = "2026-11-20T15:10:00Z"
+        return rows, cols
+
+    _rewrite_csv(ws, "appendix/sources.csv", fn)
+
+
+def m22_weak_agent_fetched_counter_evidence(ws: Path) -> None:
+    """User-curated corpus paired only with a Tier 3 / press agent-fetched source."""
+    (ws / "appendix" / "run.json").write_text(
+        json.dumps({"run_started_utc": "2026-11-20T09:00:00Z"}), encoding="utf-8"
+    )
+
+    def fn(rows: list[dict[str, str]], cols: list[str]) -> tuple[list[dict[str, str]], list[str]]:
+        cols = cols + [c for c in ("selection", "retrieved_utc") if c not in cols]
+        for r in rows:
+            r["selection"] = "user-curated"
+            r["retrieved_utc"] = "2026-11-20T09:05:00Z"
+        rows.append(
+            {
+                "claim_id": "C9",
+                "source_title": "Industry blog commentary",
+                "url": "https://example.org/blog/hybrid-opinion",
+                "tier": "Tier 3",
+                "accessed_date": "2026-11-20",
+                "data_as_of": "2026-11",
+                "kind": "press",
+                "sha256": "",
+                "selection": "agent-fetched",
+                "retrieved_utc": "2026-11-20T09:10:00Z",
+            }
+        )
+        return rows, cols
+
+    _rewrite_csv(ws, "appendix/sources.csv", fn)
+    _edit(ws, "report.md", "[@C2]", "[@C2; @C9]")
+
+
+def m23_observed_line_chart_after_as_of(ws: Path) -> None:
+    """An observed line chart (no observed_until) plots a point date after the report As-Of Date."""
+    charts = json.loads((ws / "charts.json").read_text(encoding="utf-8"))
+    charts.append(
+        {
+            "id": "future_obs",
+            "type": "line",
+            "title": "Synthetic future observation",
+            "x": {"type": "date"},
+            "y": {"label": "MW"},
+            "series": [{"name": "Capacity", "points": [["2025-12", 100.0], ["2026-12", 110.0]]}],
+        }
+    )
+    (ws / "charts.json").write_text(json.dumps(charts), encoding="utf-8")
+    _edit(ws, "report.md", "{{fig:mentoring_scatter}}", "{{fig:mentoring_scatter}}\n\n{{fig:future_obs}}")
+
+
+def m24_harking_preregistration_contains_results(ws: Path) -> None:
+    """preregistration.json seals exact computed numbers from numbers.json inside H1."""
+    import hashlib
+
+    nums = json.loads((ws / "appendix" / "numbers.json").read_text(encoding="utf-8"))
+    vals = [str(v) for v in nums.values() if re.search(r"\d+\.\d{2,}", str(v))][:2]
+    assert len(vals) >= 2
+    h0 = "No difference between hybrid and office sites."
+    h1 = f"Hybrid changes output by {vals[0]} and second metric by {vals[1]}."
+    plan = "Exact stratified permutation tests."
+    body = {"sealed_utc": "2026-11-20T08:00:00Z", "hypotheses": {"H0": h0, "H1": h1}, "plan": plan}
+    digest = hashlib.sha256(json.dumps(body, sort_keys=True).encode("utf-8")).hexdigest()
+    body["sha256"] = digest
+    (ws / "appendix" / "preregistration.json").write_text(json.dumps(body, indent=2), encoding="utf-8")
+
+
+def m25_untraced_stat_in_section4_table(ws: Path) -> None:
+    """A Section 4 results table cell contains a hand-typed statistic absent from output.txt and numbers.json."""
+    _edit(
+        ws,
+        "report.md",
+        "| Junior | 8 | {{num:pr_jun_hyb}} | {{num:pr_jun_off}} | {{num:pr_jun_diff}} | {{num:pr_jun_p}} |",
+        "| Junior | 8 | {{num:pr_jun_hyb}} | {{num:pr_jun_off}} | {{num:pr_jun_diff}} | 0.4180 |",
+    )
+
+
 MUTATIONS: dict[str, tuple[str, Mutation, bool]] = {
     # name: (description, function, re-render after applying)
     "M01": ("data value changed, HTML re-rendered", m01_data_value_changed, True),
@@ -257,9 +368,15 @@ MUTATIONS: dict[str, tuple[str, Mutation, bool]] = {
     "M17": ("unresolved {{num:}} marker", m17_unresolved_num_marker, True),
     "M18": ("citation to a source that does not exist", m18_citation_to_missing_source, True),
     "M19": ("home-directory path in the report", m19_home_path_in_report, True),
+    "M20": ("local user-curated file laundered to Tier 1 with dated retrieved_utc", m20_tier_laundering_local_user_curated, True),
+    "M21": ("agent-fetched row with retrieved_utc earlier than run_started_utc", m21_forged_agent_fetched_before_run_start, True),
+    "M22": ("user-curated corpus paired only with Tier 3 press agent-fetched source", m22_weak_agent_fetched_counter_evidence, True),
+    "M23": ("observed line chart plots a point date after the report As-Of Date", m23_observed_line_chart_after_as_of, True),
+    "M24": ("preregistration H1 contains exact computed figures from numbers.json (HARKing)", m24_harking_preregistration_contains_results, True),
+    "M25": ("Section 4 table cell has a hand-typed statistic absent from output.txt/numbers.json", m25_untraced_stat_in_section4_table, True),
 }
 
-# Mutations the validator does not yet catch -> the v0.7.0 phase that will. Remove an entry when its phase lands.
+# Mutations the validator does not yet catch -> the v0.8.0 phase that will. Remove an entry when its phase lands.
 PENDING: dict[str, int] = {
 }
 
@@ -286,6 +403,12 @@ EXPECT: dict[str, str] = {
     "M17": r"no_existe",
     "M18": r"C99",
     "M19": r"home-directory",
+    "M20": r"(?i)local.*user-curated.*Tier 1|cannot be Tier 1",
+    "M21": r"(?i)agent-fetched.*before run start|precedes run_started_utc",
+    "M22": r"(?i)agent-fetched.*Tier 1 or Tier 2|independent Tier 1/2",
+    "M23": r"(?i)after the report As-Of Date",
+    "M24": r"(?i)computed result figures|HARKing|numbers\.json",
+    "M25": r"(?i)not found in appendix/output\.txt or appendix/numbers\.json|untraced",
 }
 # Mutations about the gates themselves keep the gates as the mutation left them; every other mutation re-stamps
 # REVIEWED-SHA256 afterwards, as an agent covering its tracks would.

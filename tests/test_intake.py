@@ -3,6 +3,7 @@
 import csv
 import json
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -182,6 +183,28 @@ class TestIntake(unittest.TestCase):
                 row = list(csv.DictReader(fh))[0]
             self.assertEqual((row["kind"], row["selection"]), ("literature", "user-curated"))
 
+    def test_intake_multi_channel_preserves_both_sections_and_is_idempotent(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            datos = root / "datos"
+            inbox = root / "inbox" / "sources"
+            datos.mkdir(parents=True)
+            inbox.mkdir(parents=True)
+            (datos / "series.csv").write_text("y;v\n2025;10,5\n", encoding="utf-8")
+            (inbox / "paper.md").write_text("# Paper\n", encoding="utf-8")
+            local_data.intake(datos, root / "appendix", channel="data", selection="user-curated")
+            local_data.intake(inbox, root / "appendix", channel="sources", selection="user-curated")
+            md = (root / "appendix" / "intake.md").read_text(encoding="utf-8")
+            self.assertIn("## Channel: data", md)
+            self.assertIn("## Channel: sources", md)
+            self.assertIn("series.csv", md)
+            self.assertIn("paper.md", md)
+            # Idempotent re-run on data channel does not duplicate the section
+            local_data.intake(datos, root / "appendix", channel="data", selection="user-curated")
+            md2 = (root / "appendix" / "intake.md").read_text(encoding="utf-8")
+            self.assertEqual(md2.count("## Channel: data"), 1)
+            self.assertEqual(md2.count("## Channel: sources"), 1)
+
 
 class TestPreregistration(unittest.TestCase):
     def test_prereg_seals_hypotheses_and_plan(self) -> None:
@@ -192,13 +215,34 @@ class TestPreregistration(unittest.TestCase):
             self.assertEqual(data["hypotheses"]["H1"], "Rents fell.")
             self.assertRegex(data["sealed_utc"], r"Z$")
             self.assertEqual(rec["sha256"], data["sha256"])
+            self.assertIn("known_artifacts", data)
             with self.assertRaises(ValueError):  # sealing twice would let the plan move after the data
                 local_data.preregister(app, {"H0": "x", "H1": "y"}, "z")
+
+    def test_prereg_records_known_artifacts_and_blocks_after_output_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            app = Path(t) / "appendix"
+            app.mkdir()
+            (app / "sources.csv").write_text("claim_id,url\nC1,https://example.org\n", encoding="utf-8")
+            (app / "output.txt").write_text("result = 42\n", encoding="utf-8")
+            with self.assertRaises(ValueError) as ctx:
+                local_data.preregister(app, {"H0": "No effect.", "H1": "Positive effect."}, "Test.")
+            self.assertRegex(str(ctx.exception), r"(?i)output\.txt|already exist|post.hoc")
+            rec = local_data.preregister(
+                app, {"H0": "No effect.", "H1": "Positive effect."}, "Test.", allow_post_hoc=True
+            )
+            self.assertTrue(rec.get("post_hoc"))
+            self.assertIn("sources.csv", rec.get("known_artifacts", {}))
 
     def _with_prereg(self, ws: Path, h1: str) -> None:
         text = (ws / "report.md").read_text(encoding="utf-8")
         h0 = re.search(r"H₀[^:]*:\**\s*(.+)", text).group(1).strip()
+        (ws / "appendix" / "output.txt").unlink(missing_ok=True)
+        (ws / "appendix" / "numbers.json").unlink(missing_ok=True)
         local_data.preregister(ws / "appendix", {"H0": h0, "H1": h1}, "Exact permutation tests by seniority.")
+        # Restore output.txt and numbers.json from golden so the rest of the study stays valid
+        shutil.copy2(M.GOLDEN / "appendix" / "output.txt", ws / "appendix" / "output.txt")
+        shutil.copy2(M.GOLDEN / "appendix" / "numbers.json", ws / "appendix" / "numbers.json")
 
     def test_matching_hypotheses_are_clean_and_tampering_is_caught(self) -> None:
         def ok(ws: Path) -> None:

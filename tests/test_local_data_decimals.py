@@ -53,8 +53,8 @@ class TestDecimalPerColumn(unittest.TestCase):
         self.assertEqual([r["note"] for r in rows], ["see table 3", "12", "n/a", "pending review"])
 
     def test_numeric_column_keeps_non_numeric_cells_as_strings(self) -> None:
-        rows = read("id;v\n1;1,5\n2;n/a\n3;3,5\n")
-        self.assertEqual([r["v"] for r in rows], [1.5, "n/a", 3.5])
+        rows = read("id;v\n1;1,5\n2;pending\n3;3,5\n")
+        self.assertEqual([r["v"] for r in rows], [1.5, "pending", 3.5])
 
     def test_leading_zero_identifiers_are_kept_as_text(self) -> None:
         rows = read("code;n\n00123;5\n00456;6\n")
@@ -83,6 +83,44 @@ class TestDecimalPerColumn(unittest.TestCase):
             p = Path(t) / "z.csv"
             p.write_text("zip;n\n12345;1,5\n", encoding="utf-8")
             self.assertEqual(local_data.read_table(p, keep_strings=["zip"])[0]["zip"], "12345")
+
+    def test_na_sentinels_excluded_from_column_type_inference(self) -> None:
+        rows = read(
+            "year;mw;cost\n"
+            "2015;NA;N/A\n"
+            "2016;—;-\n"
+            "2017;null;none\n"
+            "2018;33.141,5;68,4\n"
+            "2019;34.200,0;71,2\n"
+        )
+        self.assertIsNone(rows[0]["mw"])
+        self.assertIsNone(rows[0]["cost"])
+        self.assertIsNone(rows[1]["mw"])
+        self.assertIsNone(rows[1]["cost"])
+        self.assertIsNone(rows[2]["mw"])
+        self.assertIsNone(rows[2]["cost"])
+        self.assertAlmostEqual(rows[3]["mw"], 33141.5)
+        self.assertAlmostEqual(rows[4]["cost"], 71.2)
+
+    def test_mixed_decimal_column_with_na_still_raises(self) -> None:
+        with self.assertRaises(ValueError):
+            read("id;v\n1;NA\n2;1,5\n3;2.5\n")
+
+    def test_worst_tier_inherits_weakest_cell_source(self) -> None:
+        with tempfile.TemporaryDirectory() as t:
+            meta = Path(t) / "sources_metadata.csv"
+            meta.write_text(
+                "source_id,tier,title\n"
+                "SRC_18,Tier 1,Official grid report\n"
+                "SRC_45,Tier 3,Wikipedia summary\n",
+                encoding="utf-8",
+            )
+            rows = [
+                {"year": 2015, "mw": 33141, "primary_source_id": "SRC_18;SRC_45"},
+                {"year": 2025, "mw": 44662, "primary_source_id": "SRC_18"},
+            ]
+            self.assertEqual(local_data.worst_tier(rows, "primary_source_id", meta), "Tier 3")
+            self.assertEqual(local_data.worst_tier(rows[1:], "primary_source_id", meta), "Tier 1")
 
 
 class TestPreviewShowsDetectedFormat(unittest.TestCase):
