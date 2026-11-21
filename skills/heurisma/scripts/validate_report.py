@@ -9,8 +9,9 @@ import json
 import re
 import unicodedata
 import sys
-from urllib.parse import unquote, urlparse
 from pathlib import Path
+from typing import Any
+from urllib.parse import unquote, urlparse
 
 _SCRIPTS_DIR = str(Path(__file__).resolve().parent)
 if _SCRIPTS_DIR not in sys.path:
