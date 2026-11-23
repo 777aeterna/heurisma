@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Emergence in Physics: Asymptotic Non-Analyticity, Renormalization Decoupling, and Formal Undecidability</title>
+  <style>
+    :root {
+      --text: #111827; --muted: #4b5563; --rule: #cbd5e1; --rule-dark: #1e293b;
+      --bg: #ffffff; --tint: #f8fafc; --accent: #0072B2;
+    }
+    body {
+      font-family: Charter, 'Bitstream Charter', 'Iowan Old Style', 'Source Serif Pro', Georgia, serif;
+      font-size: 17px; line-height: 1.55; color: var(--text); background: var(--bg);
+      margin: 0; font-variant-numeric: tabular-nums;
+    }
+    .paper { max-width: 720px; margin: 0 auto; padding: 3rem 1.5rem 4.5rem; }
+    header.title-block { border-bottom: 1.5px solid var(--rule-dark); padding-bottom: 1.25rem; margin-bottom: 1.75rem; }
+    h1 { font-size: 1.9rem; line-height: 1.22; margin: 0 0 0.6rem; font-weight: 700; letter-spacing: -0.01em; }
+    .meta-line { font-size: 0.88rem; color: var(--muted); margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+    .abstract {
+      background: var(--tint); border-left: 3px solid var(--accent);
+      padding: 1rem 1.25rem; margin: 1.5rem 0 2rem; font-size: 0.96rem;
+    }
+    .abstract-label {
+      font-family: system-ui, -apple-system, sans-serif; font-size: 0.75rem;
+      font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.35rem;
+    }
+    .abstract p { margin: 0.25rem 0; }
+    .abstract-change { font-size: 0.88rem; color: var(--muted); margin-top: 0.5rem; }
+    h2 {
+      font-size: 1.28rem; margin-top: 2.25rem; margin-bottom: 0.75rem;
+      border-bottom: 1px solid var(--rule); padding-bottom: 0.25rem; page-break-after: avoid;
+    }
+    h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; page-break-after: avoid; }
+    h4 { font-size: 0.98rem; margin-top: 1.2rem; margin-bottom: 0.4rem; font-style: italic; page-break-after: avoid; }
+    h5 { font-size: 0.9rem; margin-top: 1rem; margin-bottom: 0.3rem; font-variant: small-caps; page-break-after: avoid; }
+    p, li { margin: 0.45rem 0; }
+    ul ul { margin-top: 0.25rem; margin-bottom: 0.25rem; padding-left: 1.35rem; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .ep-tag {
+      font-variant: small-caps; font-family: system-ui, -apple-system, sans-serif;
+      font-size: 0.82em; font-weight: 600; letter-spacing: 0.02em; padding-left: 0.25rem;
+    }
+    .tag-strong { color: #166534; border-left: 2px solid #166534; }
+    .tag-moderate { color: #075985; border-left: 2px solid #075985; }
+    .tag-preliminary { color: #92400e; border-left: 2px solid #92400e; }
+    .tag-speculative { color: #991b1b; border-left: 2px solid #991b1b; }
+    .table-wrap { overflow-x: auto; margin: 1.25rem 0; }
+    table.booktabs {
+      width: 100%; border-collapse: collapse; font-size: 0.88rem; line-height: 1.4;
+      border-top: 1.5px solid var(--rule-dark); border-bottom: 1.5px solid var(--rule-dark);
+      page-break-inside: avoid;
+    }
+    table.booktabs th, table.booktabs td { padding: 0.45rem 0.55rem; text-align: left; border: none; vertical-align: top; }
+    table.booktabs thead th { border-bottom: 1px solid var(--rule-dark); font-weight: 700; }
+    table.booktabs td.num { text-align: right; white-space: nowrap; }
+    table.booktabs.compact { font-size: 0.8rem; margin-top: 0.5rem; }
+    figure.paper-fig { margin: 1.5rem 0; page-break-inside: avoid; }
+    .fig-title { font-size: 0.95rem; margin-bottom: 0.35rem; color: var(--text); }
+    figcaption { font-size: 0.84rem; color: var(--muted); margin-top: 0.35rem; line-height: 1.4; }
+    details.fig-data, details.appendix-item {
+      margin-top: 0.5rem; font-size: 0.85rem; border-top: 1px solid var(--rule); padding-top: 0.35rem;
+    }
+    details summary { cursor: pointer; color: var(--muted); font-family: system-ui, -apple-system, sans-serif; }
+    pre { background: var(--tint); padding: 0.75rem; overflow-x: auto; font-size: 0.8rem; border: 1px solid var(--rule); }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.86em; }
+    ol.ref-list { list-style: none; padding-left: 0; font-size: 0.86rem; line-height: 1.45; }
+    ol.ref-list li { margin: 0.4rem 0; }
+    blockquote { border-left: 2.5px solid var(--rule); margin: 1rem 0; padding-left: 1rem; color: var(--muted); }
+    footer.paper-footer {
+      margin-top: 3rem; padding-top: 0.75rem; border-top: 1px solid var(--rule);
+      font-size: 0.8rem; color: var(--muted); font-family: system-ui, -apple-system, sans-serif;
+    }
+    @page { size: A4; margin: 2.2cm; }
+    @media print {
+      body { font-size: 11pt; }
+      .paper { max-width: none; padding: 0; }
+      details.fig-data, details.appendix-item { display: none; }
+      a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.8em; color: #4b5563; }
+      figure.paper-fig, table.booktabs { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <!-- heurisma-sources: sha256:61ebc1d311c7 -->
+  <article class="paper">
+    <header class="title-block">
+      <h1>Emergence in Physics: Asymptotic Non-Analyticity, Renormalization Decoupling, and Formal Undecidability</h1>
+      <p class="meta-line"><strong>As-Of Date:</strong> 2026-11-23 | <strong>Depth Level:</strong> Level 3 (Deep Multi-Disciplinary) | <strong>Primary Disciplines:</strong> Natural &amp; Physical Sciences (Statistical Mechanics, Condensed Matter &amp; Quantum Many-Body Physics), Formal Sciences (Mathematical Physics &amp; Computability Theory), Humanities &amp; Historical Inquiry (Philosophy of Physics)</p>
+    </header>
+    <section class="abstract"><div class="abstract-label">Abstract</div><p>Physical emergence in generic local many-body systems is predominantly <strong>weak and asymptotic</strong>, not a violation of microscopic laws: exact phase-transition singularities occur strictly in the thermodynamic limit (N → ∞), yet finite-N classical lattices already exhibit universal finite-size scaling precursors <span class="ep-tag tag-strong">[strong]</span>. Our 2D Ising simulations across square and triangular lattices recover γ/ν = 1.769 and 1.731 (exact 1.75) and Binder crossings bracketing Onsager Tc = 2.2692 within Monte Carlo uncertainty <span class="ep-tag tag-moderate">[moderate]</span>. Nevertheless, weak emergence does not guarantee algorithmic derivability: formal proofs establish that the macroscopic spectral gap of local 1D and 2D quantum Hamiltonians is undecidable, bounding micro-to-macro deduction <span class="ep-tag tag-strong">[strong]</span>.</p><p class="abstract-change"><strong>Falsifier:</strong> Replicated experimental detection of macroscopic downward causation violating microscopic conservation laws or unitarity would falsify the weak-emergence synthesis; conversely, a proof that undecidable spectral-gap Hamiltonians have measure zero under generic physical perturbations and thermal noise would narrow the practical scope of formal irreducibility.</p></section>
+    <main><h2>1. Executive Summary</h2>
+<ul>
+<li><strong>What Would Change This Conclusion:</strong> Replicated experimental detection of macroscopic downward causation violating microscopic conservation laws or unitarity would falsify the weak-emergence synthesis; conversely, a proof that undecidable spectral-gap Hamiltonians have measure zero under generic physical perturbations and thermal noise would narrow the practical scope of formal irreducibility.
+</li>
+<li><strong>Key Takeaways:</strong>
+<ul>
+<li><strong>Finite-N analyticity vs. asymptotic singularities:</strong> Every finite-N local Hamiltonian has a strictly analytic partition function and, under exact ℤ₂ symmetry (zero external field), zero exact signed magnetization (⟨m⟩ = 0.0 on L = 4), while collective observables sharpen systematically toward thermodynamic-limit singularities via Lee–Yang zero pinching and renormalization-group (RG) fixed points <span class="ep-tag tag-strong">[strong]</span>.
+</li>
+<li><strong>Universality across microscopic Hamiltonians:</strong> High-precision 3D multi-model lattice benchmarks (<code>@C1</code>) establish identical 3D Ising critical exponents across distinct microscopic Hamiltonians <span class="ep-tag tag-strong">[strong]</span>, and our 2D square vs. triangular Ising simulations (<code>@C11</code>) yield consistent 2D Ising exponents despite distinct coordination numbers and critical temperatures <span class="ep-tag tag-moderate">[moderate]</span>.
+</li>
+<li><strong>Beyond symmetry breaking:</strong> Emergence in quantum matter extends past Landau order parameters to gauge-boson mass generation and long-range entangled topological order (established in fractional quantum Hall states, while bulk quantum spin liquids remain under active experimental investigation) <span class="ep-tag tag-moderate">[moderate]</span>.
+</li>
+<li><strong>Formal ceiling without ontological vitalism:</strong> Even with completely known local microscopic rules, deciding whether a 1D or 2D quantum lattice Hamiltonian is gapped in the thermodynamic limit is algorithmically undecidable—breaking the smooth finite-N precursor intuition for adversarial quantum models <span class="ep-tag tag-strong">[strong]</span>.
+</li>
+</ul>
+</li>
+</ul>
+<h2>2. Framing &amp; Hypotheses</h2>
+<ul>
+<li><strong>Scientific Discipline(s) &amp; Depth Level:</strong> <strong>Level 3 (Deep Multi-Disciplinary)</strong> bridging three branches under the Interdisciplinary Bridge Protocol:
+<ul>
+<li><em>Natural &amp; Physical Sciences</em> (Statistical Mechanics, Condensed Matter Physics, Quantum Many-Body Physics): governs phase transitions, spontaneous symmetry breaking, finite-size scaling, universality classes, and topological order.
+</li>
+<li><em>Formal Sciences</em> (Mathematical Physics, Computability Theory): governs partition-function analyticity (Lee–Yang zeros), renormalization-group fixed-point structure, and algorithmic decidability of macroscopic spectral gaps.
+</li>
+<li><em>Humanities &amp; Historical Inquiry</em> (Philosophy of Physics): governs weak (epistemic/asymptotic) vs. strong (ontological/downward-causal) emergence and the compatibility of emergence with inter-theoretic reduction.
+</li>
+<li><em>Cross-Domain Coupling:</em> Formal theorems (Lee–Yang analyticity at finite N; spectral-gap undecidability at N → ∞) constrain philosophical claims about whether macroscopic laws are merely convenient approximations or formally underivable from microphysics. Crucially, classical finite-size scaling and zero-temperature quantum undecidability stand in direct tension: generic classical fixed-point models display smooth finite-N precursors, whereas undecidable quantum Hamiltonians can hide their asymptotic phase up to uncomputably large system sizes.
+</li>
+</ul>
+</li>
+<li><strong>Research Question:</strong> To what extent does emergence in physics represent a formally irreducible, non-analytic collective phenomenon requiring asymptotic limits or undecidable micro-to-macro mappings, versus a weakly emergent, in-principle reducible consequence of local microscopic interactions that already manifests quantitatively in finite-N systems?
+</li>
+<li><strong>Hypotheses:</strong>
+<ul>
+<li>H₀: Macroscopic phase behavior in local many-body Hamiltonians is a smooth, additive function of microscopic constituents with no sharp scaling divergence or formal barrier between micro and macro descriptions.
+</li>
+<li>H₁: H1 (Weak/Asymptotic Emergence): Exact non-analyticities occur only in the thermodynamic limit N-&gt;inf, but finite-N local 2D Ising lattices exhibit systematic finite-size scaling precursors (power-law growth of peak susceptibility chi_max(L) with L, sharpening specific heat, and Binder cumulant crossings converging toward the exact Onsager Tc). H2 (Formal/Strong Emergence): Macroscopic phase properties can be formally undecidable from local microscopic Hamiltonians even without violating microscopic dynamics.
+</li>
+</ul>
+</li>
+<li><strong>Refutation Criteria:</strong>
+<ul>
+<li>H₀ is falsified if finite-size scaling of local 2D Ising lattices demonstrates power-law divergence of χ_max(L) and χ₀(Tc, L) and logarithmic growth of Cv(Tc, L) converging toward Onsager Tc, and if distinct microscopic Hamiltonians in the same symmetry class share universal exponents.
+</li>
+<li>H₁ (as an exhaustive, universally computable account of emergence) is bounded if formal mathematical physics proves that macroscopic phase properties are algorithmically undecidable from local microscopic Hamiltonians.
+</li>
+<li>Strong ontological emergence (evaluated as an exploratory contrast in Section 5) is falsified if no replicated Tier 1 physical experiment demonstrates violation of microscopic conservation laws or downward causation incompatible with effective field theory and RG decoupling.
+</li>
+</ul>
+</li>
+</ul>
+<h2>3. Methodology &amp; Evidence Standards</h2>
+<ul>
+<li><strong>Domain Evidence Hierarchy:</strong>
+<ul>
+<li><em>Tier 1:</em> Formal deductive proofs in mathematical physics (Lee–Yang zero theorems, spectral-gap undecidability proofs), replicated lattice/experimental benchmarks, and peer-reviewed physics review articles retrieved in full text via <code>papers.py</code>.
+</li>
+<li><em>Tier 2:</em> Peer-reviewed philosophy-of-physics analyses (<code>@C8</code>, <code>@C10</code>) and our own reproducible Monte Carlo computation (<code>@C11</code>, <code>kind = own-computation</code>, capped at Tier 2; cannot support <span class="ep-tag tag-strong">[strong]</span> claims about the physical world on its own).
+</li>
+<li><em>Tier 3:</em> Unreplicated preprints, popular-science essays, and abstract-only readings (none relied upon in this report).
+</li>
+</ul>
+</li>
+<li><strong>Analytical &amp; Data Provenance:</strong>
+<ul>
+<li><strong>Pre-registration &amp; Disclosed Deviations (<code>appendix/preregistration.json</code>, <code>appendix/run.json</code>):</strong> Hypotheses and the analytical plan were sealed prior to computation. Four deviations from the sealed plan are explicitly disclosed: (1) OpenAlex and arXiv fallback searches returned no open-access full text or abstract for Anderson (1972), Laughlin &amp; Pines (2000), or Batterman, so verified full-text peer-reviewed substitutes (<code>C1</code>–<code>C10</code>) were used (<code>appendix/data_attempts.csv</code>); (2) alongside the pre-registered <code>log(chi_max) vs. log(L)</code> block-bootstrap regression, we also report WLS regressions at exact Tc (<code>log chi0(Tc, L)</code>) with exact Student-t 95% CIs and reduced χ²/df; (3) strong ontological emergence is discussed as an exploratory philosophical contrast to sealed H₂ (formal undecidability) in Section 5; and (4) following Reviewer #2, a second 2D microscopic Hamiltonian (triangular-lattice Ising, z = 6) and equilibration/multi-seed diagnostics were added to <code>appendix/analysis.py</code>.
+</li>
+<li><strong>Literature Acquisition (<code>appendix/fetch_data.py</code>, <code>appendix/papers.csv</code>, <code>appendix/sources.csv</code>):</strong> Eighteen structured queries across OpenAlex and arXiv were executed via <code>papers.py</code> (logged in <code>appendix/search_log.csv</code>). Ten peer-reviewed works (<code>C1</code>–<code>C10</code>) were retrieved with verified, hashed open-access full-text PDFs in <code>appendix/data/papers/</code> (<code>appendix/download_log.csv</code>), and all DOIs passed <code>papers.py verify</code> and offline <code>papers.py replay</code>.
+</li>
+<li><strong>Reproducible Computation (<code>appendix/analysis.py</code>, <code>appendix/output.txt</code>, <code>appendix/numbers.json</code>, <code>charts.json</code>):</strong> A zero-dependency Python 3 script (<code>C11</code>, <code>kind = own-computation</code>, Tier 2, seed 42) executes: (a) exact partition-function enumeration for L = 2, 3, 4 (N = 4, 9, 16); (b) Wolff single-cluster Monte Carlo on periodic L × L square lattices (L ∈ {8, 12, 16, 24, 32}, 17 temperatures T ∈ [1.80, 3.00]) with 500 thermalization updates and 20 measurement blocks of 180 cluster updates (3,600 measured updates per (L, T)) and delete-1 block-jackknife SEs; (c) hot-start vs. cold-start equilibration check, lag-1 block autocorrelation r₁(m²), effective sweeps per block, and L ≥ 12 sensitivity fits; (d) a second 2D ℤ₂ Hamiltonian—the triangular-lattice Ising model (z = 6, exact Tc_tri = 4 / ln 3 = 3.6410)—at Tc_tri across L = 8..32; and (e) the pre-registered <code>log(chi_max) vs. log(L)</code> block-bootstrap (2,000 replicates), WLS fits with Student-t 95% CIs (<code>df = 3</code>, t = 3.1824), jackknife SEs for all three Binder U₄ crossings, and a 3-seed check (seeds 42, 137, 2026).
+</li>
+<li><strong>Verification Gates:</strong> Independent fresh-context subagent gates (<code>appendix/gates/reviewer.md</code>, <code>appendix/gates/source_verifier.md</code>, and <code>appendix/gates/qa.md</code>) audited methodology, provenance, and reproducibility.
+</li>
+</ul>
+</li>
+<li><strong>Data Attempts (<code>appendix/data_attempts.csv</code>):</strong>
+</li>
+</ul>
+<div class="table-wrap"><table class="booktabs">
+<thead><tr><th>Target</th><th>Online Rung</th><th>Local Rung</th><th>Outcome</th></tr></thead>
+<tbody>
+<tr><td>Primary scholarly literature (OpenAlex, arXiv, Crossref)</td><td><code>papers.py search</code> / <code>lookup</code> / <code>cite --fulltext</code>; 4 publisher PDFs rejected (HTTP 403 / landing page); fallback searches for Anderson 1972, Laughlin &amp; Pines 2000, Batterman (<code>search_log.csv</code> Q17), Ellis 2020 (<code>no-abstract</code> refusal logged), and MIT Press HTTP 403 for Juarrero 2023</td><td><code>local_data.py inventory</code> (no local datasets)</td><td>10 peer-reviewed full-text PDFs verified and hashed (<code>C1</code>–<code>C10</code>)</td></tr>
+<tr><td>Experimental condensed-matter critical-scaling dataset</td><td>OpenAlex search for 2D Ising calorimetry/magnetometry raw CSV series returned articles without downloadable raw data tables</td><td><code>local_data.py inventory</code> confirmed no local CSVs</td><td>Declared as limitation; reproducible square + triangular 2D Ising simulation executed (<code>C11</code>)</td></tr>
+</tbody>
+</table></div>
+<h2>4. Findings</h2>
+<h3>4.1 Finite-N Analyticity vs. Thermodynamic-Limit Emergence (Lee–Yang Mechanism)</h3>
+<p>For any finite system of N spins with bounded local interactions, the canonical partition function Z_N(T) is a finite sum of positive exponential terms and is therefore strictly analytic for all real temperatures T &gt; 0 <a href="#ref-1">[1]</a> <span class="ep-tag tag-strong">[strong]</span>. By exact ℤ₂ spin-flip symmetry (sᵢ → −sᵢ), the equilibrium signed magnetization vanishes identically on every finite lattice. Exact enumeration at Tc confirms ⟨m⟩ = 0.0 (L = 2), 0.0 (L = 3), and 0.0 (L = 4), demonstrating that exact non-analytic spontaneous symmetry breaking cannot occur at finite N <a href="#ref-1">[1]</a>, <a href="#ref-2">[2]</a>, <a href="#ref-3">[3]</a> <span class="ep-tag tag-strong">[strong]</span>.</p>
+<p>In the Yang–Lee formalism, equilibrium phase transitions emerge as complex-plane zeros of Z_N accumulate and pinch the real axis strictly in the thermodynamic limit N → ∞—a mechanism established rigorously both for general equilibrium/nonequilibrium transitions <a href="#ref-1">[1]</a> and specifically for first-order phase transitions <a href="#ref-4">[4]</a> <span class="ep-tag tag-strong">[strong]</span>. Nevertheless, finite-N classical systems do not remain featureless until N = ∞: as complex zeros approach the real axis with growing L, collective observables exhibit smooth but rapidly sharpening precursors, supporting Butterfield and Bouatta&#x27;s and Landsman&#x27;s philosophical thesis that emergent macroscopic novelty is compatible with reduction to finite-N microphysics <a href="#ref-5">[5]</a>, <a href="#ref-2">[2]</a>, <a href="#ref-3">[3]</a> <span class="ep-tag tag-moderate">[moderate]</span>.</p>
+<figure class="paper-fig" id="fig-1">
+<div class="fig-title"><strong>Figure 1.</strong> Emergence of Spontaneous Magnetization: Finite Lattices vs. Onsager Limit</div>
+<svg viewBox="0 0 680 330" width="100%" role="img" style="font-family: inherit; display: block;"><title>Emergence of Spontaneous Magnetization: Finite Lattices vs. Onsager Limit</title><desc>Finite lattices smooth out the phase transition at Tc = 2.2692; at T = 2.0000, L = 32 matches Onsager (0.911 vs. 0.911), while at T = 2.75, &lt;|m|&gt; decays from 0.445 (L = 8) to 0.109 (L = 32).</desc><line x1="68" y1="282.0" x2="654" y2="282.0" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="285.5" text-anchor="end" font-size="11" fill="#475569">0</text><line x1="68" y1="233.2" x2="654" y2="233.2" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="236.7" text-anchor="end" font-size="11" fill="#475569">0.2</text><line x1="68" y1="184.4" x2="654" y2="184.4" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="187.9" text-anchor="end" font-size="11" fill="#475569">0.4</text><line x1="68" y1="135.6" x2="654" y2="135.6" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="139.1" text-anchor="end" font-size="11" fill="#475569">0.6</text><line x1="68" y1="86.8" x2="654" y2="86.8" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="90.3" text-anchor="end" font-size="11" fill="#475569">0.8</text><line x1="68" y1="38.0" x2="654" y2="38.0" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="41.5" text-anchor="end" font-size="11" fill="#475569">1</text><line x1="68" y1="282" x2="654" y2="282" stroke="#334155" stroke-width="1.2"/><text x="68" y="28" text-anchor="start" font-size="11" font-weight="600" fill="#334155">Magnetization &lt;|m|&gt;</text><line x1="68.0" y1="282" x2="68.0" y2="287" stroke="#334155"/><text x="68.0" y="300" text-anchor="middle" font-size="11" fill="#475569">1.5</text><line x1="263.3" y1="282" x2="263.3" y2="287" stroke="#334155"/><text x="263.3" y="300" text-anchor="middle" font-size="11" fill="#475569">2</text><line x1="458.7" y1="282" x2="458.7" y2="287" stroke="#334155"/><text x="458.7" y="300" text-anchor="middle" font-size="11" fill="#475569">2.5</text><line x1="654.0" y1="282" x2="654.0" y2="287" stroke="#334155"/><text x="654.0" y="300" text-anchor="middle" font-size="11" fill="#475569">3</text><text x="361.0" y="322" text-anchor="middle" font-size="11" fill="#334155">Temperature T (J/kB)</text><line x1="368.5" y1="38" x2="368.5" y2="282" stroke="#64748b" stroke-dasharray="3,3" stroke-width="1"/><text x="372.5" y="50.0" text-anchor="start" font-size="10" fill="#334155" style="paint-order: stroke; stroke: #ffffff; stroke-width: 3px; stroke-linejoin: round;">Onsager Tc</text><polyline fill="none" stroke="#0072B2" stroke-width="2.2" points="185.2,48.6 263.3,59.4 310.2,70.7 341.5,80.8 357.1,88.6 364.9,88.8 368.5,93.7 372.7,93.0 380.5,97.1 388.3,101.5 400.1,106.4 411.8,114.5 427.4,121.3 450.9,130.0 478.2,148.5 556.3,173.4 654.0,203.1"/><circle cx="185.2" cy="48.6" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="263.3" cy="59.4" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="310.2" cy="70.7" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="341.5" cy="80.8" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="357.1" cy="88.6" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="364.9" cy="88.8" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="368.5" cy="93.7" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="372.7" cy="93.0" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="380.5" cy="97.1" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="388.3" cy="101.5" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="400.1" cy="106.4" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="411.8" cy="114.5" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="427.4" cy="121.3" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="450.9" cy="130.0" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="478.2" cy="148.5" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="556.3" cy="173.4" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="654.0" cy="203.1" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><polyline fill="none" stroke="#D55E00" stroke-width="2.2" stroke-dasharray="6,3" points="185.2,48.8 263.3,59.7 310.2,71.7 341.5,89.4 357.1,98.7 364.9,104.5 368.5,108.2 372.7,113.4 380.5,114.8 388.3,124.4 400.1,138.9 411.8,148.0 427.4,162.5 450.9,181.0 478.2,197.9 556.3,228.7 654.0,242.9"/><circle cx="185.2" cy="48.8" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="263.3" cy="59.7" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="310.2" cy="71.7" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="341.5" cy="89.4" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="357.1" cy="98.7" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="364.9" cy="104.5" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="368.5" cy="108.2" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="372.7" cy="113.4" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="380.5" cy="114.8" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="388.3" cy="124.4" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="400.1" cy="138.9" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="411.8" cy="148.0" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="427.4" cy="162.5" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="450.9" cy="181.0" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="478.2" cy="197.9" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="556.3" cy="228.7" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="654.0" cy="242.9" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><polyline fill="none" stroke="#009E73" stroke-width="2.2" stroke-dasharray="2,3" points="185.2,48.5 263.3,59.6 310.2,73.2 341.5,89.9 357.1,107.9 364.9,117.1 368.5,121.8 372.7,128.8 380.5,143.3 388.3,152.7 400.1,183.1 411.8,198.0 427.4,214.9 450.9,232.1 478.2,239.5 556.3,255.4 654.0,261.3"/><circle cx="185.2" cy="48.5" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="263.3" cy="59.6" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="310.2" cy="73.2" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="341.5" cy="89.9" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="357.1" cy="107.9" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="364.9" cy="117.1" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="368.5" cy="121.8" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="372.7" cy="128.8" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="380.5" cy="143.3" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="388.3" cy="152.7" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="400.1" cy="183.1" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="411.8" cy="198.0" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="427.4" cy="214.9" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="450.9" cy="232.1" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="478.2" cy="239.5" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="556.3" cy="255.4" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="654.0" cy="261.3" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><polyline fill="none" stroke="#E69F00" stroke-width="2.2" stroke-dasharray="8,3,2,3" points="185.2,48.5 263.3,59.6 310.2,72.9 341.5,90.5 357.1,109.4 364.9,132.3 368.5,282.0 372.7,282.0 380.5,282.0 388.3,282.0 400.1,282.0 411.8,282.0 427.4,282.0 450.9,282.0 478.2,282.0 556.3,282.0 654.0,282.0"/><circle cx="185.2" cy="48.5" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="263.3" cy="59.6" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="310.2" cy="72.9" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="341.5" cy="90.5" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="357.1" cy="109.4" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="364.9" cy="132.3" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="368.5" cy="282.0" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="372.7" cy="282.0" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="380.5" cy="282.0" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="388.3" cy="282.0" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="400.1" cy="282.0" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="411.8" cy="282.0" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="427.4" cy="282.0" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="450.9" cy="282.0" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="478.2" cy="282.0" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="556.3" cy="282.0" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="654.0" cy="282.0" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><line x1="481.2" y1="13" x2="497.2" y2="13" stroke="#E69F00" stroke-width="2.2" stroke-dasharray="8,3,2,3"/><text x="501.2" y="16" font-size="10.5" fill="#1e293b">Onsager Limit (L -&gt; inf)</text><line x1="345.6" y1="13" x2="361.6" y2="13" stroke="#009E73" stroke-width="2.2" stroke-dasharray="2,3"/><text x="365.6" y="16" font-size="10.5" fill="#1e293b">L = 32 (N = 1,024)</text><line x1="222.4" y1="13" x2="238.4" y2="13" stroke="#D55E00" stroke-width="2.2" stroke-dasharray="6,3"/><text x="242.4" y="16" font-size="10.5" fill="#1e293b">L = 16 (N = 256)</text><line x1="111.6" y1="13" x2="127.6" y2="13" stroke="#0072B2" stroke-width="2.2"/><text x="131.6" y="16" font-size="10.5" fill="#1e293b">L = 8 (N = 64)</text></svg>
+<figcaption><em>Note:</em> Finite lattices smooth out the phase transition at Tc = 2.2692; at T = 2.0000, L = 32 matches Onsager (0.911 vs. 0.911), while at T = 2.75, &lt;|m|&gt; decays from 0.445 (L = 8) to 0.109 (L = 32). <em>Source:</em> Own Wolff-cluster Monte Carlo simulation (seed = 42) and exact Onsager (1944) formula.</figcaption>
+<details class="fig-data"><summary>Figure data preview</summary><table class="booktabs compact"><thead><tr><th>X</th><th>Y</th></tr></thead><tbody><tr><td>1.8</td><td class="num">0.9566</td></tr><tr><td>2.0</td><td class="num">0.9121</td></tr><tr><td>2.12</td><td class="num">0.8659</td></tr><tr><td>2.2</td><td class="num">0.8244</td></tr><tr><td>2.24</td><td class="num">0.7926</td></tr><tr><td>2.26</td><td class="num">0.7916</td></tr><tr><td>2.2692</td><td class="num">0.7719</td></tr><tr><td>2.28</td><td class="num">0.7746</td></tr><tr><td>2.3</td><td class="num">0.7576</td></tr><tr><td>2.32</td><td class="num">0.7399</td></tr><tr><td>2.35</td><td class="num">0.7196</td></tr><tr><td>2.38</td><td class="num">0.6865</td></tr></tbody></table></details>
+</figure>
+<p>As shown in Figure 1, finite lattices smooth out the Onsager discontinuity at Tc = 2.2692. Deep in the ordered phase (T = 2.00), L = 32 already matches the thermodynamic limit (⟨|m|⟩ = 0.911 vs. exact 0.911), whereas in the disordered phase (T = 2.75), finite-size fluctuations decay systematically from 0.445 (L = 8) to 0.109 (L = 32) toward zero <a href="#ref-3">[3]</a> <span class="ep-tag tag-moderate">[moderate]</span>.</p>
+<h3>4.2 Quantitative Finite-Size Scaling &amp; Universality Across Two 2D Hamiltonians (Testing H₀ vs. H₁)</h3>
+<p>To test H₀ (smooth additivity) against H₁ (weak/asymptotic emergence with universal scaling precursors), Table 1 reports square-lattice critical observables at exact Onsager Tc across five lattice sizes, together with triangular-lattice χ₀ at exact Tc_tri = 3.6410. Hot-start and cold-start runs at (L = 32, Tc) agree within z = −0.11 (84.1 effective sweeps per block at Tc; 3.7 at T = 2.75), supporting thermal equilibration; however, the lag-1 block autocorrelation r₁(m²) = +0.51 across B = 20 blocks at (L = 32, Tc) indicates non-negligible inter-block dependence that may bias naive delete-1 block-jackknife SEs downward (declared as a limitation in Section 7) <a href="#ref-3">[3]</a> <span class="ep-tag tag-moderate">[moderate]</span>.</p>
+<div class="table-wrap"><table class="booktabs">
+<thead><tr><th>Lattice L</th><th>Spins N</th><th>Square ⟨|m|⟩ ± SE</th><th>Square χ₀(Tc, L) ± SE</th><th>Square χ(Tc, L) ± SE</th><th>Square Cv(Tc, L) ± SE</th><th>Square U₄ ± SE</th><th>Triangular χ₀(Tc_tri, L) ± SE</th></tr></thead>
+<tbody>
+<tr><td class="num">8</td><td class="num">64</td><td>0.772 ± 0.005</td><td>18.0 ± 0.2</td><td>1.24 ± 0.06</td><td>1.213 ± 0.044</td><td>0.610 ± 0.002</td><td>11.0 ± 0.1</td></tr>
+<tr><td class="num">12</td><td class="num">144</td><td>0.740 ± 0.007</td><td>37.2 ± 0.5</td><td>2.42 ± 0.15</td><td>1.341 ± 0.063</td><td>0.613 ± 0.004</td><td>22.5 ± 0.3</td></tr>
+<tr><td class="num">16</td><td class="num">256</td><td>0.712 ± 0.006</td><td>61.2 ± 0.8</td><td>3.95 ± 0.23</td><td>1.372 ± 0.042</td><td>0.612 ± 0.003</td><td>36.8 ± 0.4</td></tr>
+<tr><td class="num">24</td><td class="num">576</td><td>0.687 ± 0.007</td><td>127.7 ± 1.8</td><td>7.93 ± 0.55</td><td>1.661 ± 0.087</td><td>0.616 ± 0.003</td><td>74.7 ± 1.2</td></tr>
+<tr><td class="num">32</td><td class="num">1024</td><td>0.656 ± 0.007</td><td>207.6 ± 3.5</td><td>13.08 ± 0.89</td><td>1.856 ± 0.114</td><td>0.612 ± 0.004</td><td>121.3 ± 2.2</td></tr>
+</tbody>
+</table></div>
+<p>Increasing linear size fourfold (L = 8 → 32) amplifies square-lattice χ₀ by 11.5× and connected χ by 10.5×, while specific heat per spin Cv rises by 1.53×—falsifying H₀&#x27;s additive baseline <a href="#ref-3">[3]</a> <span class="ep-tag tag-moderate">[moderate]</span>.</p>
+<figure class="paper-fig" id="fig-2">
+<div class="fig-title"><strong>Figure 2.</strong> Sharpening Magnetic Susceptibility Peak Across Lattice Sizes</div>
+<svg viewBox="0 0 680 330" width="100%" role="img" style="font-family: inherit; display: block;"><title>Sharpening Magnetic Susceptibility Peak Across Lattice Sizes</title><desc>Connected susceptibility chi(T, L) grows by 10.5x at Tc from L = 8 (1.24) to L = 32 (13.08); peak T_peak shifts from 2.5500 (L = 8) to 2.3500 (L = 32).</desc><line x1="68" y1="282.0" x2="654" y2="282.0" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="285.5" text-anchor="end" font-size="11" fill="#475569">0</text><line x1="68" y1="200.7" x2="654" y2="200.7" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="204.2" text-anchor="end" font-size="11" fill="#475569">10</text><line x1="68" y1="119.3" x2="654" y2="119.3" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="122.8" text-anchor="end" font-size="11" fill="#475569">20</text><line x1="68" y1="38.0" x2="654" y2="38.0" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="41.5" text-anchor="end" font-size="11" fill="#475569">30</text><line x1="68" y1="282" x2="654" y2="282" stroke="#334155" stroke-width="1.2"/><text x="68" y="28" text-anchor="start" font-size="11" font-weight="600" fill="#334155">Connected Susceptibility chi(T, L)</text><line x1="68.0" y1="282" x2="68.0" y2="287" stroke="#334155"/><text x="68.0" y="300" text-anchor="middle" font-size="11" fill="#475569">1.5</text><line x1="263.3" y1="282" x2="263.3" y2="287" stroke="#334155"/><text x="263.3" y="300" text-anchor="middle" font-size="11" fill="#475569">2</text><line x1="458.7" y1="282" x2="458.7" y2="287" stroke="#334155"/><text x="458.7" y="300" text-anchor="middle" font-size="11" fill="#475569">2.5</text><line x1="654.0" y1="282" x2="654.0" y2="287" stroke="#334155"/><text x="654.0" y="300" text-anchor="middle" font-size="11" fill="#475569">3</text><text x="361.0" y="322" text-anchor="middle" font-size="11" fill="#334155">Temperature T (J/kB)</text><line x1="368.5" y1="38" x2="368.5" y2="282" stroke="#64748b" stroke-dasharray="3,3" stroke-width="1"/><text x="372.5" y="50.0" text-anchor="start" font-size="10" fill="#334155" style="paint-order: stroke; stroke: #ffffff; stroke-width: 3px; stroke-linejoin: round;">Onsager Tc</text><polyline fill="none" stroke="#0072B2" stroke-width="2.2" points="185.2,281.0 263.3,279.3 310.2,276.7 341.5,275.0 357.1,272.6 364.9,272.9 368.5,271.9 372.7,272.2 380.5,271.3 388.3,270.9 400.1,270.1 411.8,268.8 427.4,268.3 450.9,268.5 478.2,268.2 556.3,268.9 654.0,274.0"/><circle cx="185.2" cy="281.0" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="263.3" cy="279.3" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="310.2" cy="276.7" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="341.5" cy="275.0" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="357.1" cy="272.6" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="364.9" cy="272.9" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="368.5" cy="271.9" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="372.7" cy="272.2" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="380.5" cy="271.3" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="388.3" cy="270.9" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="400.1" cy="270.1" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="411.8" cy="268.8" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="427.4" cy="268.3" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="450.9" cy="268.5" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="478.2" cy="268.2" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="556.3" cy="268.9" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="654.0" cy="274.0" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><polyline fill="none" stroke="#D55E00" stroke-width="2.2" stroke-dasharray="6,3" points="185.2,281.1 263.3,278.5 310.2,273.4 341.5,269.3 357.1,265.8 364.9,263.3 368.5,262.3 372.7,261.9 380.5,259.7 388.3,256.0 400.1,254.1 411.8,253.3 427.4,251.4 450.9,253.0 478.2,256.6 556.3,263.2 654.0,271.7"/><circle cx="185.2" cy="281.1" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="263.3" cy="278.5" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="310.2" cy="273.4" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="341.5" cy="269.3" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="357.1" cy="265.8" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="364.9" cy="263.3" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="368.5" cy="262.3" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="372.7" cy="261.9" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="380.5" cy="259.7" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="388.3" cy="256.0" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="400.1" cy="254.1" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="411.8" cy="253.3" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="427.4" cy="251.4" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="450.9" cy="253.0" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="478.2" cy="256.6" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="556.3" cy="263.2" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="654.0" cy="271.7" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><polyline fill="none" stroke="#009E73" stroke-width="2.2" stroke-dasharray="2,3" points="185.2,281.0 263.3,278.5 310.2,274.0 341.5,260.8 357.1,255.1 364.9,252.6 368.5,249.9 372.7,243.8 380.5,247.6 388.3,240.4 400.1,233.5 411.8,233.0 427.4,231.8 450.9,237.6 478.2,246.0 556.3,262.7 654.0,272.3"/><circle cx="185.2" cy="281.0" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="263.3" cy="278.5" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="310.2" cy="274.0" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="341.5" cy="260.8" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="357.1" cy="255.1" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="364.9" cy="252.6" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="368.5" cy="249.9" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="372.7" cy="243.8" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="380.5" cy="247.6" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="388.3" cy="240.4" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="400.1" cy="233.5" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="411.8" cy="233.0" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="427.4" cy="231.8" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="450.9" cy="237.6" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="478.2" cy="246.0" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="556.3" cy="262.7" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="654.0" cy="272.3" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><polyline fill="none" stroke="#E69F00" stroke-width="2.2" stroke-dasharray="8,3,2,3" points="185.2,281.1 263.3,278.9 310.2,271.8 341.5,246.7 357.1,234.7 364.9,224.5 368.5,217.5 372.7,207.6 380.5,190.8 388.3,188.3 400.1,181.6 411.8,187.8 427.4,194.2 450.9,217.2 478.2,235.5 556.3,261.2 654.0,270.0"/><circle cx="185.2" cy="281.1" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="263.3" cy="278.9" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="310.2" cy="271.8" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="341.5" cy="246.7" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="357.1" cy="234.7" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="364.9" cy="224.5" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="368.5" cy="217.5" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="372.7" cy="207.6" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="380.5" cy="190.8" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="388.3" cy="188.3" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="400.1" cy="181.6" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="411.8" cy="187.8" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="427.4" cy="194.2" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="450.9" cy="217.2" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="478.2" cy="235.5" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="556.3" cy="261.2" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="654.0" cy="270.0" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><polyline fill="none" stroke="#CC79A7" stroke-width="2.2" stroke-dasharray="10,4" points="185.2,281.1 263.3,279.0 310.2,272.3 341.5,250.7 357.1,202.4 364.9,176.4 368.5,175.6 372.7,155.5 380.5,126.7 388.3,131.7 400.1,115.6 411.8,138.7 427.4,169.7 450.9,212.9 478.2,231.0 556.3,261.5 654.0,270.2"/><circle cx="185.2" cy="281.1" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="263.3" cy="279.0" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="310.2" cy="272.3" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="341.5" cy="250.7" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="357.1" cy="202.4" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="364.9" cy="176.4" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="368.5" cy="175.6" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="372.7" cy="155.5" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="380.5" cy="126.7" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="388.3" cy="131.7" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="400.1" cy="115.6" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="411.8" cy="138.7" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="427.4" cy="169.7" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="450.9" cy="212.9" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="478.2" cy="231.0" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="556.3" cy="261.5" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="654.0" cy="270.2" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><line x1="592.8" y1="13" x2="608.8" y2="13" stroke="#CC79A7" stroke-width="2.2" stroke-dasharray="10,4"/><text x="612.8" y="16" font-size="10.5" fill="#1e293b">L = 32</text><line x1="531.6" y1="13" x2="547.6" y2="13" stroke="#E69F00" stroke-width="2.2" stroke-dasharray="8,3,2,3"/><text x="551.6" y="16" font-size="10.5" fill="#1e293b">L = 24</text><line x1="470.4" y1="13" x2="486.4" y2="13" stroke="#009E73" stroke-width="2.2" stroke-dasharray="2,3"/><text x="490.4" y="16" font-size="10.5" fill="#1e293b">L = 16</text><line x1="409.2" y1="13" x2="425.2" y2="13" stroke="#D55E00" stroke-width="2.2" stroke-dasharray="6,3"/><text x="429.2" y="16" font-size="10.5" fill="#1e293b">L = 12</text><line x1="351.2" y1="13" x2="367.2" y2="13" stroke="#0072B2" stroke-width="2.2"/><text x="371.2" y="16" font-size="10.5" fill="#1e293b">L = 8</text></svg>
+<figcaption><em>Note:</em> Connected susceptibility chi(T, L) grows by 10.5x at Tc from L = 8 (1.24) to L = 32 (13.08); peak T_peak shifts from 2.5500 (L = 8) to 2.3500 (L = 32). <em>Source:</em> Own Wolff-cluster Monte Carlo simulation in appendix/analysis.py (seed = 42).</figcaption>
+<details class="fig-data"><summary>Figure data preview</summary><table class="booktabs compact"><thead><tr><th>X</th><th>Y</th></tr></thead><tbody><tr><td>1.8</td><td class="num">0.124</td></tr><tr><td>2.0</td><td class="num">0.335</td></tr><tr><td>2.12</td><td class="num">0.649</td></tr><tr><td>2.2</td><td class="num">0.858</td></tr><tr><td>2.24</td><td class="num">1.16</td></tr><tr><td>2.26</td><td class="num">1.116</td></tr><tr><td>2.2692</td><td class="num">1.24</td></tr><tr><td>2.28</td><td class="num">1.206</td></tr><tr><td>2.3</td><td class="num">1.319</td></tr><tr><td>2.32</td><td class="num">1.365</td></tr><tr><td>2.35</td><td class="num">1.458</td></tr><tr><td>2.38</td><td class="num">1.618</td></tr></tbody></table></details>
+</figure>
+<p>Table 2 summarizes the pre-registered <code>log(chi_max) vs. log(L)</code> block-bootstrap regression (conditioning on the fixed full-sample <code>T_peak(L)</code> grid points rather than re-maximizing over T inside each replicate), the WLS scaling fits at exact Tc with exact Student-t 95% confidence intervals (df = 3, t = 3.1824) and reduced χ²/df, L ≥ 12 sensitivity checks, the triangular-lattice universality test, and all three Binder cumulant crossings with delete-1 block-jackknife SEs <a href="#ref-3">[3]</a> <span class="ep-tag tag-moderate">[moderate]</span>.</p>
+<div class="table-wrap"><table class="booktabs">
+<thead><tr><th>Scaling Relation / Estimator</th><th>Estimate ± SE</th><th>95% CI (Bootstrap or Student-t)</th><th>χ²/df</th><th>R²</th><th>Exact 2D Ising</th></tr></thead>
+<tbody>
+<tr><td>Pre-reg. log(χ_max) vs. log(L) (OLS / boot)</td><td>1.782 (WLS 1.786 ± 0.034)</td><td>[1.736, 1.824]</td><td class="num">1.97</td><td>—</td><td class="num">1.75</td></tr>
+<tr><td>Square χ₀(Tc, L) ~ L<sup>γ/ν</sup> (L ≥ 12: 1.766)</td><td>1.769 ± 0.012</td><td>[1.731, 1.807]</td><td class="num">0.49</td><td class="num">0.9999</td><td class="num">1.75</td></tr>
+<tr><td>Triangular χ₀(Tc_tri, L) ~ L<sup>γ/ν</sup></td><td>1.731 ± 0.014</td><td>[1.687, 1.774]</td><td class="num">0.19</td><td class="num">1.0000</td><td class="num">1.75</td></tr>
+<tr><td>Square ⟨|m|⟩(Tc, L) ~ L<sup>−β/ν</sup> (L ≥ 12: 0.116)</td><td>0.113 ± 0.008</td><td>[0.089, 0.138]</td><td class="num">0.33</td><td class="num">0.9940</td><td class="num">0.125</td></tr>
+<tr><td>Triangular ⟨|m|⟩(Tc_tri, L) ~ L<sup>−β/ν</sup></td><td>0.139 ± 0.009</td><td>[0.111, 0.168]</td><td class="num">0.23</td><td>—</td><td class="num">0.125</td></tr>
+<tr><td>Square Cv(Tc, L) ~ a ln(L) + b</td><td>0.374 ± 0.085</td><td>[0.102, 0.646]</td><td class="num">1.92</td><td class="num">0.874</td><td>0.495 (asymp.)</td></tr>
+<tr><td>Binder U₄ crossing (L = 8, 16)</td><td>2.2714 ± 0.0281</td><td>—</td><td>—</td><td>—</td><td class="num">2.2692</td></tr>
+<tr><td>Binder U₄ crossing (L = 12, 24)</td><td>2.2751 ± 0.0080</td><td>—</td><td>—</td><td>—</td><td class="num">2.2692</td></tr>
+<tr><td>Binder U₄ crossing (L = 16, 32)</td><td>2.2631 ± 0.0253</td><td>3-seed: [2.2631, 2.2722]</td><td>—</td><td>—</td><td class="num">2.2692</td></tr>
+</tbody>
+</table></div>
+<figure class="paper-fig" id="fig-3">
+<div class="fig-title"><strong>Figure 3.</strong> Scale-Invariant Binder Cumulant U4 Crossing Near Tc</div>
+<svg viewBox="0 0 680 330" width="100%" role="img" style="font-family: inherit; display: block;"><title>Scale-Invariant Binder Cumulant U4 Crossing Near Tc</title><desc>The L = 16 and L = 32 Binder cumulants intersect at T = 2.2631 +/- 0.0253 (3-seed range [2.2631, 2.2722], exact Tc = 2.2692).</desc><line x1="68" y1="282.0" x2="654" y2="282.0" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="285.5" text-anchor="end" font-size="11" fill="#475569">0.2</text><line x1="68" y1="233.2" x2="654" y2="233.2" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="236.7" text-anchor="end" font-size="11" fill="#475569">0.3</text><line x1="68" y1="184.4" x2="654" y2="184.4" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="187.9" text-anchor="end" font-size="11" fill="#475569">0.4</text><line x1="68" y1="135.6" x2="654" y2="135.6" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="139.1" text-anchor="end" font-size="11" fill="#475569">0.5</text><line x1="68" y1="86.8" x2="654" y2="86.8" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="90.3" text-anchor="end" font-size="11" fill="#475569">0.6</text><line x1="68" y1="38.0" x2="654" y2="38.0" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="41.5" text-anchor="end" font-size="11" fill="#475569">0.7</text><line x1="68" y1="282" x2="654" y2="282" stroke="#334155" stroke-width="1.2"/><text x="68" y="28" text-anchor="start" font-size="11" font-weight="600" fill="#334155">Binder Cumulant U4</text><line x1="68.0" y1="282" x2="68.0" y2="287" stroke="#334155"/><text x="68.0" y="300" text-anchor="middle" font-size="11" fill="#475569">2.1</text><line x1="214.5" y1="282" x2="214.5" y2="287" stroke="#334155"/><text x="214.5" y="300" text-anchor="middle" font-size="11" fill="#475569">2.2</text><line x1="361.0" y1="282" x2="361.0" y2="287" stroke="#334155"/><text x="361.0" y="300" text-anchor="middle" font-size="11" fill="#475569">2.3</text><line x1="507.5" y1="282" x2="507.5" y2="287" stroke="#334155"/><text x="507.5" y="300" text-anchor="middle" font-size="11" fill="#475569">2.4</text><line x1="654.0" y1="282" x2="654.0" y2="287" stroke="#334155"/><text x="654.0" y="300" text-anchor="middle" font-size="11" fill="#475569">2.5</text><text x="361.0" y="322" text-anchor="middle" font-size="11" fill="#334155">Temperature T (J/kB)</text><line x1="315.9" y1="38" x2="315.9" y2="282" stroke="#64748b" stroke-dasharray="3,3" stroke-width="1"/><text x="319.9" y="50.0" text-anchor="start" font-size="10" fill="#334155" style="paint-order: stroke; stroke: #ffffff; stroke-width: 3px; stroke-linejoin: round;">Onsager Tc</text><polyline fill="none" stroke="#0072B2" stroke-width="2.2" points="97.3,66.0 214.5,71.4 273.1,78.0 302.4,77.8 315.9,82.1 331.7,80.9 361.0,84.5 390.3,87.8 434.3,91.9 478.2,100.6 536.8,107.0"/><circle cx="97.3" cy="66.0" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="214.5" cy="71.4" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="273.1" cy="78.0" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="302.4" cy="77.8" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="315.9" cy="82.1" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="331.7" cy="80.9" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="361.0" cy="84.5" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="390.3" cy="87.8" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="434.3" cy="91.9" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="478.2" cy="100.6" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="536.8" cy="107.0" r="3.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><polyline fill="none" stroke="#D55E00" stroke-width="2.2" stroke-dasharray="6,3" points="97.3,63.2 214.5,69.5 273.1,74.9 302.4,78.7 315.9,80.6 331.7,82.6 361.0,85.6 390.3,96.1 434.3,103.7 478.2,112.5 536.8,129.8"/><circle cx="97.3" cy="63.2" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="214.5" cy="69.5" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="273.1" cy="74.9" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="302.4" cy="78.7" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="315.9" cy="80.6" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="331.7" cy="82.6" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="361.0" cy="85.6" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="390.3" cy="96.1" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="434.3" cy="103.7" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="478.2" cy="112.5" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="536.8" cy="129.8" r="3.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><polyline fill="none" stroke="#009E73" stroke-width="2.2" stroke-dasharray="2,3" points="97.3,59.7 214.5,68.5 273.1,74.1 302.4,77.7 315.9,80.7 331.7,86.2 361.0,85.3 390.3,95.8 434.3,112.3 478.2,124.1 536.8,147.8"/><circle cx="97.3" cy="59.7" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="214.5" cy="68.5" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="273.1" cy="74.1" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="302.4" cy="77.7" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="315.9" cy="80.7" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="331.7" cy="86.2" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="361.0" cy="85.3" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="390.3" cy="95.8" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="434.3" cy="112.3" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="478.2" cy="124.1" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><circle cx="536.8" cy="147.8" r="3.0" fill="#009E73" stroke="#ffffff" stroke-width="0.8"/><polyline fill="none" stroke="#E69F00" stroke-width="2.2" stroke-dasharray="8,3,2,3" points="97.3,57.5 214.5,65.0 273.1,71.1 302.4,75.8 315.9,78.9 331.7,84.0 361.0,98.9 390.3,108.8 434.3,132.5 478.2,146.3 536.8,183.0"/><circle cx="97.3" cy="57.5" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="214.5" cy="65.0" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="273.1" cy="71.1" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="302.4" cy="75.8" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="315.9" cy="78.9" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="331.7" cy="84.0" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="361.0" cy="98.9" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="390.3" cy="108.8" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="434.3" cy="132.5" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="478.2" cy="146.3" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><circle cx="536.8" cy="183.0" r="3.0" fill="#E69F00" stroke="#ffffff" stroke-width="0.8"/><polyline fill="none" stroke="#CC79A7" stroke-width="2.2" stroke-dasharray="10,4" points="97.3,56.3 214.5,60.5 273.1,71.1 302.4,77.6 315.9,81.0 331.7,87.3 361.0,103.1 390.3,111.3 434.3,166.0 478.2,202.0 536.8,245.2"/><circle cx="97.3" cy="56.3" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="214.5" cy="60.5" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="273.1" cy="71.1" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="302.4" cy="77.6" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="315.9" cy="81.0" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="331.7" cy="87.3" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="361.0" cy="103.1" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="390.3" cy="111.3" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="434.3" cy="166.0" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="478.2" cy="202.0" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><circle cx="536.8" cy="245.2" r="3.0" fill="#CC79A7" stroke="#ffffff" stroke-width="0.8"/><line x1="592.8" y1="13" x2="608.8" y2="13" stroke="#CC79A7" stroke-width="2.2" stroke-dasharray="10,4"/><text x="612.8" y="16" font-size="10.5" fill="#1e293b">L = 32</text><line x1="531.6" y1="13" x2="547.6" y2="13" stroke="#E69F00" stroke-width="2.2" stroke-dasharray="8,3,2,3"/><text x="551.6" y="16" font-size="10.5" fill="#1e293b">L = 24</text><line x1="470.4" y1="13" x2="486.4" y2="13" stroke="#009E73" stroke-width="2.2" stroke-dasharray="2,3"/><text x="490.4" y="16" font-size="10.5" fill="#1e293b">L = 16</text><line x1="409.2" y1="13" x2="425.2" y2="13" stroke="#D55E00" stroke-width="2.2" stroke-dasharray="6,3"/><text x="429.2" y="16" font-size="10.5" fill="#1e293b">L = 12</text><line x1="351.2" y1="13" x2="367.2" y2="13" stroke="#0072B2" stroke-width="2.2"/><text x="371.2" y="16" font-size="10.5" fill="#1e293b">L = 8</text></svg>
+<figcaption><em>Note:</em> The L = 16 and L = 32 Binder cumulants intersect at T = 2.2631 +/- 0.0253 (3-seed range [2.2631, 2.2722], exact Tc = 2.2692). <em>Source:</em> Own Wolff-cluster Monte Carlo simulation in appendix/analysis.py (seed = 42).</figcaption>
+<details class="fig-data"><summary>Figure data preview</summary><table class="booktabs compact"><thead><tr><th>X</th><th>Y</th></tr></thead><tbody><tr><td>2.12</td><td class="num">0.6426</td></tr><tr><td>2.2</td><td class="num">0.6315</td></tr><tr><td>2.24</td><td class="num">0.6181</td></tr><tr><td>2.26</td><td class="num">0.6185</td></tr><tr><td>2.2692</td><td class="num">0.6096</td></tr><tr><td>2.28</td><td class="num">0.612</td></tr><tr><td>2.3</td><td class="num">0.6047</td></tr><tr><td>2.32</td><td class="num">0.598</td></tr><tr><td>2.35</td><td class="num">0.5895</td></tr><tr><td>2.38</td><td class="num">0.5718</td></tr><tr><td>2.42</td><td class="num">0.5586</td></tr></tbody></table></details>
+</figure>
+<figure class="paper-fig" id="fig-4">
+<div class="fig-title"><strong>Figure 4.</strong> Universality Test: Log-Log Susceptibility Scaling on Square vs. Triangular Lattices</div>
+<svg viewBox="0 0 680 330" width="100%" role="img" style="font-family: inherit; display: block;"><title>Universality Test: Log-Log Susceptibility Scaling on Square vs. Triangular Lattices</title><desc>Despite distinct coordination numbers (z = 4 vs. z = 6) and critical temperatures (2.2692 vs. 3.6410), WLS slopes yield gamma/nu = 1.769 +/- 0.012 (square) and 1.731 +/- 0.014 (triangular), both consistent with exact 1.75.</desc><line x1="68" y1="282.0" x2="654" y2="282.0" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="285.5" text-anchor="end" font-size="11" fill="#475569">2</text><line x1="68" y1="221.0" x2="654" y2="221.0" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="224.5" text-anchor="end" font-size="11" fill="#475569">3</text><line x1="68" y1="160.0" x2="654" y2="160.0" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="163.5" text-anchor="end" font-size="11" fill="#475569">4</text><line x1="68" y1="99.0" x2="654" y2="99.0" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="102.5" text-anchor="end" font-size="11" fill="#475569">5</text><line x1="68" y1="38.0" x2="654" y2="38.0" stroke="#e2e8f0" stroke-width="1"/><text x="60" y="41.5" text-anchor="end" font-size="11" fill="#475569">6</text><line x1="68" y1="282" x2="654" y2="282" stroke="#334155" stroke-width="1.2"/><text x="68" y="28" text-anchor="start" font-size="11" font-weight="600" fill="#334155">ln(chi0(Tc, L))</text><line x1="68.0" y1="282" x2="68.0" y2="287" stroke="#334155"/><text x="68.0" y="300" text-anchor="middle" font-size="11" fill="#475569">2</text><line x1="263.3" y1="282" x2="263.3" y2="287" stroke="#334155"/><text x="263.3" y="300" text-anchor="middle" font-size="11" fill="#475569">2.5</text><line x1="458.7" y1="282" x2="458.7" y2="287" stroke="#334155"/><text x="458.7" y="300" text-anchor="middle" font-size="11" fill="#475569">3</text><line x1="654.0" y1="282" x2="654.0" y2="287" stroke="#334155"/><text x="654.0" y="300" text-anchor="middle" font-size="11" fill="#475569">3.5</text><text x="361.0" y="322" text-anchor="middle" font-size="11" fill="#334155">ln(L)</text><circle cx="99.0" cy="227.5" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="257.4" cy="183.5" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="369.8" cy="153.1" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="528.2" cy="108.2" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="640.6" cy="78.5" r="4.0" fill="#0072B2" stroke="#ffffff" stroke-width="0.8"/><circle cx="99.0" cy="257.5" r="4.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="257.4" cy="214.1" r="4.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="369.8" cy="184.1" r="4.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="528.2" cy="140.9" r="4.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="640.6" cy="111.3" r="4.0" fill="#D55E00" stroke="#ffffff" stroke-width="0.8"/><circle cx="640.6" cy="78.5" r="5.5" fill="#D55E00" stroke="#ffffff" stroke-width="1.5"/><text x="632.6" y="82.0" text-anchor="end" font-size="10.5" font-weight="600" fill="#D55E00" style="paint-order: stroke; stroke: #ffffff; stroke-width: 3px; stroke-linejoin: round;">Square L = 32</text><line x1="388.2" y1="13" x2="404.2" y2="13" stroke="#D55E00" stroke-width="2.2" stroke-dasharray="6,3"/><text x="408.2" y="16" font-size="10.5" fill="#1e293b">Triangular Lattice (z = 6, Tc = 3.6410)</text><line x1="147.2" y1="13" x2="163.2" y2="13" stroke="#0072B2" stroke-width="2.2"/><text x="167.2" y="16" font-size="10.5" fill="#1e293b">Square Lattice (z = 4, Tc = 2.2692)</text></svg>
+<figcaption><em>Note:</em> Despite distinct coordination numbers (z = 4 vs. z = 6) and critical temperatures (2.2692 vs. 3.6410), WLS slopes yield gamma/nu = 1.769 +/- 0.012 (square) and 1.731 +/- 0.014 (triangular), both consistent with exact 1.75. <em>Source:</em> Own Wolff-cluster Monte Carlo simulation in appendix/analysis.py (seed = 42).</figcaption>
+<details class="fig-data"><summary>Figure data preview</summary><table class="booktabs compact"><thead><tr><th>X</th><th>Y</th></tr></thead><tbody><tr><td>2.0794</td><td class="num">2.893</td></tr><tr><td>2.4849</td><td class="num">3.6151</td></tr><tr><td>2.7726</td><td class="num">4.1139</td></tr><tr><td>3.1781</td><td class="num">4.8495</td></tr><tr><td>3.4657</td><td class="num">5.3354</td></tr></tbody></table></details>
+</figure>
+<p>Both microscopic 2D Hamiltonians—despite a 50% difference in coordination number (z = 4 vs. z = 6) and a 60% difference in critical temperature (2.2692 vs. 3.6410)—yield overlapping Student-t 95% confidence intervals covering the exact 2D Ising exponents γ/ν = 1.75 and β/ν = 0.125, directly corroborating RG universality <a href="#ref-3">[3]</a> <span class="ep-tag tag-moderate">[moderate]</span>. Independent Tier 1 physics literature establishes this universality mechanism rigorously: information-theoretic renormalization-group flow demonstrates that coarse-graining systematically discards irrelevant microscopic couplings <a href="#ref-6">[6]</a> <span class="ep-tag tag-strong">[strong]</span>, and high-precision finite-size scaling across distinct 3D lattice Hamiltonians (Ising, Blume–Capel, and φ⁴ models) confirms identical 3D Ising critical exponents to four significant digits <a href="#ref-7">[7]</a> <span class="ep-tag tag-strong">[strong]</span>.</p>
+<h3>4.3 Emergence Beyond Landau Symmetry Breaking: Gauge Masses and Topological Order</h3>
+<p>Emergence in physics extends beyond classical Landau symmetry breaking in two major directions:</p>
+<ul>
+<li><strong>Spontaneous Symmetry Breaking in Gauge Theories:</strong> When a continuous local gauge symmetry is spontaneously broken, the would-be Goldstone mode is absorbed to yield massive vector bosons—an emergent mass gap absent from the unbroken microscopic Lagrangian <a href="#ref-8">[8]</a>, <a href="#ref-2">[2]</a> <span class="ep-tag tag-strong">[strong]</span>.
+</li>
+<li><strong>Topological Order &amp; Long-Range Entanglement:</strong> Zero-temperature quantum many-body phases can share identical symmetries and lack any local order parameter, instead being classified by global patterns of long-range quantum entanglement (topological order) that give rise to emergent fractionalized excitations (anyons) and emergent gauge fields <a href="#ref-9">[9]</a> <span class="ep-tag tag-moderate">[moderate]</span>. Fractional quantum Hall states provide well-established experimental realizations of topological order, whereas candidate bulk quantum spin liquids remain under active experimental investigation <a href="#ref-9">[9]</a> <span class="ep-tag tag-moderate">[moderate]</span>.
+</li>
+</ul>
+<h3>4.4 Formal Irreducibility: Algorithmic Undecidability of the Spectral Gap (Testing H₂)</h3>
+<p>While H₁ accounts for universality and finite-size scaling in generic classical models without violating microscopic physics, formal mathematical physics proves a sharp ceiling on algorithmic reducibility. Cubitt, Perez-Garcia, and Wolf proved that deciding whether a translationally invariant, nearest-neighbor 2D quantum spin Hamiltonian has a gapped or gapless spectrum in the thermodynamic limit is <strong>algorithmically undecidable</strong> (reducible to the Halting Problem) <a href="#ref-10">[10]</a> <span class="ep-tag tag-strong">[strong]</span>. Bausch et al. proved that this undecidability persists even in <strong>one-dimensional</strong> translation-invariant local spin chains <a href="#ref-11">[11]</a> <span class="ep-tag tag-strong">[strong]</span>.</p>
+<p>This establishes <strong>formal irreducibility without strong ontological emergence</strong>: no microscopic conservation law is violated, yet no general algorithm can infer the thermodynamic phase from finite-size observations because an undecidable Hamiltonian can mimic a gapless or gapped phase up to an uncomputably large lattice size before abruptly switching phase <a href="#ref-10">[10]</a>, <a href="#ref-11">[11]</a> <span class="ep-tag tag-strong">[strong]</span>.</p>
+<h2>5. Counter-Evidence &amp; Alternative Explanations</h2>
+<ul>
+<li><strong>Cross-Domain Tension — Finite-N Precursors vs. Undecidable Switching:</strong> The reductive reconciliation of Butterfield and Bouatta <a href="#ref-5">[5]</a> and Landsman <a href="#ref-2">[2]</a> holds that macroscopic phase behavior is quantitatively realized &quot;on the way to the limit&quot; at large finite N, as seen in our classical 2D Ising Binder crossings (3-seed range [2.2631, 2.2722] bracketing exact 2.2692) <a href="#ref-3">[3]</a> <span class="ep-tag tag-moderate">[moderate]</span>. However, this finite-N precursor principle applies strictly to generic, RG-fixed-point models with well-behaved finite-size scaling; it directly conflicts with the undecidable zero-temperature quantum Hamiltonians of Cubitt et al. <a href="#ref-10">[10]</a> and Bausch et al. <a href="#ref-11">[11]</a>, for which finite-N observation at any computable lattice size provides no guarantee of the N → ∞ phase <span class="ep-tag tag-strong">[strong]</span>.
+</li>
+<li><strong>Strong Ontological Emergence &amp; Downward Causation (Exploratory Contrast):</strong> A competing philosophical tradition argues that macroscopic boundary conditions and higher-level constraints exert irreducible &quot;top-down&quot; causation on microscopic constituents (note that open-access full texts for Batterman&#x27;s singular-limit critique, Ellis 2020, and Juarrero 2023 could not be retrieved in full via OpenAlex/arXiv; see <code>appendix/data_attempts.csv</code>). Within physics, while broken-symmetry environments and &quot;flea&quot; perturbations select symmetry-broken sectors in quantum systems <a href="#ref-2">[2]</a>, no Tier 1 experiment has demonstrated a violation of underlying microscopic conservation laws or unitarity, leaving strong ontological emergence unestablished compared with contextual effective-field-theory decoupling <a href="#ref-6">[6]</a>, <a href="#ref-2">[2]</a> <span class="ep-tag tag-moderate">[moderate]</span>.
+</li>
+<li><strong>Physical Typicality of Spectral-Gap Undecidability:</strong> The undecidable constructions of Cubitt et al. <a href="#ref-10">[10]</a> and Bausch et al. <a href="#ref-11">[11]</a> require high local Hilbert-space dimension and fine-tuned Turing-machine encodings. Whether undecidability survives generic disorder, low local dimension, and non-zero temperature in laboratory condensed matter remains open, bounding the empirical—though not the formal—reach of H₂ <a href="#ref-10">[10]</a>, <a href="#ref-11">[11]</a> <span class="ep-tag tag-preliminary">[preliminary]</span>.
+</li>
+</ul>
+<h3>Reviewer #2 Disposition</h3>
+<div class="table-wrap"><table class="booktabs">
+<thead><tr><th>Flaw #</th><th>Reviewer Critique</th><th>Action</th><th>Evidence / Artifact</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>Section 1 bullet 2 attached <span class="ep-tag tag-strong">[strong]</span> to joint 3D (<code>@C1</code>) + 2D own-computation (<code>@C11</code>) claim</td><td><code>Fixed</code></td><td>Split Tier 1 3D universality (<code>@C1</code>, <span class="ep-tag tag-strong">[strong]</span>) from Tier 2 2D consistency check (<code>@C11</code>, <span class="ep-tag tag-moderate">[moderate]</span>) in Section 1</td></tr>
+<tr><td class="num">2</td><td>Section 1 bullet 1 omitted zero-field / ℤ₂ symmetry condition for ⟨m⟩ = 0</td><td><code>Fixed</code></td><td>Added &quot;under exact ℤ₂ symmetry (zero external field)&quot; in Section 1 to match Sections 4.1 and 6</td></tr>
+<tr><td class="num">3</td><td>Lag-1 block autocorrelation r₁(m²) = +0.51 at (L = 32, Tc) misread as confirming block independence</td><td><code>Fixed</code></td><td>Rewrote Section 4.2 and Section 7 to flag r₁(m²) = +0.51 as indicating inter-block dependence that may underestimate naive jackknife SEs</td></tr>
+<tr><td class="num">4</td><td><code>log(chi_max)</code> bootstrap held <code>T_peak(L)</code> fixed across replicates without disclosure</td><td><code>Fixed</code></td><td>Explicitly disclosed fixed-<code>T_peak(L)</code> conditioning in Section 4.2 and Section 7</td></tr>
+<tr><td class="num">5</td><td>Missing Ellis (2020) <code>no-abstract</code> row and query-label alignment in <code>appendix/data_attempts.csv</code></td><td><code>Fixed</code></td><td>Logged Ellis (2020) <code>no-abstract</code> refusal via <code>local_data.py attempt</code> in <code>appendix/data_attempts.csv</code> and aligned Section 3/5/7 wording</td></tr>
+<tr><td class="num">6</td><td>Nonexistent <code>C12</code> referenced in <code>appendix/data_attempts.csv</code> line 19</td><td><code>Fixed</code></td><td>Removed <code>C12</code> from <code>appendix/data_attempts.csv</code> line 19 so it accurately reads <code>C1-C10</code></td></tr>
+</tbody>
+</table></div>
+<h4>Post-review changes</h4>
+<p>Prior to Round 2 (<code>appendix/gates/reviewer.md</code>), an initial Round 1 adversarial review raised 15 critiques, all resolved by updating <code>appendix/analysis.py</code> and <code>report.md</code>: downgrading own-computation 2D FSS (<code>@C11</code>) and Tier 2 philosophical reconciliation (<code>@C8</code>, <code>@C10</code>) to <span class="ep-tag tag-moderate">[moderate]</span>, separating established fractional quantum Hall states from contested bulk quantum spin liquids (<code>@C4</code>), correcting <code>@C1</code> (3D Ising) and <code>@C7</code> (first-order Lee–Yang, year 2000) scope, logging online calorimetry and fallback literature attempts in <code>appendix/data_attempts.csv</code>, adding the 2D triangular-lattice Ising Hamiltonian (z = 6, Tc_tri = 4 / ln 3), executing the pre-registered <code>log(chi_max) vs. log(L)</code> block-bootstrap (2,000 replicates), switching WLS intervals from z = 1.96 to exact Student-t (df = 3) with χ²/df, adding hot-vs-cold equilibration and L ≥ 12 sensitivity checks, computing jackknife SEs for all three Binder crossings plus a 3-seed check, and disclosing all pre-registration deviations in Section 3. No changes were made to <code>appendix/analysis.py</code> after Round 2.</p>
+<h2>6. Claim-Evidence Matrix</h2>
+<div class="table-wrap"><table class="booktabs">
+<thead><tr><th>Claim</th><th>Discipline / Axis</th><th>Evidence &amp; Source Tier (As-Of Date)</th><th>Confidence Tag</th><th>Key Falsifier / Condition</th></tr></thead>
+<tbody>
+<tr><td>Finite-N local Hamiltonians have strictly analytic partition functions and zero exact signed magnetization under ℤ₂ symmetry</td><td>Mathematical Physics / Statistical Mechanics</td><td>Yang–Lee review <a href="#ref-1">[1]</a>, Tier 1, 2005; first-order Lee–Yang theorem <a href="#ref-4">[4]</a>, Tier 1, 2000; exact L = 2–4 enumeration <a href="#ref-3">[3]</a>, Tier 2, 2026-11</td><td><span class="ep-tag tag-strong">[strong]</span></td><td>A finite-N bounded local Hamiltonian exhibiting a real-temperature non-analyticity in Z_N(T)</td></tr>
+<tr><td>Finite-N 2D square and triangular Ising lattices exhibit universal finite-size scaling precursors converging to exact exponents and Tc</td><td>Statistical Mechanics / Computational Physics</td><td>Own Wolff MC on square &amp; triangular 2D lattices <a href="#ref-3">[3]</a>, Tier 2, 2026-11</td><td><span class="ep-tag tag-moderate">[moderate]</span></td><td>Systematic failure of χ_max(L) or χ₀(Tc, L) ~ L<sup>γ/ν</sup> or divergence of Binder crossings from Tc at larger L</td></tr>
+<tr><td>Renormalization-group coarse-graining explains macroscopic universality by decoupling irrelevant microscopic details</td><td>Statistical Mechanics / Information Theory</td><td>Information-theoretic RG <a href="#ref-6">[6]</a>, Tier 1, 2015; 3D multi-model Ising FSS <a href="#ref-7">[7]</a>, Tier 1, 2010</td><td><span class="ep-tag tag-strong">[strong]</span></td><td>Two local Hamiltonians in the same dimension and symmetry class yielding distinct critical exponents</td></tr>
+<tr><td>Spontaneous symmetry breaking in gauge theories generates emergent massive gauge bosons</td><td>Quantum Field Theory / Condensed Matter</td><td>Gauge symmetry breaking proof <a href="#ref-8">[8]</a>, Tier 1, 1964; quantum SSB analysis <a href="#ref-2">[2]</a>, Tier 2, 2017</td><td><span class="ep-tag tag-strong">[strong]</span></td><td>Failure of broken local gauge symmetry to yield massive gauge excitations</td></tr>
+<tr><td>Long-range entangled topological order generates emergent anyons and gauge fields (established in FQH; contested in bulk spin liquids)</td><td>Condensed Matter / Quantum Many-Body</td><td>Topological order review <a href="#ref-9">[9]</a>, Tier 1, 2019</td><td><span class="ep-tag tag-moderate">[moderate]</span></td><td>Primary experimental refutation of fractional braiding statistics in FQH or absence of topological entanglement entropy</td></tr>
+<tr><td>Emergence and reduction are compatible in generic classical models because robust precursors appear &quot;on the way to the limit&quot;</td><td>Philosophy of Physics</td><td>Phase-transition emergence analysis <a href="#ref-5">[5]</a>, Tier 2, 2012; quantum SSB analysis <a href="#ref-2">[2]</a>, Tier 2, 2017; 2D Ising FSS <a href="#ref-3">[3]</a>, Tier 2, 2026-11</td><td><span class="ep-tag tag-moderate">[moderate]</span></td><td>Demonstration of a generic classical phase transition with zero finite-size precursor before literal N = ∞</td></tr>
+<tr><td>Macroscopic spectral-gap determination from local microscopic Hamiltonians is formally undecidable in 1D and 2D</td><td>Mathematical Physics / Computability</td><td>2D spectral-gap proof <a href="#ref-10">[10]</a>, Tier 1, 2022; 1D spectral-gap proof <a href="#ref-11">[11]</a>, Tier 1, 2020</td><td><span class="ep-tag tag-strong">[strong]</span></td><td>Discovery of a logical flaw in the Halting-Problem reduction of local Hamiltonian spectral gaps</td></tr>
+<tr><td>Strong ontological emergence (downward causation violating microscopic physical laws) lacks replicated empirical support</td><td>Philosophy of Physics / Condensed Matter</td><td>RG decoupling <a href="#ref-6">[6]</a>, Tier 1, 2015; quantum SSB reduction analysis <a href="#ref-2">[2]</a>, Tier 2, 2017</td><td><span class="ep-tag tag-moderate">[moderate]</span></td><td>Replicated Tier 1 experiment showing macroscopic dynamics violating microscopic conservation laws or unitarity</td></tr>
+</tbody>
+</table></div>
+<h2>7. Limitations &amp; Open Questions</h2>
+<ul>
+<li><strong>Verified Methodological &amp; Data Limitations:</strong>
+<ul>
+<li><em>Simulation Scope, Autocorrelation &amp; Grid Resolution:</em> Our reproducible Wolff Monte Carlo simulation (<code>appendix/analysis.py</code>) spans L = 8 to L = 32 on 2D classical square and triangular lattices without correction-to-scaling terms or continuous histogram reweighting; discrete temperature spacing still yields tied <code>T_peak</code> bins between adjacent sizes (<code>L = 12, 16</code> at 2.42 and <code>L = 24, 32</code> at 2.35), the <code>log(chi_max)</code> block-bootstrap conditions on fixed full-sample <code>T_peak(L)</code> rather than re-maximizing over T per replicate, the lag-1 block autocorrelation r₁(m²) = +0.51 across B = 20 blocks at (L = 32, Tc) indicates residual inter-block dependence that may bias naive delete-1 jackknife SEs downward, and the logarithmic specific-heat slope (0.374 ± 0.085) retains finite-size corrections relative to the asymptotic Onsager value (0.495).
+</li>
+<li><em>Experimental Datasets &amp; Full-Text Literature Access:</em> Both online (OpenAlex) and local (<code>local_data.py inventory</code>) searches for raw downloadable 2D Ising calorimetry/magnetometry datasets returned no primary CSV series (<code>appendix/data_attempts.csv</code>). Likewise, fallback searches for Anderson (1972), Laughlin &amp; Pines (2000), Batterman, Ellis (2020), and Juarrero (2023) yielded no open-access full text or missing database abstracts (<code>appendix/data_attempts.csv</code>), so they were excluded rather than cited from incomplete metadata; all ten external citations (<code>C1</code>–<code>C10</code>) were verified in full text.
+</li>
+<li><em>Physical Scope of Undecidability:</em> Existing spectral-gap undecidability proofs (<code>@C5</code>, <code>@C6</code>) apply to zero-temperature, fine-tuned, high-local-dimension Hamiltonians; their stability under thermal decoherence and generic disorder remains unestablished.
+</li>
+</ul>
+</li>
+<li><strong>Actionable Next Steps / Experiments:</strong>
+<ul>
+<li>Extend the finite-size scaling benchmark to L = 64–256 with Ferrenberg–Swendsen multi-histogram reweighting to resolve continuous <code>T_peak(L)</code> shifts and extract the correlation-length exponent ν independently.
+</li>
+<li>Incorporate an open primary experimental calorimetry dataset (e.g., quasi-2D Ising antiferromagnet Rb₂CoF₄ or K₂CoF₄ heat-capacity measurements digitized from archival tables) to test finite-size rounding directly against laboratory data.
+</li>
+<li>Investigate whether spectral-gap undecidability persists in low-local-dimension, physically generic quantum Hamiltonians at finite temperature and under realistic decoherence.
+</li>
+</ul>
+</li>
+</ul></main>
+    
+    <section class="references"><h2>References</h2><ol class="ref-list"><li id="ref-1"><strong>[1]</strong> STATISTICAL MECHANICS OF EQUILIBRIUM AND NONEQUILIBRIUM PHASE TRANSITIONS: THE YANG–LEE FORMALISM. <a href="https://doi.org/10.1142/s0217979205032759">https://doi.org/10.1142/s0217979205032759</a> (Tier 1, data as of 2005, accessed 2026-11-23)</li><li id="ref-2"><strong>[2]</strong> Spontaneous Symmetry Breaking. <a href="https://doi.org/10.1007/978-3-319-51777-3_10">https://doi.org/10.1007/978-3-319-51777-3_10</a> (Tier 2, data as of 2017, accessed 2026-11-23)</li><li id="ref-3"><strong>[3]</strong> Own 2D Ising Wolff-cluster Monte Carlo and exact small-lattice finite-size scaling simulation (appendix/analysis.py). <code>analysis.py</code> (local file, sha256 2b5ae84775735cc8f0c53452cf10ed4c150bff900e162e2f2cb6d8ee5978a646) (Tier 2, data as of 2026-11-23, accessed 2026-11-23)</li><li id="ref-4"><strong>[4]</strong> General Theory of Lee-Yang Zeros in Models with First-Order Phase Transitions. <a href="https://doi.org/10.1103/physrevlett.84.4794">https://doi.org/10.1103/physrevlett.84.4794</a> (Tier 1, data as of 2000, accessed 2026-11-23)</li><li id="ref-5"><strong>[5]</strong> Emergence and reduction combined in phase transitions. <a href="https://doi.org/10.1063/1.4728007">https://doi.org/10.1063/1.4728007</a> (Tier 2, data as of 2012, accessed 2026-11-23)</li><li id="ref-6"><strong>[6]</strong> The renormalization group via statistical inference. <a href="https://doi.org/10.1088/1367-2630/17/8/083005">https://doi.org/10.1088/1367-2630/17/8/083005</a> (Tier 1, data as of 2015, accessed 2026-11-23)</li><li id="ref-7"><strong>[7]</strong> Finite size scaling study of lattice models in the three-dimensional Ising universality class. <a href="https://doi.org/10.1103/physrevb.82.174433">https://doi.org/10.1103/physrevb.82.174433</a> (Tier 1, data as of 2010, accessed 2026-11-23)</li><li id="ref-8"><strong>[8]</strong> Broken Symmetries and the Masses of Gauge Bosons. <a href="https://doi.org/10.1103/physrevlett.13.508">https://doi.org/10.1103/physrevlett.13.508</a> (Tier 1, data as of 1964, accessed 2026-11-23)</li><li id="ref-9"><strong>[9]</strong> Choreographed entanglement dances: Topological states of quantum matter. <a href="https://doi.org/10.1126/science.aal3099">https://doi.org/10.1126/science.aal3099</a> (Tier 1, data as of 2019, accessed 2026-11-23)</li><li id="ref-10"><strong>[10]</strong> Undecidability of the Spectral Gap. <a href="https://doi.org/10.1017/fmp.2021.15">https://doi.org/10.1017/fmp.2021.15</a> (Tier 1, data as of 2022, accessed 2026-11-23)</li><li id="ref-11"><strong>[11]</strong> Undecidability of the Spectral Gap in One Dimension. <a href="https://doi.org/10.1103/physrevx.10.031038">https://doi.org/10.1103/physrevx.10.031038</a> (Tier 1, data as of 2020, accessed 2026-11-23)</li></ol></section>
+    <section class="appendices"><h2>Appendices &amp; Reproducible Artifacts</h2>
+<details class="appendix-item"><summary><code>appendix/README.md</code> (1,021 bytes)</summary><pre><code># Appendix — Emergence in Physics (Heurisma Level 3)
+
+## Reproducibility Commands (run from report root)
+
+1. Acquire literature metadata and open-access full texts (requires network; respects `HEURISMA_OFFLINE=1`):
+   ```bash
+   python3 -B appendix/fetch_data.py
+   ```
+2. Run the 2D Ising exact enumeration and Wolff single-cluster Monte Carlo simulation (zero external dependencies, deterministic seed `42`):
+   ```bash
+   python3 -B appendix/analysis.py &gt; appendix/output.txt
+   ```
+   This regenerates `appendix/output.txt`, `appendix/numbers.json`, and `charts.json` byte for byte.
+
+## Provenance of `appendix/data/`
+
+- All files under `appendix/data/papers/` (raw OpenAlex/arXiv/Crossref API responses and 10 peer-reviewed full-text PDFs) were downloaded in this run via `papers.py` (invoked from `appendix/fetch_data.py` and `papers.py cite --fulltext`) and are hashed in `appendix/download_log.csv`.
+- No local user-curated datasets were present in `datos/` or `data/` (logged in `appendix/data_attempts.csv`).
+</code></pre></details>
+<details class="appendix-item"><summary><code>appendix/analysis.py</code> (33,515 bytes)</summary><pre><code>#!/usr/bin/env python3
+&quot;&quot;&quot;Reproducible 2D Ising finite-size scaling, universality &amp; emergence simulation (Heurisma v0.10.1).
+
+Zero-dependency Python 3 standard-library implementation of:
+  1. Exact Onsager (1944) square-lattice (Tc = 2/ln(1+sqrt(2))) and exact triangular-lattice
+     (Tc_tri = 4/ln(3)) thermodynamic-limit benchmarks and 2D Ising universality exponents.
+  2. Exact finite-N partition function enumeration for L=2, 3, 4 verifying Lee-Yang analyticity
+     and exact zero signed magnetization &lt;m&gt; = 0 under Z2 symmetry.
+  3. Wolff single-cluster Monte Carlo simulations on periodic L x L square lattices
+     (L = 8, 12, 16, 24, 32) across 17 temperatures spanning ordered, critical, and disordered
+     regimes, with 20 measurement blocks per (L, T) for delete-1 block-jackknife SEs,
+     lag-1 block autocorrelation, effective sweeps per block, and hot-vs-cold equilibration check.
+  4. Second microscopic Hamiltonian in the same 2D Z2 universality class: periodic L x L
+     triangular-lattice ferromagnetic Ising model (z = 6 neighbors, Tc_tri = 4/ln(3) = 3.6410)
+     simulated at Tc_tri across L = 8, 12, 16, 24, 32 to directly test RG universality.
+  5. Pre-registered finite-size scaling regression of log(chi_max) vs. log(L) with block-bootstrap
+     95% CIs (2,000 replicates), plus WLS regressions at Tc with exact Student-t 95% CIs,
+     reduced chi^2/df, L &gt;= 12 sensitivity fits, jackknife SEs for all three Binder U4 crossings,
+     and a 3-seed stability check.
+
+Outputs (written relative to report root):
+  - appendix/output.txt
+  - appendix/numbers.json
+  - charts.json          (Heurisma v2 schema)
+&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import json
+import math
+import random
+import statistics
+from pathlib import Path
+
+APPENDIX = Path(__file__).resolve().parent
+REPORT_DIR = APPENDIX.parent
+
+# Exact 2D Ising constants (J=1, kB=1)
+TC_EXACT = 2.0 / math.log(1.0 + math.sqrt(2.0))   # 2.269185314213022 (square, z=4)
+TC_TRI_EXACT = 4.0 / math.log(3.0)                # 3.640956906507210 (triangular, z=6)
+GAMMA_NU_EXACT = 1.75   # 7/4
+BETA_NU_EXACT = 0.125   # 1/8
+CV_THEORY_SLOPE = (2.0 / math.pi) * (2.0 / TC_EXACT) ** 2  # 0.4945
+
+# Exact two-sided Student-t 95% critical values t_{0.975, df}
+T_CRIT_95 = {1: 12.7062, 2: 4.3027, 3: 3.1824, 4: 2.7764, 5: 2.5706}
+
+# Simulation parameters (deterministic seed)
+SEED = 42
+LATTICE_SIZES = [8, 12, 16, 24, 32]
+TEMPS = [
+    1.80, 2.00, 2.12, 2.20, 2.24,
+    2.26, round(TC_EXACT, 4), 2.28, 2.30, 2.32,
+    2.35, 2.38, 2.42, 2.48, 2.55, 2.75, 3.00,
+]
+N_THERM = 500
+N_BLOCKS = 20
+STEPS_PER_BLOCK = 180  # 3,600 measured Wolff cluster updates per (L, T)
+N_BOOT = 2000
+
+
+def write_json(path: Path, payload: object) -&gt; None:
+    path.write_text(
+        json.dumps(payload, allow_nan=False, ensure_ascii=False, indent=1) + &quot;\n&quot;,
+        encoding=&quot;utf-8&quot;,
+    )
+
+
+def onsager_magnetization(temp: float) -&gt; float:
+    if temp &gt;= TC_EXACT:
+        return 0.0
+    s = math.sinh(2.0 / temp)
+    val = 1.0 - (s ** -4)
+    return val ** 0.125 if val &gt; 0.0 else 0.0
+
+
+def exact_small_lattice(L: int, temp: float) -&gt; dict[str, float]:
+    &quot;&quot;&quot;Exact enumeration for small periodic L x L square lattices (L &lt;= 4).&quot;&quot;&quot;
+    n = L * L
+    beta = 1.0 / temp
+    edges = []
+    for r in range(L):
+        for c in range(L):
+            i = r * L + c
+            edges.append((i, r * L + ((c + 1) % L)))
+            edges.append((i, ((r + 1) % L) * L + c))
+
+    e_shift = -2.0 * n
+    z = sum_m = sum_abs_m = sum_m2 = sum_m4 = sum_e = sum_e2 = 0.0
+    for state in range(1 &lt;&lt; n):
+        m_int = 2 * state.bit_count() - n
+        e_int = 0
+        for u, v in edges:
+            e_int += -1 if ((state &gt;&gt; u) &amp; 1) == ((state &gt;&gt; v) &amp; 1) else 1
+        w = math.exp(-beta * (e_int - e_shift))
+        m_val = m_int / n
+        e_val = e_int / n
+        z += w
+        sum_m += w * m_val
+        sum_abs_m += w * abs(m_val)
+        sum_m2 += w * (m_val * m_val)
+        sum_m4 += w * (m_val ** 4)
+        sum_e += w * e_val
+        sum_e2 += w * (e_val * e_val)
+
+    avg_m = sum_m / z
+    if abs(avg_m) &lt; 1e-12:
+        avg_m = 0.0
+    avg_abs_m = sum_abs_m / z
+    avg_m2 = sum_m2 / z
+    avg_m4 = sum_m4 / z
+    avg_e = sum_e / z
+    avg_e2 = sum_e2 / z
+    return {
+        &quot;m_signed&quot;: avg_m,
+        &quot;abs_m&quot;: avg_abs_m,
+        &quot;chi&quot;: (n / temp) * (avg_m2 - avg_abs_m * avg_abs_m),
+        &quot;chi0&quot;: (n / temp) * avg_m2,
+        &quot;cv&quot;: (n / (temp * temp)) * (avg_e2 - avg_e * avg_e),
+        &quot;u4&quot;: 1.0 - avg_m4 / (3.0 * avg_m2 * avg_m2),
+    }
+
+
+def build_neighbors(L: int, lattice: str = &quot;square&quot;) -&gt; list[tuple[int, ...]]:
+    nbrs = []
+    for r in range(L):
+        rm = (r - 1) % L
+        rp = (r + 1) % L
+        for c in range(L):
+            cm = (c - 1) % L
+            cp = (c + 1) % L
+            if lattice == &quot;square&quot;:
+                nbrs.append((r * L + cp, r * L + cm, rp * L + c, rm * L + c))
+            elif lattice == &quot;triangular&quot;:
+                nbrs.append((
+                    r * L + cp, r * L + cm,
+                    rp * L + c, rm * L + c,
+                    rp * L + cp, rm * L + cm,
+                ))
+            else:
+                raise ValueError(f&quot;Unknown lattice: {lattice}&quot;)
+    return nbrs
+
+
+def lag1_autocorr(vals: list[float]) -&gt; float:
+    if len(vals) &lt; 3:
+        return 0.0
+    mu = statistics.fmean(vals)
+    den = sum((v - mu) ** 2 for v in vals)
+    if den &lt; 1e-15:
+        return 0.0
+    num = sum((vals[i] - mu) * (vals[i + 1] - mu) for i in range(len(vals) - 1))
+    return num / den
+
+
+def wolff_simulate(
+    L: int,
+    temp: float,
+    rng: random.Random,
+    lattice: str = &quot;square&quot;,
+    hot_start: bool = False,
+    compute_cv: bool = True,
+) -&gt; dict[str, object]:
+    &quot;&quot;&quot;Run Wolff single-cluster MC at (L, temp) and return observables, diagnostics, and block arrays.&quot;&quot;&quot;
+    n = L * L
+    nbrs = build_neighbors(L, lattice)
+    p_add = 1.0 - math.exp(-2.0 / temp)
+    spins = [1 if rng.random() &lt; 0.5 else -1 for _ in range(n)] if hot_start else [1] * n
+    mag_int = sum(spins)
+
+    rand = rng.random
+    randrange = rng.randrange
+
+    def wolff_step() -&gt; int:
+        nonlocal mag_int
+        seed = randrange(n)
+        old_s = spins[seed]
+        new_s = -old_s
+        spins[seed] = new_s
+        stack = [seed]
+        csize = 1
+        while stack:
+            u = stack.pop()
+            for v in nbrs[u]:
+                if spins[v] == old_s and rand() &lt; p_add:
+                    spins[v] = new_s
+                    stack.append(v)
+                    csize += 1
+        mag_int += 2 * new_s * csize
+        return csize
+
+    def compute_energy_sq() -&gt; int:
+        e = 0
+        for r in range(L):
+            row_off = r * L
+            next_row = ((r + 1) % L) * L
+            for c in range(L):
+                i = row_off + c
+                si = spins[i]
+                e -= si * (spins[row_off + ((c + 1) % L)] + spins[next_row + c])
+        return e
+
+    # Thermalization
+    for _ in range(N_THERM):
+        wolff_step()
+
+    blk_abs_m: list[float] = []
+    blk_m2: list[float] = []
+    blk_m4: list[float] = []
+    blk_e: list[float] = []
+    blk_e2: list[float] = []
+    total_cluster_spins = 0
+
+    inv_n = 1.0 / n
+    for _ in range(N_BLOCKS):
+        s_am = s_m2 = s_m4 = s_e = s_e2 = 0.0
+        for _ in range(STEPS_PER_BLOCK):
+            total_cluster_spins += wolff_step()
+            m = mag_int * inv_n
+            am = abs(m)
+            m2 = m * m
+            s_am += am
+            s_m2 += m2
+            s_m4 += m2 * m2
+            if compute_cv and lattice == &quot;square&quot;:
+                e = compute_energy_sq() * inv_n
+                s_e += e
+                s_e2 += e * e
+        k = float(STEPS_PER_BLOCK)
+        blk_abs_m.append(s_am / k)
+        blk_m2.append(s_m2 / k)
+        blk_m4.append(s_m4 / k)
+        blk_e.append(s_e / k)
+        blk_e2.append(s_e2 / k)
+
+    mean_am = statistics.fmean(blk_abs_m)
+    mean_m2 = statistics.fmean(blk_m2)
+    mean_m4 = statistics.fmean(blk_m4)
+    mean_e = statistics.fmean(blk_e)
+    mean_e2 = statistics.fmean(blk_e2)
+
+    chi = (n / temp) * (mean_m2 - mean_am * mean_am)
+    chi0 = (n / temp) * mean_m2
+    cv = (n / (temp * temp)) * (mean_e2 - mean_e * mean_e) if (compute_cv and lattice == &quot;square&quot;) else 0.0
+    u4 = 1.0 - mean_m4 / (3.0 * mean_m2 * mean_m2)
+
+    # Delete-1 block jackknife replicates
+    B = N_BLOCKS
+    jk_am, jk_chi, jk_chi0, jk_cv, jk_u4 = [], [], [], [], []
+    sum_am, sum_m2, sum_m4 = sum(blk_abs_m), sum(blk_m2), sum(blk_m4)
+    sum_e, sum_e2 = sum(blk_e), sum(blk_e2)
+    for b in range(B):
+        am_b = (sum_am - blk_abs_m[b]) / (B - 1)
+        m2_b = (sum_m2 - blk_m2[b]) / (B - 1)
+        m4_b = (sum_m4 - blk_m4[b]) / (B - 1)
+        e_b = (sum_e - blk_e[b]) / (B - 1)
+        e2_b = (sum_e2 - blk_e2[b]) / (B - 1)
+        jk_am.append(am_b)
+        jk_chi.append((n / temp) * (m2_b - am_b * am_b))
+        jk_chi0.append((n / temp) * m2_b)
+        jk_cv.append((n / (temp * temp)) * (e2_b - e_b * e_b))
+        jk_u4.append(1.0 - m4_b / (3.0 * m2_b * m2_b))
+
+    def jk_se(vals: list[float]) -&gt; float:
+        mu = statistics.fmean(vals)
+        return math.sqrt(((B - 1) / B) * sum((v - mu) ** 2 for v in vals))
+
+    mean_cluster = total_cluster_spins / (N_BLOCKS * STEPS_PER_BLOCK)
+    eff_sweeps_per_blk = STEPS_PER_BLOCK * mean_cluster / n
+
+    return {
+        &quot;abs_m&quot;: mean_am,
+        &quot;abs_m_se&quot;: jk_se(jk_am),
+        &quot;chi&quot;: chi,
+        &quot;chi_se&quot;: jk_se(jk_chi),
+        &quot;chi0&quot;: chi0,
+        &quot;chi0_se&quot;: jk_se(jk_chi0),
+        &quot;cv&quot;: cv,
+        &quot;cv_se&quot;: jk_se(jk_cv),
+        &quot;u4&quot;: u4,
+        &quot;u4_se&quot;: jk_se(jk_u4),
+        &quot;jk_u4&quot;: jk_u4,
+        &quot;blk_am&quot;: blk_abs_m,
+        &quot;blk_m2&quot;: blk_m2,
+        &quot;r1_m2&quot;: lag1_autocorr(blk_m2),
+        &quot;eff_sweeps_per_blk&quot;: eff_sweeps_per_blk,
+    }
+
+
+def wls_fit(xs: list[float], ys: list[float], ses: list[float]) -&gt; dict[str, float]:
+    &quot;&quot;&quot;Weighted least squares y = a + b*x with exact Student-t 95% CI and reduced chi^2/df.&quot;&quot;&quot;
+    n = len(xs)
+    df = n - 2
+    ws = [1.0 / max(se * se, 1e-12) for se in ses]
+    sw = sum(ws)
+    sx = sum(w * x for w, x in zip(ws, xs))
+    sy = sum(w * y for w, y in zip(ws, ys))
+    sxx = sum(w * x * x for w, x in zip(ws, xs))
+    sxy = sum(w * x * y for w, x, y in zip(ws, xs, ys))
+    denom = sw * sxx - sx * sx
+    b = (sw * sxy - sx * sy) / denom
+    a = (sy - b * sx) / sw
+    se_b = math.sqrt(sw / denom)
+    chi2 = sum(w * (y - (a + b * x)) ** 2 for w, x, y in zip(ws, xs, ys))
+    red_chi2 = chi2 / df if df &gt; 0 else 0.0
+    # Scale SE by sqrt(max(1, red_chi2)) if overdispersed
+    se_eff = se_b * math.sqrt(max(1.0, red_chi2))
+    t_crit = T_CRIT_95[df]
+    my = statistics.fmean(ys)
+    ss_tot = sum((y - my) ** 2 for y in ys)
+    ss_res = sum((y - (a + b * x)) ** 2 for x, y in zip(xs, ys))
+    r2 = 1.0 - ss_res / ss_tot if ss_tot &gt; 0 else 1.0
+    return {
+        &quot;slope&quot;: b,
+        &quot;se&quot;: se_eff,
+        &quot;lo&quot;: b - t_crit * se_eff,
+        &quot;hi&quot;: b + t_crit * se_eff,
+        &quot;intercept&quot;: a,
+        &quot;r2&quot;: r2,
+        &quot;chi2_df&quot;: red_chi2,
+        &quot;df&quot;: df,
+        &quot;t_crit&quot;: t_crit,
+    }
+
+
+def ols_slope(xs: list[float], ys: list[float]) -&gt; float:
+    mx, my = statistics.fmean(xs), statistics.fmean(ys)
+    return sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sum((x - mx) ** 2 for x in xs)
+
+
+def find_crossing(temps: list[float], u1: list[float], u2: list[float]) -&gt; float | None:
+    diffs = [a - b for a, b in zip(u1, u2)]
+    for i in range(len(temps) - 1):
+        d0, d1 = diffs[i], diffs[i + 1]
+        if d0 == 0.0:
+            return temps[i]
+        if (d0 &lt; 0 and d1 &gt; 0) or (d0 &gt; 0 and d1 &lt; 0):
+            frac = abs(d0) / (abs(d0) + abs(d1))
+            return temps[i] + frac * (temps[i + 1] - temps[i])
+    return None
+
+
+def main() -&gt; None:
+    rng = random.Random(SEED)
+    lines: list[str] = []
+    nums: dict[str, str] = {}
+
+    def log(msg: str = &quot;&quot;) -&gt; None:
+        print(msg)
+        lines.append(msg)
+
+    log(&quot;=&quot; * 80)
+    log(&quot;HEURISMA COMPUTATIONAL APPENDIX — EMERGENCE IN PHYSICS (2D ISING UNIVERSALITY)&quot;)
+    log(&quot;=&quot; * 80)
+    log(
+        f&quot;Seed: {SEED} | Lattices: {LATTICE_SIZES} | Temps: {len(TEMPS)} points [{TEMPS[0]}..{TEMPS[-1]}]&quot;
+    )
+    log(
+        f&quot;Wolff MC protocol: N_THERM={N_THERM}, N_BLOCKS={N_BLOCKS}, &quot;
+        f&quot;STEPS_PER_BLOCK={STEPS_PER_BLOCK} ({N_BLOCKS * STEPS_PER_BLOCK} measured updates per (L,T)), &quot;
+        f&quot;N_BOOT={N_BOOT}&quot;
+    )
+    log(
+        f&quot;Exact square Tc = {TC_EXACT:.6f} | Exact triangular Tc_tri = {TC_TRI_EXACT:.6f} | &quot;
+        f&quot;Exact gamma/nu = {GAMMA_NU_EXACT:.4f} | Exact beta/nu = {BETA_NU_EXACT:.4f}&quot;
+    )
+
+    nums[&quot;tc_exact&quot;] = f&quot;{TC_EXACT:.4f}&quot;
+    nums[&quot;tc_tri_exact&quot;] = f&quot;{TC_TRI_EXACT:.4f}&quot;
+    nums[&quot;gamma_nu_exact&quot;] = f&quot;{GAMMA_NU_EXACT:.2f}&quot;
+    nums[&quot;beta_nu_exact&quot;] = f&quot;{BETA_NU_EXACT:.3f}&quot;
+    nums[&quot;cv_theory_slope&quot;] = f&quot;{CV_THEORY_SLOPE:.3f}&quot;
+    nums[&quot;n_therm&quot;] = str(N_THERM)
+    nums[&quot;n_blocks&quot;] = str(N_BLOCKS)
+    nums[&quot;steps_per_block&quot;] = str(STEPS_PER_BLOCK)
+    nums[&quot;total_updates&quot;] = f&quot;{N_BLOCKS * STEPS_PER_BLOCK:,}&quot;
+
+    # 1. Exact small-lattice verification of Lee-Yang analyticity &amp; zero exact &lt;m&gt;
+    log(&quot;\n--- 1. EXACT ENUMERATION AT Tc (FINITE-N ANALYTICITY &amp; Z2 SYMMETRY) ---&quot;)
+    log(f&quot;{&#x27;L&#x27;:&gt;4} {&#x27;N&#x27;:&gt;5} {&#x27;&lt;m&gt; (signed)&#x27;:&gt;14} {&#x27;&lt;|m|&gt;&#x27;:&gt;10} {&#x27;chi0&#x27;:&gt;10} {&#x27;chi&#x27;:&gt;10} {&#x27;Cv&#x27;:&gt;10} {&#x27;U4&#x27;:&gt;10}&quot;)
+    for L in (2, 3, 4):
+        ex = exact_small_lattice(L, TC_EXACT)
+        log(
+            f&quot;{L:4d} {L*L:5d} {ex[&#x27;m_signed&#x27;]:14.1f} {ex[&#x27;abs_m&#x27;]:10.4f} &quot;
+            f&quot;{ex[&#x27;chi0&#x27;]:10.4f} {ex[&#x27;chi&#x27;]:10.4f} {ex[&#x27;cv&#x27;]:10.4f} {ex[&#x27;u4&#x27;]:10.4f}&quot;
+        )
+        nums[f&quot;exact_L{L}_m_signed&quot;] = f&quot;{ex[&#x27;m_signed&#x27;]:.1f}&quot;
+
+    # 2. Wolff MC across all (L, T) on square lattice
+    results: dict[int, dict[float, dict[str, object]]] = {}
+    for L in LATTICE_SIZES:
+        results[L] = {}
+        for T in TEMPS:
+            results[L][T] = wolff_simulate(L, T, rng, lattice=&quot;square&quot;, hot_start=False, compute_cv=True)
+
+    tc_grid = round(TC_EXACT, 4)
+
+    log(&quot;\n--- 2. SQUARE-LATTICE OBSERVABLES AT Tc (T = 2.2692) ---&quot;)
+    log(f&quot;{&#x27;L&#x27;:&gt;4} {&#x27;N&#x27;:&gt;5} {&#x27;&lt;|m|&gt; +/- SE&#x27;:&gt;18} {&#x27;chi0 +/- SE&#x27;:&gt;18} {&#x27;chi +/- SE&#x27;:&gt;18} {&#x27;Cv +/- SE&#x27;:&gt;16} {&#x27;U4 +/- SE&#x27;:&gt;16}&quot;)
+    for L in LATTICE_SIZES:
+        r = results[L][tc_grid]
+        log(
+            f&quot;{L:4d} {L*L:5d} &quot;
+            f&quot;{r[&#x27;abs_m&#x27;]:7.4f} +/- {r[&#x27;abs_m_se&#x27;]:6.4f} &quot;
+            f&quot;{r[&#x27;chi0&#x27;]:7.2f} +/- {r[&#x27;chi0_se&#x27;]:6.2f} &quot;
+            f&quot;{r[&#x27;chi&#x27;]:7.2f} +/- {r[&#x27;chi_se&#x27;]:6.2f} &quot;
+            f&quot;{r[&#x27;cv&#x27;]:6.3f} +/- {r[&#x27;cv_se&#x27;]:5.3f} &quot;
+            f&quot;{r[&#x27;u4&#x27;]:6.4f} +/- {r[&#x27;u4_se&#x27;]:6.4f}&quot;
+        )
+        nums[f&quot;tc_L{L}_abs_m&quot;] = f&quot;{r[&#x27;abs_m&#x27;]:.3f}&quot;
+        nums[f&quot;tc_L{L}_abs_m_se&quot;] = f&quot;{r[&#x27;abs_m_se&#x27;]:.3f}&quot;
+        nums[f&quot;tc_L{L}_chi0&quot;] = f&quot;{r[&#x27;chi0&#x27;]:.1f}&quot;
+        nums[f&quot;tc_L{L}_chi0_se&quot;] = f&quot;{r[&#x27;chi0_se&#x27;]:.1f}&quot;
+        nums[f&quot;tc_L{L}_chi&quot;] = f&quot;{r[&#x27;chi&#x27;]:.2f}&quot;
+        nums[f&quot;tc_L{L}_chi_se&quot;] = f&quot;{r[&#x27;chi_se&#x27;]:.2f}&quot;
+        nums[f&quot;tc_L{L}_cv&quot;] = f&quot;{r[&#x27;cv&#x27;]:.3f}&quot;
+        nums[f&quot;tc_L{L}_cv_se&quot;] = f&quot;{r[&#x27;cv_se&#x27;]:.3f}&quot;
+        nums[f&quot;tc_L{L}_u4&quot;] = f&quot;{r[&#x27;u4&#x27;]:.3f}&quot;
+        nums[f&quot;tc_L{L}_u4_se&quot;] = f&quot;{r[&#x27;u4_se&#x27;]:.3f}&quot;
+
+    # 3. Equilibration &amp; autocorrelation diagnostics
+    hot_rng = random.Random(SEED + 999)
+    r_hot = wolff_simulate(32, tc_grid, hot_rng, lattice=&quot;square&quot;, hot_start=True, compute_cv=False)
+    r_cold = results[32][tc_grid]
+    hot_cold_z = (r_hot[&quot;chi0&quot;] - r_cold[&quot;chi0&quot;]) / math.sqrt(r_hot[&quot;chi0_se&quot;] ** 2 + r_cold[&quot;chi0_se&quot;] ** 2)
+    r_dis32 = results[32][2.75]
+
+    log(&quot;\n--- 3. EQUILIBRATION &amp; AUTOCORRELATION DIAGNOSTICS (L = 32) ---&quot;)
+    log(
+        f&quot;Hot vs Cold start at (L=32, Tc): cold chi0 = {r_cold[&#x27;chi0&#x27;]:.2f} +/- {r_cold[&#x27;chi0_se&#x27;]:.2f}, &quot;
+        f&quot;hot chi0 = {r_hot[&#x27;chi0&#x27;]:.2f} +/- {r_hot[&#x27;chi0_se&#x27;]:.2f} (z = {hot_cold_z:+.2f})&quot;
+    )
+    log(
+        f&quot;L=32 at Tc:   lag-1 block autocorr r1(m^2) = {r_cold[&#x27;r1_m2&#x27;]:+.3f}, &quot;
+        f&quot;eff. sweeps/block = {r_cold[&#x27;eff_sweeps_per_blk&#x27;]:.1f}&quot;
+    )
+    log(
+        f&quot;L=32 at 2.75: lag-1 block autocorr r1(m^2) = {r_dis32[&#x27;r1_m2&#x27;]:+.3f}, &quot;
+        f&quot;eff. sweeps/block = {r_dis32[&#x27;eff_sweeps_per_blk&#x27;]:.1f}&quot;
+    )
+    nums[&quot;hot_cold_z&quot;] = f&quot;{hot_cold_z:+.2f}&quot;
+    nums[&quot;r1_tc_32&quot;] = f&quot;{r_cold[&#x27;r1_m2&#x27;]:+.2f}&quot;
+    nums[&quot;sweeps_tc_32&quot;] = f&quot;{r_cold[&#x27;eff_sweeps_per_blk&#x27;]:.1f}&quot;
+    nums[&quot;sweeps_275_32&quot;] = f&quot;{r_dis32[&#x27;eff_sweeps_per_blk&#x27;]:.1f}&quot;
+
+    # 4. Second microscopic Hamiltonian: 2D Triangular-Lattice Ising at exact Tc_tri = 4/ln(3)
+    tri_res: dict[int, dict[str, object]] = {}
+    for L in LATTICE_SIZES:
+        tri_res[L] = wolff_simulate(L, TC_TRI_EXACT, rng, lattice=&quot;triangular&quot;, hot_start=False, compute_cv=False)
+
+    log(&quot;\n--- 4. SECOND MICROSCOPIC HAMILTONIAN: 2D TRIANGULAR ISING AT Tc_tri (3.6410) ---&quot;)
+    log(f&quot;{&#x27;L&#x27;:&gt;4} {&#x27;N&#x27;:&gt;5} {&#x27;&lt;|m|&gt; +/- SE&#x27;:&gt;18} {&#x27;chi0 +/- SE&#x27;:&gt;18} {&#x27;U4 +/- SE&#x27;:&gt;16}&quot;)
+    for L in LATTICE_SIZES:
+        r = tri_res[L]
+        log(
+            f&quot;{L:4d} {L*L:5d} &quot;
+            f&quot;{r[&#x27;abs_m&#x27;]:7.4f} +/- {r[&#x27;abs_m_se&#x27;]:6.4f} &quot;
+            f&quot;{r[&#x27;chi0&#x27;]:7.2f} +/- {r[&#x27;chi0_se&#x27;]:6.2f} &quot;
+            f&quot;{r[&#x27;u4&#x27;]:6.4f} +/- {r[&#x27;u4_se&#x27;]:6.4f}&quot;
+        )
+        nums[f&quot;tri_L{L}_chi0&quot;] = f&quot;{r[&#x27;chi0&#x27;]:.1f}&quot;
+        nums[f&quot;tri_L{L}_chi0_se&quot;] = f&quot;{r[&#x27;chi0_se&#x27;]:.1f}&quot;
+
+    # 5. Pre-registered primary regression: log(chi_max(L)) vs. log(L) with block-bootstrap 95% CI
+    log_L = [math.log(L) for L in LATTICE_SIZES]
+    peak_temps = {L: max(TEMPS, key=lambda t: results[L][t][&quot;chi&quot;]) for L in LATTICE_SIZES}
+    chi_max_vals = [results[L][peak_temps[L]][&quot;chi&quot;] for L in LATTICE_SIZES]
+    chi_max_ses = [results[L][peak_temps[L]][&quot;chi_se&quot;] for L in LATTICE_SIZES]
+    log_chi_max = [math.log(v) for v in chi_max_vals]
+    se_log_chi_max = [s / v for v, s in zip(chi_max_vals, chi_max_ses)]
+    fit_peak = wls_fit(log_L, log_chi_max, se_log_chi_max)
+
+    # Block-bootstrap (2,000 replicates) for pre-registered log(chi_max) vs log(L)
+    boot_rng = random.Random(SEED + 1)
+    boot_slopes: list[float] = []
+    for _ in range(N_BOOT):
+        b_y = []
+        for L in LATTICE_SIZES:
+            t_pk = peak_temps[L]
+            r = results[L][t_pk]
+            idx = [boot_rng.randrange(N_BLOCKS) for _ in range(N_BLOCKS)]
+            am_b = statistics.fmean([r[&quot;blk_am&quot;][i] for i in idx])
+            m2_b = statistics.fmean([r[&quot;blk_m2&quot;][i] for i in idx])
+            chi_b = max((L * L / t_pk) * (m2_b - am_b * am_b), 1e-6)
+            b_y.append(math.log(chi_b))
+        boot_slopes.append(ols_slope(log_L, b_y))
+    boot_slopes.sort()
+    peak_boot_lo = boot_slopes[int(0.025 * N_BOOT)]
+    peak_boot_hi = boot_slopes[int(0.975 * N_BOOT)]
+    peak_ols = ols_slope(log_L, log_chi_max)
+
+    # Complementary WLS regressions at Tc (exact Student-t 95% CIs, chi^2/df)
+    log_chi0 = [math.log(results[L][tc_grid][&quot;chi0&quot;]) for L in LATTICE_SIZES]
+    se_log_chi0 = [results[L][tc_grid][&quot;chi0_se&quot;] / results[L][tc_grid][&quot;chi0&quot;] for L in LATTICE_SIZES]
+    fit_chi0 = wls_fit(log_L, log_chi0, se_log_chi0)
+    fit_chi0_ge12 = wls_fit(log_L[1:], log_chi0[1:], se_log_chi0[1:])
+
+    log_am = [math.log(results[L][tc_grid][&quot;abs_m&quot;]) for L in LATTICE_SIZES]
+    se_log_am = [results[L][tc_grid][&quot;abs_m_se&quot;] / results[L][tc_grid][&quot;abs_m&quot;] for L in LATTICE_SIZES]
+    fit_am = wls_fit(log_L, log_am, se_log_am)
+    fit_am_ge12 = wls_fit(log_L[1:], log_am[1:], se_log_am[1:])
+
+    cvs = [results[L][tc_grid][&quot;cv&quot;] for L in LATTICE_SIZES]
+    cv_ses = [results[L][tc_grid][&quot;cv_se&quot;] for L in LATTICE_SIZES]
+    fit_cv = wls_fit(log_L, cvs, cv_ses)
+
+    # Triangular lattice WLS regressions at Tc_tri
+    tri_log_chi0 = [math.log(tri_res[L][&quot;chi0&quot;]) for L in LATTICE_SIZES]
+    tri_se_chi0 = [tri_res[L][&quot;chi0_se&quot;] / tri_res[L][&quot;chi0&quot;] for L in LATTICE_SIZES]
+    fit_tri_chi0 = wls_fit(log_L, tri_log_chi0, tri_se_chi0)
+
+    tri_log_am = [math.log(tri_res[L][&quot;abs_m&quot;]) for L in LATTICE_SIZES]
+    tri_se_am = [tri_res[L][&quot;abs_m_se&quot;] / tri_res[L][&quot;abs_m&quot;] for L in LATTICE_SIZES]
+    fit_tri_am = wls_fit(log_L, tri_log_am, tri_se_am)
+
+    chi0_ratio = results[32][tc_grid][&quot;chi0&quot;] / results[8][tc_grid][&quot;chi0&quot;]
+    chi_ratio = results[32][tc_grid][&quot;chi&quot;] / results[8][tc_grid][&quot;chi&quot;]
+    cv_ratio = results[32][tc_grid][&quot;cv&quot;] / results[8][tc_grid][&quot;cv&quot;]
+
+    log(&quot;\n--- 5. FINITE-SIZE SCALING REGRESSIONS (EXACT STUDENT-t CIs &amp; BLOCK BOOTSTRAP) ---&quot;)
+    log(
+        f&quot;[Pre-registered] log(chi_max) vs log(L): OLS={peak_ols:.4f} (block-bootstrap 95% CI &quot;
+        f&quot;[{peak_boot_lo:.3f}, {peak_boot_hi:.3f}]); WLS={fit_peak[&#x27;slope&#x27;]:.4f} +/- {fit_peak[&#x27;se&#x27;]:.4f} &quot;
+        f&quot;(t-95% CI [{fit_peak[&#x27;lo&#x27;]:.3f}, {fit_peak[&#x27;hi&#x27;]:.3f}], chi2/df={fit_peak[&#x27;chi2_df&#x27;]:.2f}, R^2={fit_peak[&#x27;r2&#x27;]:.4f})&quot;
+    )
+    log(
+        f&quot;[Square Tc]      chi0(Tc, L) ~ L^(g/n):  g/n = {fit_chi0[&#x27;slope&#x27;]:.4f} +/- {fit_chi0[&#x27;se&#x27;]:.4f} &quot;
+        f&quot;(t-95% CI [{fit_chi0[&#x27;lo&#x27;]:.3f}, {fit_chi0[&#x27;hi&#x27;]:.3f}], chi2/df={fit_chi0[&#x27;chi2_df&#x27;]:.2f}, R^2={fit_chi0[&#x27;r2&#x27;]:.5f}) | &quot;
+        f&quot;L&gt;=12: {fit_chi0_ge12[&#x27;slope&#x27;]:.4f} +/- {fit_chi0_ge12[&#x27;se&#x27;]:.4f}&quot;
+    )
+    log(
+        f&quot;[Triangular Tc]  chi0(Tc, L) ~ L^(g/n):  g/n = {fit_tri_chi0[&#x27;slope&#x27;]:.4f} +/- {fit_tri_chi0[&#x27;se&#x27;]:.4f} &quot;
+        f&quot;(t-95% CI [{fit_tri_chi0[&#x27;lo&#x27;]:.3f}, {fit_tri_chi0[&#x27;hi&#x27;]:.3f}], chi2/df={fit_tri_chi0[&#x27;chi2_df&#x27;]:.2f}, R^2={fit_tri_chi0[&#x27;r2&#x27;]:.5f})&quot;
+    )
+    log(
+        f&quot;[Square Tc]      &lt;|m|&gt;(Tc, L) ~ L^(-b/n): b/n = {-fit_am[&#x27;slope&#x27;]:.4f} +/- {fit_am[&#x27;se&#x27;]:.4f} &quot;
+        f&quot;(t-95% CI [{-fit_am[&#x27;hi&#x27;]:.3f}, {-fit_am[&#x27;lo&#x27;]:.3f}], chi2/df={fit_am[&#x27;chi2_df&#x27;]:.2f}, R^2={fit_am[&#x27;r2&#x27;]:.4f}) | &quot;
+        f&quot;L&gt;=12: {-fit_am_ge12[&#x27;slope&#x27;]:.4f} +/- {fit_am_ge12[&#x27;se&#x27;]:.4f}&quot;
+    )
+    log(
+        f&quot;[Triangular Tc]  &lt;|m|&gt;(Tc, L) ~ L^(-b/n): b/n = {-fit_tri_am[&#x27;slope&#x27;]:.4f} +/- {fit_tri_am[&#x27;se&#x27;]:.4f} &quot;
+        f&quot;(t-95% CI [{-fit_tri_am[&#x27;hi&#x27;]:.3f}, {-fit_tri_am[&#x27;lo&#x27;]:.3f}], chi2/df={fit_tri_am[&#x27;chi2_df&#x27;]:.2f}, R^2={fit_tri_am[&#x27;r2&#x27;]:.4f})&quot;
+    )
+    log(
+        f&quot;[Square Tc]      Cv(Tc, L) ~ a*ln(L)+b:  a   = {fit_cv[&#x27;slope&#x27;]:.4f} +/- {fit_cv[&#x27;se&#x27;]:.4f} &quot;
+        f&quot;(t-95% CI [{fit_cv[&#x27;lo&#x27;]:.3f}, {fit_cv[&#x27;hi&#x27;]:.3f}], chi2/df={fit_cv[&#x27;chi2_df&#x27;]:.2f}, R^2={fit_cv[&#x27;r2&#x27;]:.4f}) | &quot;
+        f&quot;Onsager asymp. = {CV_THEORY_SLOPE:.4f}&quot;
+    )
+    log(f&quot;Growth from L=8 to L=32 (4x linear size): chi0 x{chi0_ratio:.1f}, chi x{chi_ratio:.1f}, Cv x{cv_ratio:.2f}&quot;)
+
+    nums[&quot;peak_gn_ols&quot;] = f&quot;{peak_ols:.3f}&quot;
+    nums[&quot;peak_gn_boot_lo&quot;] = f&quot;{peak_boot_lo:.3f}&quot;
+    nums[&quot;peak_gn_boot_hi&quot;] = f&quot;{peak_boot_hi:.3f}&quot;
+    nums[&quot;peak_gn_wls&quot;] = f&quot;{fit_peak[&#x27;slope&#x27;]:.3f}&quot;
+    nums[&quot;peak_gn_se&quot;] = f&quot;{fit_peak[&#x27;se&#x27;]:.3f}&quot;
+    nums[&quot;peak_gn_chi2&quot;] = f&quot;{fit_peak[&#x27;chi2_df&#x27;]:.2f}&quot;
+
+    nums[&quot;gamma_nu_hat&quot;] = f&quot;{fit_chi0[&#x27;slope&#x27;]:.3f}&quot;
+    nums[&quot;gamma_nu_se&quot;] = f&quot;{fit_chi0[&#x27;se&#x27;]:.3f}&quot;
+    nums[&quot;gamma_nu_lo&quot;] = f&quot;{fit_chi0[&#x27;lo&#x27;]:.3f}&quot;
+    nums[&quot;gamma_nu_hi&quot;] = f&quot;{fit_chi0[&#x27;hi&#x27;]:.3f}&quot;
+    nums[&quot;gamma_nu_r2&quot;] = f&quot;{fit_chi0[&#x27;r2&#x27;]:.4f}&quot;
+    nums[&quot;gamma_nu_chi2&quot;] = f&quot;{fit_chi0[&#x27;chi2_df&#x27;]:.2f}&quot;
+    nums[&quot;gamma_nu_ge12&quot;] = f&quot;{fit_chi0_ge12[&#x27;slope&#x27;]:.3f}&quot;
+
+    nums[&quot;tri_gn_hat&quot;] = f&quot;{fit_tri_chi0[&#x27;slope&#x27;]:.3f}&quot;
+    nums[&quot;tri_gn_se&quot;] = f&quot;{fit_tri_chi0[&#x27;se&#x27;]:.3f}&quot;
+    nums[&quot;tri_gn_lo&quot;] = f&quot;{fit_tri_chi0[&#x27;lo&#x27;]:.3f}&quot;
+    nums[&quot;tri_gn_hi&quot;] = f&quot;{fit_tri_chi0[&#x27;hi&#x27;]:.3f}&quot;
+    nums[&quot;tri_gn_r2&quot;] = f&quot;{fit_tri_chi0[&#x27;r2&#x27;]:.4f}&quot;
+    nums[&quot;tri_gn_chi2&quot;] = f&quot;{fit_tri_chi0[&#x27;chi2_df&#x27;]:.2f}&quot;
+
+    nums[&quot;beta_nu_hat&quot;] = f&quot;{-fit_am[&#x27;slope&#x27;]:.3f}&quot;
+    nums[&quot;beta_nu_se&quot;] = f&quot;{fit_am[&#x27;se&#x27;]:.3f}&quot;
+    nums[&quot;beta_nu_lo&quot;] = f&quot;{-fit_am[&#x27;hi&#x27;]:.3f}&quot;
+    nums[&quot;beta_nu_hi&quot;] = f&quot;{-fit_am[&#x27;lo&#x27;]:.3f}&quot;
+    nums[&quot;beta_nu_r2&quot;] = f&quot;{fit_am[&#x27;r2&#x27;]:.4f}&quot;
+    nums[&quot;beta_nu_chi2&quot;] = f&quot;{fit_am[&#x27;chi2_df&#x27;]:.2f}&quot;
+    nums[&quot;beta_nu_ge12&quot;] = f&quot;{-fit_am_ge12[&#x27;slope&#x27;]:.3f}&quot;
+
+    nums[&quot;tri_bn_hat&quot;] = f&quot;{-fit_tri_am[&#x27;slope&#x27;]:.3f}&quot;
+    nums[&quot;tri_bn_se&quot;] = f&quot;{fit_tri_am[&#x27;se&#x27;]:.3f}&quot;
+    nums[&quot;tri_bn_lo&quot;] = f&quot;{-fit_tri_am[&#x27;hi&#x27;]:.3f}&quot;
+    nums[&quot;tri_bn_hi&quot;] = f&quot;{-fit_tri_am[&#x27;lo&#x27;]:.3f}&quot;
+    nums[&quot;tri_bn_chi2&quot;] = f&quot;{fit_tri_am[&#x27;chi2_df&#x27;]:.2f}&quot;
+
+    nums[&quot;cv_log_slope&quot;] = f&quot;{fit_cv[&#x27;slope&#x27;]:.3f}&quot;
+    nums[&quot;cv_log_se&quot;] = f&quot;{fit_cv[&#x27;se&#x27;]:.3f}&quot;
+    nums[&quot;cv_log_lo&quot;] = f&quot;{fit_cv[&#x27;lo&#x27;]:.3f}&quot;
+    nums[&quot;cv_log_hi&quot;] = f&quot;{fit_cv[&#x27;hi&#x27;]:.3f}&quot;
+    nums[&quot;cv_log_r2&quot;] = f&quot;{fit_cv[&#x27;r2&#x27;]:.3f}&quot;
+    nums[&quot;cv_log_chi2&quot;] = f&quot;{fit_cv[&#x27;chi2_df&#x27;]:.2f}&quot;
+
+    nums[&quot;chi0_ratio_8_32&quot;] = f&quot;{chi0_ratio:.1f}&quot;
+    nums[&quot;chi_ratio_8_32&quot;] = f&quot;{chi_ratio:.1f}&quot;
+    nums[&quot;cv_ratio_8_32&quot;] = f&quot;{cv_ratio:.2f}&quot;
+
+    # 6. Binder cumulant crossings with delete-1 block-jackknife SEs + 3-seed stability check
+    log(&quot;\n--- 6. BINDER CUMULANT U4 CROSSINGS (WITH BLOCK-JACKKNIFE SEs) &amp; 3-SEED CHECK ---&quot;)
+    pairs = [(8, 16), (12, 24), (16, 32)]
+    crossings: dict[tuple[int, int], tuple[float, float]] = {}
+    for l1, l2 in pairs:
+        u1 = [results[l1][T][&quot;u4&quot;] for T in TEMPS]
+        u2 = [results[l2][T][&quot;u4&quot;] for T in TEMPS]
+        tc_c = find_crossing(TEMPS, u1, u2)
+        jk_vals = []
+        for b in range(N_BLOCKS):
+            u1_b = [results[l1][T][&quot;jk_u4&quot;][b] for T in TEMPS]
+            u2_b = [results[l2][T][&quot;jk_u4&quot;][b] for T in TEMPS]
+            c_b = find_crossing(TEMPS, u1_b, u2_b)
+            if c_b is not None:
+                jk_vals.append(c_b)
+        mu_jk = statistics.fmean(jk_vals)
+        se_c = math.sqrt(((len(jk_vals) - 1) / len(jk_vals)) * sum((v - mu_jk) ** 2 for v in jk_vals))
+        crossings[(l1, l2)] = (tc_c, se_c)
+        err_pct = 100.0 * (tc_c - TC_EXACT) / TC_EXACT
+        z_tc = (tc_c - TC_EXACT) / max(se_c, 1e-9)
+        log(
+            f&quot;U4 crossing (L={l1:2d}, L={l2:2d}): Tc_est = {tc_c:.4f} +/- {se_c:.4f} &quot;
+            f&quot;(diff = {err_pct:+.2f}%, z = {z_tc:+.2f})&quot;
+        )
+        nums[f&quot;u4_cross_{l1}_{l2}&quot;] = f&quot;{tc_c:.4f}&quot;
+        nums[f&quot;u4_se_{l1}_{l2}&quot;] = f&quot;{se_c:.4f}&quot;
+        nums[f&quot;u4_err_{l1}_{l2}&quot;] = f&quot;{abs(err_pct):.2f}&quot;
+
+    # 3-seed stability check for (16, 32) in the critical window
+    crit_win = [2.24, 2.26, tc_grid, 2.28, 2.30]
+    seed_crosses = [crossings[(16, 32)][0]]
+    for s_alt in (137, 2026):
+        r_alt = random.Random(s_alt)
+        u16 = [wolff_simulate(16, T, r_alt, compute_cv=False)[&quot;u4&quot;] for T in crit_win]
+        u32 = [wolff_simulate(32, T, r_alt, compute_cv=False)[&quot;u4&quot;] for T in crit_win]
+        c_alt = find_crossing(crit_win, u16, u32)
+        if c_alt is not None:
+            seed_crosses.append(c_alt)
+    log(
+        f&quot;3-seed (L=16, 32) U4 crossings (seeds 42, 137, 2026): &quot;
+        f&quot;{[round(x, 4) for x in seed_crosses]} | range = [{min(seed_crosses):.4f}, {max(seed_crosses):.4f}]&quot;
+    )
+    nums[&quot;u4_seed_min&quot;] = f&quot;{min(seed_crosses):.4f}&quot;
+    nums[&quot;u4_seed_max&quot;] = f&quot;{max(seed_crosses):.4f}&quot;
+
+    log(&quot;\nPseudocritical temperature T_peak(L) maximizing connected susceptibility chi(T, L):&quot;)
+    for L in LATTICE_SIZES:
+        t_pk = peak_temps[L]
+        chi_pk = results[L][t_pk][&quot;chi&quot;]
+        chi_pk_se = results[L][t_pk][&quot;chi_se&quot;]
+        log(f&quot;  L={L:2d}: T_peak = {t_pk:.4f} (shift = {t_pk - TC_EXACT:+.4f}), chi_max = {chi_pk:.2f} +/- {chi_pk_se:.2f}&quot;)
+        nums[f&quot;tpeak_L{L}&quot;] = f&quot;{t_pk:.4f}&quot;
+        nums[f&quot;chimax_L{L}&quot;] = f&quot;{chi_pk:.2f}&quot;
+
+    # 7. Finite-N vs Onsager thermodynamic limit magnetization (including T=2.00)
+    log(&quot;\n--- 7. FINITE-N VS. THERMODYNAMIC LIMIT (ONSAGER) MAGNETIZATION ---&quot;)
+    for T in (1.80, 2.00, 2.12, tc_grid, 2.42, 2.75):
+        m_ex = onsager_magnetization(T)
+        m8 = results[8][T][&quot;abs_m&quot;]
+        m16 = results[16][T][&quot;abs_m&quot;]
+        m32 = results[32][T][&quot;abs_m&quot;]
+        log(f&quot;  T={T:.4f}: Onsager={m_ex:.4f} | L=8: {m8:.4f} | L=16: {m16:.4f} | L=32: {m32:.4f}&quot;)
+    nums[&quot;m_dis_275_L8&quot;] = f&quot;{results[8][2.75][&#x27;abs_m&#x27;]:.3f}&quot;
+    nums[&quot;m_dis_275_L32&quot;] = f&quot;{results[32][2.75][&#x27;abs_m&#x27;]:.3f}&quot;
+    nums[&quot;m_ord_200_exact&quot;] = f&quot;{onsager_magnetization(2.00):.3f}&quot;
+    nums[&quot;m_ord_200_L32&quot;] = f&quot;{results[32][2.00][&#x27;abs_m&#x27;]:.3f}&quot;
+
+    # 8. Emit charts.json (Heurisma v2 schema) directly from computed variables
+    tc16_32, se16_32 = crossings[(16, 32)]
+    charts = [
+        {
+            &quot;id&quot;: &quot;magnetization_vs_temp&quot;,
+            &quot;type&quot;: &quot;line&quot;,
+            &quot;title&quot;: &quot;Emergence of Spontaneous Magnetization: Finite Lattices vs. Onsager Limit&quot;,
+            &quot;caption&quot;: (
+                f&quot;Finite lattices smooth out the phase transition at Tc = {TC_EXACT:.4f}; &quot;
+                f&quot;at T = 2.0000, L = 32 matches Onsager ({results[32][2.00][&#x27;abs_m&#x27;]:.3f} vs. {onsager_magnetization(2.00):.3f}), &quot;
+                f&quot;while at T = 2.75, &lt;|m|&gt; decays from {results[8][2.75][&#x27;abs_m&#x27;]:.3f} (L = 8) to &quot;
+                f&quot;{results[32][2.75][&#x27;abs_m&#x27;]:.3f} (L = 32).&quot;
+            ),
+            &quot;source&quot;: &quot;Own Wolff-cluster Monte Carlo simulation (seed = 42) and exact Onsager (1944) formula.&quot;,
+            &quot;x&quot;: {&quot;type&quot;: &quot;number&quot;, &quot;label&quot;: &quot;Temperature T (J/kB)&quot;},
+            &quot;y&quot;: {&quot;label&quot;: &quot;Magnetization &lt;|m|&gt;&quot;},
+            &quot;series&quot;: [
+                {
+                    &quot;name&quot;: &quot;L = 8 (N = 64)&quot;,
+                    &quot;points&quot;: [[T, round(results[8][T][&quot;abs_m&quot;], 4)] for T in TEMPS],
+                },
+                {
+                    &quot;name&quot;: &quot;L = 16 (N = 256)&quot;,
+                    &quot;points&quot;: [[T, round(results[16][T][&quot;abs_m&quot;], 4)] for T in TEMPS],
+                },
+                {
+                    &quot;name&quot;: &quot;L = 32 (N = 1,024)&quot;,
+                    &quot;points&quot;: [[T, round(results[32][T][&quot;abs_m&quot;], 4)] for T in TEMPS],
+                },
+                {
+                    &quot;name&quot;: &quot;Onsager Limit (L -&gt; inf)&quot;,
+                    &quot;points&quot;: [[T, round(onsager_magnetization(T), 4)] for T in TEMPS],
+                },
+            ],
+            &quot;annotations&quot;: [
+                {&quot;x&quot;: round(TC_EXACT, 4), &quot;label&quot;: &quot;Onsager Tc&quot;},
+            ],
+        },
+        {
+            &quot;id&quot;: &quot;susceptibility_fss&quot;,
+            &quot;type&quot;: &quot;line&quot;,
+            &quot;title&quot;: &quot;Sharpening Magnetic Susceptibility Peak Across Lattice Sizes&quot;,
+            &quot;caption&quot;: (
+                f&quot;Connected susceptibility chi(T, L) grows by {chi_ratio:.1f}x at Tc from L = 8 &quot;
+                f&quot;({results[8][tc_grid][&#x27;chi&#x27;]:.2f}) to L = 32 ({results[32][tc_grid][&#x27;chi&#x27;]:.2f}); &quot;
+                f&quot;peak T_peak shifts from {peak_temps[8]:.4f} (L = 8) to {peak_temps[32]:.4f} (L = 32).&quot;
+            ),
+            &quot;source&quot;: &quot;Own Wolff-cluster Monte Carlo simulation in appendix/analysis.py (seed = 42).&quot;,
+            &quot;x&quot;: {&quot;type&quot;: &quot;number&quot;, &quot;label&quot;: &quot;Temperature T (J/kB)&quot;},
+            &quot;y&quot;: {&quot;label&quot;: &quot;Connected Susceptibility chi(T, L)&quot;},
+            &quot;series&quot;: [
+                {
+                    &quot;name&quot;: f&quot;L = {L}&quot;,
+                    &quot;points&quot;: [[T, round(results[L][T][&quot;chi&quot;], 3)] for T in TEMPS],
+                }
+                for L in LATTICE_SIZES
+            ],
+            &quot;annotations&quot;: [
+                {&quot;x&quot;: round(TC_EXACT, 4), &quot;label&quot;: &quot;Onsager Tc&quot;},
+            ],
+        },
+        {
+            &quot;id&quot;: &quot;binder_crossing&quot;,
+            &quot;type&quot;: &quot;line&quot;,
+            &quot;title&quot;: &quot;Scale-Invariant Binder Cumulant U4 Crossing Near Tc&quot;,
+            &quot;caption&quot;: (
+                f&quot;The L = 16 and L = 32 Binder cumulants intersect at T = {tc16_32:.4f} +/- {se16_32:.4f} &quot;
+                f&quot;(3-seed range [{min(seed_crosses):.4f}, {max(seed_crosses):.4f}], exact Tc = {TC_EXACT:.4f}).&quot;
+            ),
+            &quot;source&quot;: &quot;Own Wolff-cluster Monte Carlo simulation in appendix/analysis.py (seed = 42).&quot;,
+            &quot;x&quot;: {&quot;type&quot;: &quot;number&quot;, &quot;label&quot;: &quot;Temperature T (J/kB)&quot;},
+            &quot;y&quot;: {&quot;label&quot;: &quot;Binder Cumulant U4&quot;},
+            &quot;series&quot;: [
+                {
+                    &quot;name&quot;: f&quot;L = {L}&quot;,
+                    &quot;points&quot;: [
+                        [T, round(results[L][T][&quot;u4&quot;], 4)]
+                        for T in TEMPS
+                        if 2.12 &lt;= T &lt;= 2.42
+                    ],
+                }
+                for L in LATTICE_SIZES
+            ],
+            &quot;annotations&quot;: [
+                {&quot;x&quot;: round(TC_EXACT, 4), &quot;label&quot;: &quot;Onsager Tc&quot;},
+            ],
+        },
+        {
+            &quot;id&quot;: &quot;fss_universality&quot;,
+            &quot;type&quot;: &quot;scatter&quot;,
+            &quot;title&quot;: &quot;Universality Test: Log-Log Susceptibility Scaling on Square vs. Triangular Lattices&quot;,
+            &quot;caption&quot;: (
+                f&quot;Despite distinct coordination numbers (z = 4 vs. z = 6) and critical temperatures &quot;
+                f&quot;({TC_EXACT:.4f} vs. {TC_TRI_EXACT:.4f}), WLS slopes yield gamma/nu = &quot;
+                f&quot;{fit_chi0[&#x27;slope&#x27;]:.3f} +/- {fit_chi0[&#x27;se&#x27;]:.3f} (square) and &quot;
+                f&quot;{fit_tri_chi0[&#x27;slope&#x27;]:.3f} +/- {fit_tri_chi0[&#x27;se&#x27;]:.3f} (triangular), both consistent with exact {GAMMA_NU_EXACT:.2f}.&quot;
+            ),
+            &quot;source&quot;: &quot;Own Wolff-cluster Monte Carlo simulation in appendix/analysis.py (seed = 42).&quot;,
+            &quot;x&quot;: {&quot;label&quot;: &quot;ln(L)&quot;},
+            &quot;y&quot;: {&quot;label&quot;: &quot;ln(chi0(Tc, L))&quot;},
+            &quot;series&quot;: [
+                {
+                    &quot;name&quot;: &quot;Square Lattice (z = 4, Tc = 2.2692)&quot;,
+                    &quot;points&quot;: [
+                        [round(math.log(L), 4), round(math.log(results[L][tc_grid][&quot;chi0&quot;]), 4)]
+                        for L in LATTICE_SIZES
+                    ],
+                },
+                {
+                    &quot;name&quot;: &quot;Triangular Lattice (z = 6, Tc = 3.6410)&quot;,
+                    &quot;points&quot;: [
+                        [round(math.log(L), 4), round(math.log(tri_res[L][&quot;chi0&quot;]), 4)]
+                        for L in LATTICE_SIZES
+                    ],
+                },
+            ],
+            &quot;highlight&quot;: {
+                &quot;x&quot;: round(math.log(32), 4),
+                &quot;y&quot;: round(math.log(results[32][tc_grid][&quot;chi0&quot;]), 4),
+                &quot;label&quot;: &quot;Square L = 32&quot;,
+            },
+        },
+    ]
+
+    write_json(APPENDIX / &quot;numbers.json&quot;, nums)
+    write_json(REPORT_DIR / &quot;charts.json&quot;, charts)
+    (APPENDIX / &quot;output.txt&quot;).write_text(&quot;\n&quot;.join(lines) + &quot;\n&quot;, encoding=&quot;utf-8&quot;)
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre></details>
+<details class="appendix-item"><summary><code>appendix/data_attempts.csv</code> (4,449 bytes)</summary><pre><code>target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used,attempted_utc
+openalex request,openalex,GET https://api.openalex.org/works?search=More+Is+Different+Anderson+1972&amp;per-page=5&amp;select=id%2Cdoi%2Ctitle%2Cpublication_year%2Ctype%2Cis_retracted%2Ccited_by_count%2Clanguage%2Chas_fulltext%2Cabstract_inverted_index%2Cauthorships%2Cprimary_location%2Copen_access,URLError,[Errno -2] Name or service not known (after 4 attempts),,2026-11-23T19:31:22Z
+C2 STATISTICAL MECHANICS OF EQUILIBRIUM AND NONEQUILIBRIUM PHAS,openalex,lookup doi:10.1142/s0217979205032759,used,,full text; query Q5,2026-11-23T19:37:20Z
+C4 Choreographed entanglement dances: Topological states of qua,openalex,lookup doi:10.1126/science.aal3099,used,,full text; query Q13,2026-11-23T19:37:20Z
+C6 Undecidability of the Spectral Gap in One Dimension,openalex,lookup doi:10.1103/physrevx.10.031038,used,,full text; query Q10,2026-11-23T19:37:23Z
+10.1088/1742-5468/2015/10/p10009 full text,publisher,GET https://iopscience.iop.org/article/10.1088/1742-5468/2015/10/P10009/pdf,rejected,the response is not a PDF or XML document (a landing page or a cookie wall?),,2026-11-23T19:38:11Z
+C3 The renormalization group via statistical inference,openalex,lookup doi:10.1088/1367-2630/17/8/083005,used,,full text; query Q6,2026-11-23T19:38:13Z
+C5 Undecidability of the Spectral Gap,openalex,lookup doi:10.1017/fmp.2021.15,used,,full text; query Q10,2026-11-23T19:38:16Z
+10.21468/scipostphyscore.7.3.050 full text,publisher,GET https://scipost.org/10.21468/SciPostPhysCore.7.3.050/pdf,rejected,the response is not a PDF or XML document (a landing page or a cookie wall?),,2026-11-23T19:38:17Z
+C8 Emergence and reduction combined in phase transitions,openalex,lookup doi:10.1063/1.4728007,used,,full text; query Q7,2026-11-23T19:38:17Z
+publisher request,publisher,GET https://www.sciencedirect.com/science/article/pii/S135521981300052X,HTTP 403,HTTP Error 403: Forbidden,,2026-11-23T19:38:18Z
+C10 Spontaneous Symmetry Breaking,openalex,lookup doi:10.1007/978-3-319-51777-3_10,used,,full text; query Q8,2026-11-23T19:38:23Z
+publisher request,publisher,GET https://doi.org/10.1098/rsfs.2022.0075,HTTP 403,HTTP Error 403: Forbidden,,2026-11-23T19:38:24Z
+C1 Finite size scaling study of lattice models in the three-dim,openalex,lookup doi:10.1103/physrevb.82.174433,used,,full text; query Q15,2026-11-23T19:39:08Z
+C7 General Theory of Lee-Yang Zeros in Models with First-Order ,openalex,lookup doi:10.1103/physrevlett.84.4794,used,,full text; query Q5,2026-11-23T19:39:08Z
+C9 Broken Symmetries and the Masses of Gauge Bosons,openalex,lookup doi:10.1103/physrevlett.13.508,used,,full text; query Q2,2026-11-23T19:39:10Z
+Local experimental or simulation datasets on physical emergence,local_data.py inventory,&quot;datos/, data/, appendix/data/&quot;,not found,No local user datasets present; inquiry proceeds with peer-reviewed literature via papers.py and reproducible 2D Ising Monte Carlo simulation,appendix/analysis.py (Wolff MC) + papers.py (10 full-text OA papers),2026-11-23T19:39:43Z
+Experimental condensed-matter critical-scaling dataset (calorimetry/magnetometry),OpenAlex + online repositories,experimental heat capacity two-dimensional Ising ferromagnet dataset,not found,Literature search returned theoretical/review articles without downloadable raw CSV/table calorimetry series,appendix/analysis.py (Wolff MC on square + triangular 2D Ising lattices),2026-11-23T19:44:58Z
+Anderson 1972 / Laughlin &amp; Pines 2000 / Batterman (pre-registered classics),OpenAlex + arXiv fallback search,More Is Different Anderson / Theory of Everything Laughlin Pines / Batterman singularities,not found,OpenAlex returned no OA full text or abstract for Anderson 1972 and Laughlin &amp; Pines 2000; arXiv returned no Batterman full text,&quot;Substituted verified full-text OA peer-reviewed papers C1-C10&quot;,2026-11-23T19:44:58Z
+publisher request,publisher,GET https://direct.mit.edu/books/oa-monograph/5600/bookpreview-pdf/2133509,HTTP 403,HTTP Error 403: Forbidden,,2026-11-23T19:47:25Z
+Ellis (2020) Emergence in Solid State Physics and Biology (10.1007/s10701-020-00367-z),papers.py lookup + cite (OpenAlex/Crossref),10.1007/s10701-020-00367-z,rejected,&quot;OpenAlex and Crossref returned no abstract (no-abstract), so papers.py cite refused to register or fetch the OA URL&quot;,Excluded from sources.csv; top-down/strong emergence contrast evaluated via verified full-text C3 and C10,2026-11-23T19:55:14Z
+</code></pre></details>
+<details class="appendix-item"><summary><code>appendix/fetch_data.py</code> (2,813 bytes)</summary><pre><code>#!/usr/bin/env python3
+&quot;&quot;&quot;Stage 2 literature acquisition script for Emergence in Physics (Heurisma v0.10.1).
+
+Queries OpenAlex and arXiv via papers.py, logging all searches and attempts
+to appendix/papers.csv, appendix/search_log.csv, appendix/download_log.csv,
+and appendix/data_attempts.csv. Respects HEURISMA_OFFLINE=1.
+&quot;&quot;&quot;
+
+from __future__ import annotations
+
+import subprocess
+import sys
+from pathlib import Path
+
+APPENDIX = Path(__file__).resolve().parent
+REPORT_DIR = APPENDIX.parent
+SKILL_SCRIPTS = REPORT_DIR.parent / &quot;.agents&quot; / &quot;skills&quot; / &quot;heurisma&quot; / &quot;scripts&quot;
+PAPERS_PY = SKILL_SCRIPTS / &quot;papers.py&quot;
+
+SEARCHES = [
+    # Foundational condensed matter &amp; symmetry breaking
+    (&quot;openalex&quot;, &quot;More Is Different broken symmetry Anderson&quot;, 5),
+    (&quot;openalex&quot;, &quot;The Theory of Everything Laughlin Pines&quot;, 5),
+    (&quot;openalex&quot;, &quot;Crystal Statistics Two-Dimensional Model Order-Disorder Transition Onsager&quot;, 5),
+    (&quot;openalex&quot;, &quot;Statistical Theory of Equations of State Phase Transitions Yang Lee&quot;, 5),
+    (&quot;openalex&quot;, &quot;Renormalization group theory basis formulation statistical physics Fisher&quot;, 5),
+    # Philosophy of physics: weak vs strong emergence &amp; limits
+    (&quot;openalex&quot;, &quot;Less is Different Emergence and Reduction Reconciled Butterfield&quot;, 5),
+    (&quot;openalex&quot;, &quot;Emergence singularities and symmetry breaking Batterman&quot;, 5),
+    (&quot;arxiv&quot;, &quot;Less is Different Emergence and Reduction Reconciled Butterfield&quot;, 3),
+    # Formal undecidability &amp; computability barriers
+    (&quot;openalex&quot;, &quot;Undecidability of the spectral gap Cubitt Perez-Garcia Wolf&quot;, 5),
+    (&quot;arxiv&quot;, &quot;Undecidability of the spectral gap Cubitt&quot;, 3),
+    (&quot;arxiv&quot;, &quot;More really is different Gu Weedbrook&quot;, 3),
+    # Topological order &amp; emergent gauge fields
+    (&quot;openalex&quot;, &quot;Choreographed entanglement dances topological states matter Wen&quot;, 5),
+    (&quot;arxiv&quot;, &quot;Emergent gauge fields topological order Wen&quot;, 5),
+    # Finite-size scaling &amp; Binder cumulant
+    (&quot;openalex&quot;, &quot;Finite size scaling analysis of Ising model block distribution functions Binder&quot;, 5),
+    (&quot;openalex&quot;, &quot;Collective Monte Carlo Updating for Spin Systems Wolff&quot;, 5),
+]
+
+
+def main() -&gt; int:
+    for provider, query, limit in SEARCHES:
+        cmd = [
+            sys.executable,
+            &quot;-B&quot;,
+            str(PAPERS_PY),
+            &quot;search&quot;,
+            &quot;--appendix&quot;,
+            str(APPENDIX),
+            &quot;--provider&quot;,
+            provider,
+            &quot;--query&quot;,
+            query,
+            &quot;--limit&quot;,
+            str(limit),
+        ]
+        print(f&quot;\n&gt;&gt;&gt; [{provider}] {query}&quot;, flush=True)
+        res = subprocess.run(cmd, cwd=str(REPORT_DIR), text=True)
+        if res.returncode != 0:
+            print(f&quot;    (non-zero exit {res.returncode}; logged in data_attempts.csv)&quot;, flush=True)
+    return 0
+
+
+if __name__ == &quot;__main__&quot;:
+    raise SystemExit(main())
+</code></pre></details>
+<details class="appendix-item"><summary><code>appendix/gates/qa.md</code> (3,062 bytes)</summary><pre><code>MODE: subagent
+REVIEWED-SHA256: b18a2451c29ff61de58a9ac441a9df3b7dd48f8462690ced8ed3c58425de09f2
+REVIEWED-UTC: 2026-11-23T19:59:54Z
+QUOTE: appendix/output.txt:48: &quot;3-seed (L=16, 32) U4 crossings (seeds 42, 137, 2026): [2.2631, 2.2654, 2.2722] | range = [2.2631, 2.2722]&quot;
+QUOTE: appendix/data_attempts.csv:18: &quot;Experimental condensed-matter critical-scaling dataset (calorimetry/magnetometry),OpenAlex + online repositories,experimental heat capacity two-dimensional Ising ferromagnet dataset,not found,Literature search returned theoretical/review articles without downloadable raw CSV/table calorimetry series,appendix/analysis.py (Wolff MC on square + triangular 2D Ising lattices),2026-11-23T19:44:58Z&quot;
+
+QA: PASS
+1 PASS — Strict validator (`--level 3 --html report.html --strict`) returned 0 warnings and only the expected single pre-save violation verbatim: `Heurisma report validation FAILED (1 violation(s)): 1. appendix/gates/qa.md is missing or empty; save the qa gate output (or the manual checks that replaced it) there.` (marked PASS per protocol since `qa.md` is written from this report).
+2 PASS — Validator `--html` freshness check raised no `stale` or `no source hash` error or warning (`--strict --json` returned `&quot;warnings&quot;: []`).
+3 PASS — Every quantitative value in `Calibrated Verdict` (`report.md` line 6) is bound via number placeholders (`gamma_nu_hat` = 1.769, `tri_gn_hat` = 1.731, `gamma_nu_exact` = 1.75, `tc_exact` = 2.2692) present in `appendix/numbers.json` and consistent with `appendix/output.txt`.
+4 PASS — `validate_report.py --level 3 --reproduce` re-ran `appendix/analysis.py` in a temporary copy and reproduced `appendix/output.txt`, `appendix/numbers.json`, and `charts.json` byte for byte with zero reproducibility violations (only the expected missing `appendix/gates/qa.md` violation appeared).
+5 PASS — All 4 charts in `charts.json` (`magnetization_vs_temp`, `susceptibility_fss`, `binder_crossing`, `fss_universality`) are placed via figure markers in `report.md` (lines 53, 70, 86, 88), use English titles/axis labels, have every computed number in their `title`, `caption`, and `source` verified against `appendix/output.txt` or `appendix/numbers.json` (plus standard Onsager 1944 year and lattice coordination numbers z = 4, 6), and triggered zero `FIG-DESIGN` warnings.
+6 PASS — Validator check 1 (`--html --strict`) reported zero privacy/home-directory-path violations (`home-directory paths: 0`), and scanning `appendix/` found zero `__pycache__` directories, zero `.pyc` files, and zero 0-byte files.
+7 PASS — Regex scan of `report.md` found zero first-person singular pronouns (`I`, `my`), and 100% of template headings and labels are in English.
+8 PASS — `appendix/gates/source_verifier.md` (3,512 bytes, `SOURCE-VERIFIER: PASS`) and `appendix/gates/reviewer.md` (4,829 bytes) exist and are non-empty; every failure row behind a limitation in `appendix/data_attempts.csv` carries a fresh `attempted_utc` timestamp from this run (`2026-11-23T19:31:22Z` to `2026-11-23T19:55:14Z`).
+FAIL count: 0
+</code></pre></details>
+<details class="appendix-item"><summary><code>appendix/gates/reviewer.md</code> (4,829 bytes)</summary><pre><code>MODE: subagent
+REVIEWED-SHA256: 1e8c08a7c6b07fbb134737884b6c7ac361d6c0c99ea3f3a65883892919b70eef
+REVIEWED-UTC: 2026-11-23T19:53:33Z
+ANALYSIS-SHA256: 2b5ae8477573
+QUOTE: appendix/output.txt:24: &quot;L=32 at Tc:   lag-1 block autocorr r1(m^2) = +0.513, eff. sweeps/block = 84.1&quot;
+QUOTE: appendix/preregistration.json:2: &quot; &quot;sealed_utc&quot;: &quot;2026-11-23T19:31:06Z&quot;,&quot;
+
+1. [1] Section 1, Key Takeaways bullet 2 (`report.md` line 10: &quot;Both 3D multi-model benchmarks (`@C1`) and our 2D square vs. triangular Ising simulations (`@C11`) yield identical critical exponents despite distinct lattice geometries and critical temperatures `[Strong]`&quot;) — Attaches `[Strong]` to a joint claim relying on Tier 2 own-computation (`@C11`, capped at `[Moderate]`), whose square vs. triangular estimates differ by ~2.1–2.2σ (γ/ν = 1.769 ± 0.012 vs. 1.731 ± 0.014; β/ν = 0.113 ± 0.008 vs. 0.139 ± 0.009) rather than being literally identical, and ambiguously groups 3D and 2D exponents — Split the Tier 1 3D universality benchmark (`@C1`, `[Strong]`) from the Tier 2 2D square-vs.-triangular consistency check (`@C11`, `[Moderate]`) and state that exponents are consistent within each dimension&#x27;s universality class.
+2. [1] Section 1, Key Takeaways bullet 1 (`report.md` line 9: &quot;Every finite-N local Hamiltonian has a strictly analytic partition function and zero exact signed magnetization (⟨m⟩ = 0.0 on L = 4) ... `[Strong]`&quot;) — Omits the zero-field / ℤ₂ spin-flip symmetry condition required for ⟨m⟩ = 0 (present in Sections 4.1 and 6, but false for finite-N local Hamiltonians with an external symmetry-breaking field h ≠ 0) — Add &quot;under exact ℤ₂ symmetry (zero external field)&quot; to match Sections 4.1 and 6.
+3. [5] Section 4.2 (`report.md` line 58) and `appendix/output.txt` line 24 (&quot;Equilibration and autocorrelation diagnostics at L = 32 confirm convergence ... (r₁(m²) = +0.51)&quot;) — A lag-1 block autocorrelation of r₁(m²) = +0.513 across B = 20 blocks (&gt; 2/√20 ≈ 0.45) indicates non-negligible positive inter-block correlation rather than confirming block independence, biasing naive delete-1 block-jackknife SEs downward (by roughly √[(1 + r₁)/(1 − r₁)] ≈ 1.76× if persistent) and narrowing the Table 2 Student-t CIs — Do not cite r₁(m²) = +0.51 as confirming convergence; either increase `STEPS_PER_BLOCK` / rebin blocks until |r₁| &lt; 0.2 (or apply an autocorrelation-adjusted SE inflation factor) or explicitly flag r₁ = +0.51 as a limitation indicating potential SE underestimation at (L = 32, Tc).
+4. [5] `appendix/analysis.py` lines 476–486 and Table 2 (`Pre-reg. log(χ_max) vs. log(L)` block-bootstrap 95% CI `[1.736, 1.824]`) — Holds `t_pk = peak_temps[L]` fixed across all 2,000 bootstrap replicates instead of re-selecting `argmax_T χ(T, L)` within each replicate, ignoring peak-location uncertainty between adjacent temperatures with overlapping SEs (e.g., L = 8 at T = 2.42 vs. 2.55; L = 16 at T = 2.35–2.42) — Re-maximize χ(T, L) over the temperature grid inside each bootstrap replicate, or explicitly disclose that the bootstrap CI conditions on fixed full-sample `T_peak(L)`.
+5. [6] Section 3 Table (`report.md` line 43), Section 5 (`report.md` line 104), and Reviewer #2 Disposition (`report.md` lines 114, 117) vs. `appendix/data_attempts.csv` — `report.md` claims that `Ellis 2020 (lookup, no-abstract logged in data_attempts.csv)`, `Q17–Q18`, and `Juarrero 2023` are logged in `appendix/data_attempts.csv`, whereas `appendix/data_attempts.csv` contains no Ellis 2020 row, no `no-abstract` or `Q17–Q18` reference, and only an unlabeled MIT Press HTTP 403 URL on line 20 — Log the Ellis 2020 lookup (`no-abstract`), `Q17–Q18` identifiers, and Juarrero 2023 label in `appendix/data_attempts.csv`, or align `report.md` with what is actually logged in `appendix/data_attempts.csv`.
+6. [6] `appendix/data_attempts.csv` line 19 (&quot;Substituted verified full-text OA peer-reviewed papers C1-C10, C12&quot;) vs. `appendix/sources.csv` and `report.md` — References a nonexistent source `C12` that does not appear in `appendix/sources.csv` (which contains only `C1`–`C10` and `C11` own-computation) or anywhere in `report.md` — Remove `C12` from `appendix/data_attempts.csv` line 19 so it reads `C1-C10`.
+
+1. Over-calibrated claims — 2 items
+2. Unattempted data shortcuts — none found
+3. Missing counter-evidence and controls — none found
+4. Interdisciplinary and forecasting flaws — none found
+5. Decisions inside the noise — 2 items
+6. Provenance contradictions — 2 items
+
+MOST DAMAGING: 3 — Interpreting a lag-1 block autocorrelation of r1(m^2) = +0.513 across 20 blocks as confirming convergence conceals non-negligible inter-block dependence that biases delete-1 block-jackknife SEs and Table 2 Student-t confidence intervals downward.
+</code></pre></details>
+<details class="appendix-item"><summary><code>appendix/gates/source_verifier.md</code> (3,512 bytes)</summary><pre><code>MODE: subagent
+REVIEWED-SHA256: 39548ce7811941b7687db17ac1afa284389e2bc5826dd64941b2dd7a54729623
+REVIEWED-UTC: 2026-11-23T19:56:51Z
+QUOTE: appendix/sources.csv:12: &quot;C11,Own 2D Ising Wolff-cluster Monte Carlo and exact small-lattice finite-size scaling simulation (appendix/analysis.py),appendix/analysis.py,Tier 2,2026-11-23,2026-11-23,own-computation,2b5ae84775735cc8f0c53452cf10ed4c150bff900e162e2f2cb6d8ee5978a646,agent-fetched,2026-11-23T19:39:43Z&quot;
+QUOTE: appendix/data_attempts.csv:18: &quot;Experimental condensed-matter critical-scaling dataset (calorimetry/magnetometry),OpenAlex + online repositories,experimental heat capacity two-dimensional Ising ferromagnet dataset,not found,Literature search returned theoretical/review articles without downloadable raw CSV/table calorimetry series,appendix/analysis.py (Wolff MC on square + triangular 2D Ising lattices),2026-11-23T19:44:58Z&quot;
+
+1. PASS — All 10 literature rows (`C1`–`C10`) in `appendix/sources.csv` have matching titles, `is_retracted=false`, matching SHA-256 hashes, saved full-text PDFs in `appendix/data/papers/` (referenced in `appendix/papers.csv` and `appendix/download_log.csv`), and `used` full-text entries in `appendix/data_attempts.csv`.
+2. PASS — `C11` is registered in `appendix/sources.csv` as `kind = own-computation`, Tier 2, and carries only `[Moderate]` claims on its own (Sections 1, 4.1, 4.2, 5, and Section 6 rows 2 and 6); in Section 4.1 and Section 6 row 1 it corroborates exact L=2–4 enumeration alongside Tier 1 proofs `@C2` and `@C7`.
+3. PASS — Every row of Section 6 (rows 1–8) has a confidence tag calibrated to its weakest required source: rows 1 (`@C2`, `@C7`), 3 (`@C3`, `@C1`), 4 (`@C9`), and 7 (`@C5`, `@C6`) carry `[Strong]` backed by Tier 1 sources; rows 2 (`@C11`), 5 (`@C4`, appropriately downgraded for contested bulk spin liquids), 6 (`@C8`, `@C10`, `@C11`), and 8 (`@C3`, `@C10`) carry `[Moderate]`.
+4. PASS — Every cited `[@id]` in `report.md` (`C1`–`C11`) exists in `appendix/sources.csv`, and all 11 sources in `appendix/sources.csv` (`C1`–`C11`) are cited in `report.md`.
+5. PASS — All declared data and literature limitations (experimental 2D Ising calorimetry/magnetometry datasets; fallback lookups for Anderson 1972, Laughlin &amp; Pines 2000, Batterman, Ellis 2020 `no-abstract` refusal, and MIT Press HTTP 403 for Juarrero 2023) have both online and local (`local_data.py inventory`) attempts logged in `appendix/data_attempts.csv` with `attempted_utc` timestamps from this run (`2026-11-23T19:31:22Z`–`2026-11-23T19:55:14Z`) and match `report.md` Sections 3, 5, and 7.
+6. PASS — `papers.py replay` succeeded (`papers.csv is fully explained by the cached responses`); all `[Strong]` claims are supported by cited Tier 1 sources (`@C1`, `@C2`, `@C3`, `@C5`, `@C6`, `@C7`, `@C9`); and all 11 sources (`C1`–`C11`) have `selection = agent-fetched` with no uncountered user-curated corpus (note: `validate_report.py --level 3 --json` reports only expected `GATE-MISSING` for pending `source_verifier.md`/`qa.md` and `GATE-DISP` for 21 disposition rows vs. 6 Round-2 items in `reviewer.md`, not a provenance failure).
+7. PASS — Audited `appendix/gates/reviewer.md` (items 1–6) against `report.md` Sections 1–7: no unverified reviewer-introduced facts entered `report.md`; all revisions trace to `appendix/analysis.py`, `appendix/output.txt`, `appendix/data_attempts.csv`, and existing verified sources `C1`–`C11`.
+
+Problems: none
+
+RUNGS TO RE-RUN: none
+
+SOURCE-VERIFIER: PASS
+</code></pre></details>
+<details class="appendix-item"><summary><code>appendix/numbers.json</code> (3,547 bytes)</summary><pre><code>{
+ &quot;tc_exact&quot;: &quot;2.2692&quot;,
+ &quot;tc_tri_exact&quot;: &quot;3.6410&quot;,
+ &quot;gamma_nu_exact&quot;: &quot;1.75&quot;,
+ &quot;beta_nu_exact&quot;: &quot;0.125&quot;,
+ &quot;cv_theory_slope&quot;: &quot;0.495&quot;,
+ &quot;n_therm&quot;: &quot;500&quot;,
+ &quot;n_blocks&quot;: &quot;20&quot;,
+ &quot;steps_per_block&quot;: &quot;180&quot;,
+ &quot;total_updates&quot;: &quot;3,600&quot;,
+ &quot;exact_L2_m_signed&quot;: &quot;0.0&quot;,
+ &quot;exact_L3_m_signed&quot;: &quot;0.0&quot;,
+ &quot;exact_L4_m_signed&quot;: &quot;0.0&quot;,
+ &quot;tc_L8_abs_m&quot;: &quot;0.772&quot;,
+ &quot;tc_L8_abs_m_se&quot;: &quot;0.005&quot;,
+ &quot;tc_L8_chi0&quot;: &quot;18.0&quot;,
+ &quot;tc_L8_chi0_se&quot;: &quot;0.2&quot;,
+ &quot;tc_L8_chi&quot;: &quot;1.24&quot;,
+ &quot;tc_L8_chi_se&quot;: &quot;0.06&quot;,
+ &quot;tc_L8_cv&quot;: &quot;1.213&quot;,
+ &quot;tc_L8_cv_se&quot;: &quot;0.044&quot;,
+ &quot;tc_L8_u4&quot;: &quot;0.610&quot;,
+ &quot;tc_L8_u4_se&quot;: &quot;0.002&quot;,
+ &quot;tc_L12_abs_m&quot;: &quot;0.740&quot;,
+ &quot;tc_L12_abs_m_se&quot;: &quot;0.007&quot;,
+ &quot;tc_L12_chi0&quot;: &quot;37.2&quot;,
+ &quot;tc_L12_chi0_se&quot;: &quot;0.5&quot;,
+ &quot;tc_L12_chi&quot;: &quot;2.42&quot;,
+ &quot;tc_L12_chi_se&quot;: &quot;0.15&quot;,
+ &quot;tc_L12_cv&quot;: &quot;1.341&quot;,
+ &quot;tc_L12_cv_se&quot;: &quot;0.063&quot;,
+ &quot;tc_L12_u4&quot;: &quot;0.613&quot;,
+ &quot;tc_L12_u4_se&quot;: &quot;0.004&quot;,
+ &quot;tc_L16_abs_m&quot;: &quot;0.712&quot;,
+ &quot;tc_L16_abs_m_se&quot;: &quot;0.006&quot;,
+ &quot;tc_L16_chi0&quot;: &quot;61.2&quot;,
+ &quot;tc_L16_chi0_se&quot;: &quot;0.8&quot;,
+ &quot;tc_L16_chi&quot;: &quot;3.95&quot;,
+ &quot;tc_L16_chi_se&quot;: &quot;0.23&quot;,
+ &quot;tc_L16_cv&quot;: &quot;1.372&quot;,
+ &quot;tc_L16_cv_se&quot;: &quot;0.042&quot;,
+ &quot;tc_L16_u4&quot;: &quot;0.612&quot;,
+ &quot;tc_L16_u4_se&quot;: &quot;0.003&quot;,
+ &quot;tc_L24_abs_m&quot;: &quot;0.687&quot;,
+ &quot;tc_L24_abs_m_se&quot;: &quot;0.007&quot;,
+ &quot;tc_L24_chi0&quot;: &quot;127.7&quot;,
+ &quot;tc_L24_chi0_se&quot;: &quot;1.8&quot;,
+ &quot;tc_L24_chi&quot;: &quot;7.93&quot;,
+ &quot;tc_L24_chi_se&quot;: &quot;0.55&quot;,
+ &quot;tc_L24_cv&quot;: &quot;1.661&quot;,
+ &quot;tc_L24_cv_se&quot;: &quot;0.087&quot;,
+ &quot;tc_L24_u4&quot;: &quot;0.616&quot;,
+ &quot;tc_L24_u4_se&quot;: &quot;0.003&quot;,
+ &quot;tc_L32_abs_m&quot;: &quot;0.656&quot;,
+ &quot;tc_L32_abs_m_se&quot;: &quot;0.007&quot;,
+ &quot;tc_L32_chi0&quot;: &quot;207.6&quot;,
+ &quot;tc_L32_chi0_se&quot;: &quot;3.5&quot;,
+ &quot;tc_L32_chi&quot;: &quot;13.08&quot;,
+ &quot;tc_L32_chi_se&quot;: &quot;0.89&quot;,
+ &quot;tc_L32_cv&quot;: &quot;1.856&quot;,
+ &quot;tc_L32_cv_se&quot;: &quot;0.114&quot;,
+ &quot;tc_L32_u4&quot;: &quot;0.612&quot;,
+ &quot;tc_L32_u4_se&quot;: &quot;0.004&quot;,
+ &quot;hot_cold_z&quot;: &quot;-0.11&quot;,
+ &quot;r1_tc_32&quot;: &quot;+0.51&quot;,
+ &quot;sweeps_tc_32&quot;: &quot;84.1&quot;,
+ &quot;sweeps_275_32&quot;: &quot;3.7&quot;,
+ &quot;tri_L8_chi0&quot;: &quot;11.0&quot;,
+ &quot;tri_L8_chi0_se&quot;: &quot;0.1&quot;,
+ &quot;tri_L12_chi0&quot;: &quot;22.5&quot;,
+ &quot;tri_L12_chi0_se&quot;: &quot;0.3&quot;,
+ &quot;tri_L16_chi0&quot;: &quot;36.8&quot;,
+ &quot;tri_L16_chi0_se&quot;: &quot;0.4&quot;,
+ &quot;tri_L24_chi0&quot;: &quot;74.7&quot;,
+ &quot;tri_L24_chi0_se&quot;: &quot;1.2&quot;,
+ &quot;tri_L32_chi0&quot;: &quot;121.3&quot;,
+ &quot;tri_L32_chi0_se&quot;: &quot;2.2&quot;,
+ &quot;peak_gn_ols&quot;: &quot;1.782&quot;,
+ &quot;peak_gn_boot_lo&quot;: &quot;1.736&quot;,
+ &quot;peak_gn_boot_hi&quot;: &quot;1.824&quot;,
+ &quot;peak_gn_wls&quot;: &quot;1.786&quot;,
+ &quot;peak_gn_se&quot;: &quot;0.034&quot;,
+ &quot;peak_gn_chi2&quot;: &quot;1.97&quot;,
+ &quot;gamma_nu_hat&quot;: &quot;1.769&quot;,
+ &quot;gamma_nu_se&quot;: &quot;0.012&quot;,
+ &quot;gamma_nu_lo&quot;: &quot;1.731&quot;,
+ &quot;gamma_nu_hi&quot;: &quot;1.807&quot;,
+ &quot;gamma_nu_r2&quot;: &quot;0.9999&quot;,
+ &quot;gamma_nu_chi2&quot;: &quot;0.49&quot;,
+ &quot;gamma_nu_ge12&quot;: &quot;1.766&quot;,
+ &quot;tri_gn_hat&quot;: &quot;1.731&quot;,
+ &quot;tri_gn_se&quot;: &quot;0.014&quot;,
+ &quot;tri_gn_lo&quot;: &quot;1.687&quot;,
+ &quot;tri_gn_hi&quot;: &quot;1.774&quot;,
+ &quot;tri_gn_r2&quot;: &quot;1.0000&quot;,
+ &quot;tri_gn_chi2&quot;: &quot;0.19&quot;,
+ &quot;beta_nu_hat&quot;: &quot;0.113&quot;,
+ &quot;beta_nu_se&quot;: &quot;0.008&quot;,
+ &quot;beta_nu_lo&quot;: &quot;0.089&quot;,
+ &quot;beta_nu_hi&quot;: &quot;0.138&quot;,
+ &quot;beta_nu_r2&quot;: &quot;0.9940&quot;,
+ &quot;beta_nu_chi2&quot;: &quot;0.33&quot;,
+ &quot;beta_nu_ge12&quot;: &quot;0.116&quot;,
+ &quot;tri_bn_hat&quot;: &quot;0.139&quot;,
+ &quot;tri_bn_se&quot;: &quot;0.009&quot;,
+ &quot;tri_bn_lo&quot;: &quot;0.111&quot;,
+ &quot;tri_bn_hi&quot;: &quot;0.168&quot;,
+ &quot;tri_bn_chi2&quot;: &quot;0.23&quot;,
+ &quot;cv_log_slope&quot;: &quot;0.374&quot;,
+ &quot;cv_log_se&quot;: &quot;0.085&quot;,
+ &quot;cv_log_lo&quot;: &quot;0.102&quot;,
+ &quot;cv_log_hi&quot;: &quot;0.646&quot;,
+ &quot;cv_log_r2&quot;: &quot;0.874&quot;,
+ &quot;cv_log_chi2&quot;: &quot;1.92&quot;,
+ &quot;chi0_ratio_8_32&quot;: &quot;11.5&quot;,
+ &quot;chi_ratio_8_32&quot;: &quot;10.5&quot;,
+ &quot;cv_ratio_8_32&quot;: &quot;1.53&quot;,
+ &quot;u4_cross_8_16&quot;: &quot;2.2714&quot;,
+ &quot;u4_se_8_16&quot;: &quot;0.0281&quot;,
+ &quot;u4_err_8_16&quot;: &quot;0.10&quot;,
+ &quot;u4_cross_12_24&quot;: &quot;2.2751&quot;,
+ &quot;u4_se_12_24&quot;: &quot;0.0080&quot;,
+ &quot;u4_err_12_24&quot;: &quot;0.26&quot;,
+ &quot;u4_cross_16_32&quot;: &quot;2.2631&quot;,
+ &quot;u4_se_16_32&quot;: &quot;0.0253&quot;,
+ &quot;u4_err_16_32&quot;: &quot;0.27&quot;,
+ &quot;u4_seed_min&quot;: &quot;2.2631&quot;,
+ &quot;u4_seed_max&quot;: &quot;2.2722&quot;,
+ &quot;tpeak_L8&quot;: &quot;2.5500&quot;,
+ &quot;chimax_L8&quot;: &quot;1.69&quot;,
+ &quot;tpeak_L12&quot;: &quot;2.4200&quot;,
+ &quot;chimax_L12&quot;: &quot;3.77&quot;,
+ &quot;tpeak_L16&quot;: &quot;2.4200&quot;,
+ &quot;chimax_L16&quot;: &quot;6.18&quot;,
+ &quot;tpeak_L24&quot;: &quot;2.3500&quot;,
+ &quot;chimax_L24&quot;: &quot;12.34&quot;,
+ &quot;tpeak_L32&quot;: &quot;2.3500&quot;,
+ &quot;chimax_L32&quot;: &quot;20.46&quot;,
+ &quot;m_dis_275_L8&quot;: &quot;0.445&quot;,
+ &quot;m_dis_275_L32&quot;: &quot;0.109&quot;,
+ &quot;m_ord_200_exact&quot;: &quot;0.911&quot;,
+ &quot;m_ord_200_L32&quot;: &quot;0.911&quot;
+}
+</code></pre></details>
+<details class="appendix-item"><summary><code>appendix/output.txt</code> (4,758 bytes)</summary><pre><code>================================================================================
+HEURISMA COMPUTATIONAL APPENDIX — EMERGENCE IN PHYSICS (2D ISING UNIVERSALITY)
+================================================================================
+Seed: 42 | Lattices: [8, 12, 16, 24, 32] | Temps: 17 points [1.8..3.0]
+Wolff MC protocol: N_THERM=500, N_BLOCKS=20, STEPS_PER_BLOCK=180 (3600 measured updates per (L,T)), N_BOOT=2000
+Exact square Tc = 2.269185 | Exact triangular Tc_tri = 3.640957 | Exact gamma/nu = 1.7500 | Exact beta/nu = 0.1250
+
+--- 1. EXACT ENUMERATION AT Tc (FINITE-N ANALYTICITY &amp; Z2 SYMMETRY) ---
+   L     N   &lt;m&gt; (signed)      &lt;|m|&gt;       chi0        chi         Cv         U4
+   2     4            0.0     0.8993     1.5411     0.1156     0.4039     0.6269
+   3     9            0.0     0.8711     3.2103     0.2009     0.6287     0.6201
+   4    16            0.0     0.8439     5.3683     0.3473     0.7833     0.6172
+
+--- 2. SQUARE-LATTICE OBSERVABLES AT Tc (T = 2.2692) ---
+   L     N       &lt;|m|&gt; +/- SE        chi0 +/- SE         chi +/- SE        Cv +/- SE        U4 +/- SE
+   8    64  0.7719 +/- 0.0050   18.05 +/-   0.18    1.24 +/-   0.06  1.213 +/- 0.044 0.6096 +/- 0.0024
+  12   144  0.7398 +/- 0.0069   37.15 +/-   0.52    2.42 +/-   0.15  1.341 +/- 0.063 0.6127 +/- 0.0036
+  16   256  0.7123 +/- 0.0056   61.18 +/-   0.76    3.95 +/-   0.23  1.372 +/- 0.042 0.6124 +/- 0.0030
+  24   576  0.6869 +/- 0.0066  127.68 +/-   1.83    7.93 +/-   0.55  1.661 +/- 0.087 0.6162 +/- 0.0034
+  32  1024  0.6565 +/- 0.0073  207.56 +/-   3.54   13.08 +/-   0.89  1.856 +/- 0.114 0.6118 +/- 0.0040
+
+--- 3. EQUILIBRATION &amp; AUTOCORRELATION DIAGNOSTICS (L = 32) ---
+Hot vs Cold start at (L=32, Tc): cold chi0 = 207.56 +/- 3.54, hot chi0 = 206.91 +/- 4.98 (z = -0.11)
+L=32 at Tc:   lag-1 block autocorr r1(m^2) = +0.513, eff. sweeps/block = 84.1
+L=32 at 2.75: lag-1 block autocorr r1(m^2) = +0.174, eff. sweeps/block = 3.7
+
+--- 4. SECOND MICROSCOPIC HAMILTONIAN: 2D TRIANGULAR ISING AT Tc_tri (3.6410) ---
+   L     N       &lt;|m|&gt; +/- SE        chi0 +/- SE        U4 +/- SE
+   8    64  0.7680 +/- 0.0065   11.04 +/-   0.14 0.6151 +/- 0.0031
+  12   144  0.7296 +/- 0.0058   22.48 +/-   0.26 0.6128 +/- 0.0032
+  16   256  0.7003 +/- 0.0052   36.79 +/-   0.41 0.6129 +/- 0.0025
+  24   576  0.6636 +/- 0.0069   74.71 +/-   1.22 0.6110 +/- 0.0035
+  32  1024  0.6308 +/- 0.0076  121.26 +/-   2.17 0.6031 +/- 0.0048
+
+--- 5. FINITE-SIZE SCALING REGRESSIONS (EXACT STUDENT-t CIs &amp; BLOCK BOOTSTRAP) ---
+[Pre-registered] log(chi_max) vs log(L): OLS=1.7816 (block-bootstrap 95% CI [1.736, 1.824]); WLS=1.7858 +/- 0.0336 (t-95% CI [1.679, 1.893], chi2/df=1.97, R^2=0.9990)
+[Square Tc]      chi0(Tc, L) ~ L^(g/n):  g/n = 1.7687 +/- 0.0119 (t-95% CI [1.731, 1.807], chi2/df=0.49, R^2=0.99992) | L&gt;=12: 1.7658 +/- 0.0201
+[Triangular Tc]  chi0(Tc, L) ~ L^(g/n):  g/n = 1.7309 +/- 0.0137 (t-95% CI [1.687, 1.774], chi2/df=0.19, R^2=0.99996)
+[Square Tc]      &lt;|m|&gt;(Tc, L) ~ L^(-b/n): b/n = 0.1132 +/- 0.0078 (t-95% CI [0.089, 0.138], chi2/df=0.33, R^2=0.9940) | L&gt;=12: 0.1156 +/- 0.0133
+[Triangular Tc]  &lt;|m|&gt;(Tc, L) ~ L^(-b/n): b/n = 0.1391 +/- 0.0090 (t-95% CI [0.111, 0.168], chi2/df=0.23, R^2=0.9968)
+[Square Tc]      Cv(Tc, L) ~ a*ln(L)+b:  a   = 0.3736 +/- 0.0855 (t-95% CI [0.102, 0.646], chi2/df=1.92, R^2=0.8736) | Onsager asymp. = 0.4945
+Growth from L=8 to L=32 (4x linear size): chi0 x11.5, chi x10.5, Cv x1.53
+
+--- 6. BINDER CUMULANT U4 CROSSINGS (WITH BLOCK-JACKKNIFE SEs) &amp; 3-SEED CHECK ---
+U4 crossing (L= 8, L=16): Tc_est = 2.2714 +/- 0.0281 (diff = +0.10%, z = +0.08)
+U4 crossing (L=12, L=24): Tc_est = 2.2751 +/- 0.0080 (diff = +0.26%, z = +0.74)
+U4 crossing (L=16, L=32): Tc_est = 2.2631 +/- 0.0253 (diff = -0.27%, z = -0.24)
+3-seed (L=16, 32) U4 crossings (seeds 42, 137, 2026): [2.2631, 2.2654, 2.2722] | range = [2.2631, 2.2722]
+
+Pseudocritical temperature T_peak(L) maximizing connected susceptibility chi(T, L):
+  L= 8: T_peak = 2.5500 (shift = +0.2808), chi_max = 1.69 +/- 0.04
+  L=12: T_peak = 2.4200 (shift = +0.1508), chi_max = 3.77 +/- 0.09
+  L=16: T_peak = 2.4200 (shift = +0.1508), chi_max = 6.18 +/- 0.18
+  L=24: T_peak = 2.3500 (shift = +0.0808), chi_max = 12.34 +/- 0.38
+  L=32: T_peak = 2.3500 (shift = +0.0808), chi_max = 20.46 +/- 0.57
+
+--- 7. FINITE-N VS. THERMODYNAMIC LIMIT (ONSAGER) MAGNETIZATION ---
+  T=1.8000: Onsager=0.9569 | L=8: 0.9566 | L=16: 0.9559 | L=32: 0.9569
+  T=2.0000: Onsager=0.9113 | L=8: 0.9121 | L=16: 0.9110 | L=32: 0.9115
+  T=2.1200: Onsager=0.8569 | L=8: 0.8659 | L=16: 0.8619 | L=32: 0.8556
+  T=2.2692: Onsager=0.0000 | L=8: 0.7719 | L=16: 0.7123 | L=32: 0.6565
+  T=2.4200: Onsager=0.0000 | L=8: 0.6586 | L=16: 0.4899 | L=32: 0.2750
+  T=2.7500: Onsager=0.0000 | L=8: 0.4452 | L=16: 0.2186 | L=32: 0.1091
+</code></pre></details>
+<details class="appendix-item"><summary><code>appendix/sources.csv</code> (2,794 bytes)</summary><pre><code>claim_id,source_title,url,tier,accessed_date,data_as_of,kind,sha256,selection,retrieved_utc
+C2,STATISTICAL MECHANICS OF EQUILIBRIUM AND NONEQUILIBRIUM PHASE TRANSITIONS: THE YANG–LEE FORMALISM,https://doi.org/10.1142/s0217979205032759,Tier 1,2026-11-23,2005,literature,bac70059d1e7d6e52304c7a627397294ab19d69dcd3239e70cf4423fb97b6cce,agent-fetched,2026-11-23T19:34:46Z
+C4,Choreographed entanglement dances: Topological states of quantum matter,https://doi.org/10.1126/science.aal3099,Tier 1,2026-11-23,2019,literature,2b21efa8a5de2d5da8dc1614d63284887d9ceeeabe4dd1da77e754ac5a97fa54,agent-fetched,2026-11-23T19:34:54Z
+C6,Undecidability of the Spectral Gap in One Dimension,https://doi.org/10.1103/physrevx.10.031038,Tier 1,2026-11-23,2020,literature,0cb23d172cf2d8fea56cac1ef4ac10552705b2b581a3292ead633837c63f67b5,agent-fetched,2026-11-23T19:34:52Z
+C3,The renormalization group via statistical inference,https://doi.org/10.1088/1367-2630/17/8/083005,Tier 1,2026-11-23,2015,literature,c03f63cea10a8f230794a3a516a2315e6ddd3d0a65738770521a5d9511459abe,agent-fetched,2026-11-23T19:34:48Z
+C5,Undecidability of the Spectral Gap,https://doi.org/10.1017/fmp.2021.15,Tier 1,2026-11-23,2022,literature,a59cd6a0945217c2a9ec6aaf9fa898a690e4d1d4702d6412fb0331b9178c3a46,agent-fetched,2026-11-23T19:34:52Z
+C8,Emergence and reduction combined in phase transitions,https://doi.org/10.1063/1.4728007,Tier 2,2026-11-23,2012,literature,2c85438d92ca9298a280ea3142677a29e6e29c21a1a3b84517b18e25377c1b12,agent-fetched,2026-11-23T19:34:49Z
+C10,Spontaneous Symmetry Breaking,https://doi.org/10.1007/978-3-319-51777-3_10,Tier 2,2026-11-23,2017,literature,0c0950ef031e4c350f184209fb2232d731a2f95baeac705a824286e10c15a7f2,agent-fetched,2026-11-23T19:34:50Z
+C1,Finite size scaling study of lattice models in the three-dimensional Ising universality class,https://doi.org/10.1103/physrevb.82.174433,Tier 1,2026-11-23,2010,literature,7fd6e17d3f56c7d4bef63b7ef128716ac394ae837d3189f3b75369a1ee6cb5cb,agent-fetched,2026-11-23T19:34:55Z
+C7,General Theory of Lee-Yang Zeros in Models with First-Order Phase Transitions,https://doi.org/10.1103/physrevlett.84.4794,Tier 1,2026-11-23,2000,literature,cf776479f6f9c03e5d411fe8643295826eb5b95ab0f5e81bea53beb7d106c06e,agent-fetched,2026-11-23T19:34:46Z
+C9,Broken Symmetries and the Masses of Gauge Bosons,https://doi.org/10.1103/physrevlett.13.508,Tier 1,2026-11-23,1964,literature,f76b7d68c615878dbc284327384ee5ddd24cfd24d0c73444c828114bbc63a9c9,agent-fetched,2026-11-23T19:34:43Z
+C11,Own 2D Ising Wolff-cluster Monte Carlo and exact small-lattice finite-size scaling simulation (appendix/analysis.py),appendix/analysis.py,Tier 2,2026-11-23,2026-11-23,own-computation,2b5ae84775735cc8f0c53452cf10ed4c150bff900e162e2f2cb6d8ee5978a646,agent-fetched,2026-11-23T19:39:43Z
+</code></pre></details>
+<h3>External Data &amp; Large Files (Linked, Not Embedded)</h3><ul><li><a href="appendix/data/papers/10.1007_978_3_319_51777_3_10-58272724.pdf"><code>appendix/data/papers/10.1007_978_3_319_51777_3_10-58272724.pdf</code></a> (1,077,103 bytes — external artifact)</li><li><a href="appendix/data/papers/10.1017_fmp.2021.15-ec85563e.pdf"><code>appendix/data/papers/10.1017_fmp.2021.15-ec85563e.pdf</code></a> (10,698,680 bytes — external artifact)</li><li><a href="appendix/data/papers/10.1063_1.4728007-e414a291.pdf"><code>appendix/data/papers/10.1063_1.4728007-e414a291.pdf</code></a> (265,004 bytes — external artifact)</li><li><a href="appendix/data/papers/10.1088_1367_2630_17_8_083005-b130481e.pdf"><code>appendix/data/papers/10.1088_1367_2630_17_8_083005-b130481e.pdf</code></a> (970,553 bytes — external artifact)</li><li><a href="appendix/data/papers/10.1103_physrevb.82.174433-95ae6110.pdf"><code>appendix/data/papers/10.1103_physrevb.82.174433-95ae6110.pdf</code></a> (311,905 bytes — external artifact)</li><li><a href="appendix/data/papers/10.1103_physrevlett.13.508-875e64ec.pdf"><code>appendix/data/papers/10.1103_physrevlett.13.508-875e64ec.pdf</code></a> (165,129 bytes — external artifact)</li><li><a href="appendix/data/papers/10.1103_physrevlett.84.4794-a526d2c7.pdf"><code>appendix/data/papers/10.1103_physrevlett.84.4794-a526d2c7.pdf</code></a> (156,218 bytes — external artifact)</li><li><a href="appendix/data/papers/10.1103_physrevx.10.031038-b51b5403.pdf"><code>appendix/data/papers/10.1103_physrevx.10.031038-b51b5403.pdf</code></a> (767,082 bytes — external artifact)</li><li><a href="appendix/data/papers/10.1126_science.aal3099-f3d43514.pdf"><code>appendix/data/papers/10.1126_science.aal3099-f3d43514.pdf</code></a> (988,242 bytes — external artifact)</li><li><a href="appendix/data/papers/10.1142_s0217979205032759-1d07040d.pdf"><code>appendix/data/papers/10.1142_s0217979205032759-1d07040d.pdf</code></a> (573,451 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/arxiv-24aa21717e61-001.xml"><code>appendix/data/papers/raw/arxiv-24aa21717e61-001.xml</code></a> (849 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/arxiv-36afe825ce2d-001.xml"><code>appendix/data/papers/raw/arxiv-36afe825ce2d-001.xml</code></a> (931 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/arxiv-56913b70fa1d-001.xml"><code>appendix/data/papers/raw/arxiv-56913b70fa1d-001.xml</code></a> (14,513 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/arxiv-d60a0f38afb1-001.xml"><code>appendix/data/papers/raw/arxiv-d60a0f38afb1-001.xml</code></a> (851 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/arxiv-eac748cdbfa3-001.xml"><code>appendix/data/papers/raw/arxiv-eac748cdbfa3-001.xml</code></a> (841 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-1003a4696ad2-001.json"><code>appendix/data/papers/raw/crossref-1003a4696ad2-001.json</code></a> (13,707 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-1003a4696ad2-002.json"><code>appendix/data/papers/raw/crossref-1003a4696ad2-002.json</code></a> (13,707 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-1003a4696ad2-003.json"><code>appendix/data/papers/raw/crossref-1003a4696ad2-003.json</code></a> (13,707 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-1ea199c630f8-001.json"><code>appendix/data/papers/raw/crossref-1ea199c630f8-001.json</code></a> (36,066 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-1ea199c630f8-002.json"><code>appendix/data/papers/raw/crossref-1ea199c630f8-002.json</code></a> (36,066 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-1ea199c630f8-003.json"><code>appendix/data/papers/raw/crossref-1ea199c630f8-003.json</code></a> (36,066 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-1ea199c630f8-004.json"><code>appendix/data/papers/raw/crossref-1ea199c630f8-004.json</code></a> (36,066 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-4c77e310b01e-001.json"><code>appendix/data/papers/raw/crossref-4c77e310b01e-001.json</code></a> (7,157 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-4c77e310b01e-002.json"><code>appendix/data/papers/raw/crossref-4c77e310b01e-002.json</code></a> (7,157 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-6a2aa56576a5-001.json"><code>appendix/data/papers/raw/crossref-6a2aa56576a5-001.json</code></a> (2,200 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-6a2aa56576a5-002.json"><code>appendix/data/papers/raw/crossref-6a2aa56576a5-002.json</code></a> (2,200 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-6a2aa56576a5-003.json"><code>appendix/data/papers/raw/crossref-6a2aa56576a5-003.json</code></a> (2,200 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-7941c259d129-001.json"><code>appendix/data/papers/raw/crossref-7941c259d129-001.json</code></a> (7,035 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-7941c259d129-002.json"><code>appendix/data/papers/raw/crossref-7941c259d129-002.json</code></a> (7,035 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-7941c259d129-003.json"><code>appendix/data/papers/raw/crossref-7941c259d129-003.json</code></a> (7,035 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-8d6e88cc72ff-001.json"><code>appendix/data/papers/raw/crossref-8d6e88cc72ff-001.json</code></a> (33,075 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-aae76d466397-001.json"><code>appendix/data/papers/raw/crossref-aae76d466397-001.json</code></a> (12,753 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-aae76d466397-002.json"><code>appendix/data/papers/raw/crossref-aae76d466397-002.json</code></a> (12,753 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-aae76d466397-003.json"><code>appendix/data/papers/raw/crossref-aae76d466397-003.json</code></a> (12,753 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-aae76d466397-004.json"><code>appendix/data/papers/raw/crossref-aae76d466397-004.json</code></a> (12,753 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-bbfac9fc193d-001.json"><code>appendix/data/papers/raw/crossref-bbfac9fc193d-001.json</code></a> (7,629 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-bbfac9fc193d-002.json"><code>appendix/data/papers/raw/crossref-bbfac9fc193d-002.json</code></a> (7,629 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-d54d65a47d34-001.json"><code>appendix/data/papers/raw/crossref-d54d65a47d34-001.json</code></a> (3,748 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-d54d65a47d34-002.json"><code>appendix/data/papers/raw/crossref-d54d65a47d34-002.json</code></a> (3,748 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-dab87f2739d0-001.json"><code>appendix/data/papers/raw/crossref-dab87f2739d0-001.json</code></a> (25,572 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-dab87f2739d0-002.json"><code>appendix/data/papers/raw/crossref-dab87f2739d0-002.json</code></a> (25,572 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-dab87f2739d0-003.json"><code>appendix/data/papers/raw/crossref-dab87f2739d0-003.json</code></a> (25,572 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-dab87f2739d0-004.json"><code>appendix/data/papers/raw/crossref-dab87f2739d0-004.json</code></a> (25,572 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-ed7e09ddeda0-001.json"><code>appendix/data/papers/raw/crossref-ed7e09ddeda0-001.json</code></a> (1,598 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-ed7e09ddeda0-002.json"><code>appendix/data/papers/raw/crossref-ed7e09ddeda0-002.json</code></a> (1,598 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/crossref-ed7e09ddeda0-003.json"><code>appendix/data/papers/raw/crossref-ed7e09ddeda0-003.json</code></a> (1,598 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-10ffb1d509e0-001.json"><code>appendix/data/papers/raw/openalex-10ffb1d509e0-001.json</code></a> (2,368 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-1ce57c6b7332-001.json"><code>appendix/data/papers/raw/openalex-1ce57c6b7332-001.json</code></a> (33,795 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-1dc44dfccab7-001.json"><code>appendix/data/papers/raw/openalex-1dc44dfccab7-001.json</code></a> (5,175 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-1dc44dfccab7-002.json"><code>appendix/data/papers/raw/openalex-1dc44dfccab7-002.json</code></a> (5,175 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-1dc44dfccab7-003.json"><code>appendix/data/papers/raw/openalex-1dc44dfccab7-003.json</code></a> (5,175 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-2d1224b20b86-001.json"><code>appendix/data/papers/raw/openalex-2d1224b20b86-001.json</code></a> (31,980 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-2ea93cea93c3-001.json"><code>appendix/data/papers/raw/openalex-2ea93cea93c3-001.json</code></a> (2,972 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-2ea93cea93c3-002.json"><code>appendix/data/papers/raw/openalex-2ea93cea93c3-002.json</code></a> (2,972 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-2fb87c96e58a-001.json"><code>appendix/data/papers/raw/openalex-2fb87c96e58a-001.json</code></a> (8,060 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-2fb87c96e58a-002.json"><code>appendix/data/papers/raw/openalex-2fb87c96e58a-002.json</code></a> (8,060 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-2fb87c96e58a-003.json"><code>appendix/data/papers/raw/openalex-2fb87c96e58a-003.json</code></a> (8,060 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-355b12b779a8-001.json"><code>appendix/data/papers/raw/openalex-355b12b779a8-001.json</code></a> (3,645 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-355b12b779a8-002.json"><code>appendix/data/papers/raw/openalex-355b12b779a8-002.json</code></a> (3,645 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-355b12b779a8-003.json"><code>appendix/data/papers/raw/openalex-355b12b779a8-003.json</code></a> (3,645 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-355b12b779a8-004.json"><code>appendix/data/papers/raw/openalex-355b12b779a8-004.json</code></a> (3,645 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-396b61bf9e37-001.json"><code>appendix/data/papers/raw/openalex-396b61bf9e37-001.json</code></a> (19,025 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-4a1e674aaa1b-001.json"><code>appendix/data/papers/raw/openalex-4a1e674aaa1b-001.json</code></a> (30,702 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-4e7ec1422d79-001.json"><code>appendix/data/papers/raw/openalex-4e7ec1422d79-001.json</code></a> (5,475 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-4e7ec1422d79-002.json"><code>appendix/data/papers/raw/openalex-4e7ec1422d79-002.json</code></a> (5,475 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-4e7ec1422d79-003.json"><code>appendix/data/papers/raw/openalex-4e7ec1422d79-003.json</code></a> (5,475 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-4e7ec1422d79-004.json"><code>appendix/data/papers/raw/openalex-4e7ec1422d79-004.json</code></a> (5,475 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-5a1ede0b8a01-001.json"><code>appendix/data/papers/raw/openalex-5a1ede0b8a01-001.json</code></a> (32,439 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-68011c44c226-001.json"><code>appendix/data/papers/raw/openalex-68011c44c226-001.json</code></a> (5,389 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-68011c44c226-002.json"><code>appendix/data/papers/raw/openalex-68011c44c226-002.json</code></a> (5,389 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-68011c44c226-003.json"><code>appendix/data/papers/raw/openalex-68011c44c226-003.json</code></a> (5,389 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-73229f3b3bab-001.json"><code>appendix/data/papers/raw/openalex-73229f3b3bab-001.json</code></a> (33,027 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-7f3d41dc24da-001.json"><code>appendix/data/papers/raw/openalex-7f3d41dc24da-001.json</code></a> (28,680 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-b1ce9a9d4e36-001.json"><code>appendix/data/papers/raw/openalex-b1ce9a9d4e36-001.json</code></a> (39,403 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-c5c83a06bbd6-001.json"><code>appendix/data/papers/raw/openalex-c5c83a06bbd6-001.json</code></a> (3,983 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-c5c83a06bbd6-002.json"><code>appendix/data/papers/raw/openalex-c5c83a06bbd6-002.json</code></a> (3,983 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-d47c8ef78bb3-001.json"><code>appendix/data/papers/raw/openalex-d47c8ef78bb3-001.json</code></a> (6,973 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-d47c8ef78bb3-002.json"><code>appendix/data/papers/raw/openalex-d47c8ef78bb3-002.json</code></a> (6,973 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-d6f7d6665267-001.json"><code>appendix/data/papers/raw/openalex-d6f7d6665267-001.json</code></a> (32,211 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-d70842bafccc-001.json"><code>appendix/data/papers/raw/openalex-d70842bafccc-001.json</code></a> (4,877 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-d70842bafccc-002.json"><code>appendix/data/papers/raw/openalex-d70842bafccc-002.json</code></a> (4,877 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-d70842bafccc-003.json"><code>appendix/data/papers/raw/openalex-d70842bafccc-003.json</code></a> (4,877 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-d70842bafccc-004.json"><code>appendix/data/papers/raw/openalex-d70842bafccc-004.json</code></a> (4,877 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-de430cbd3fef-001.json"><code>appendix/data/papers/raw/openalex-de430cbd3fef-001.json</code></a> (21,153 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-ea92cf6dd30b-001.json"><code>appendix/data/papers/raw/openalex-ea92cf6dd30b-001.json</code></a> (22,709 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-ebd4310e7cae-001.json"><code>appendix/data/papers/raw/openalex-ebd4310e7cae-001.json</code></a> (49,922 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-f405c5f55606-001.json"><code>appendix/data/papers/raw/openalex-f405c5f55606-001.json</code></a> (3,366 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-f405c5f55606-002.json"><code>appendix/data/papers/raw/openalex-f405c5f55606-002.json</code></a> (3,366 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-f405c5f55606-003.json"><code>appendix/data/papers/raw/openalex-f405c5f55606-003.json</code></a> (3,366 bytes — external artifact)</li><li><a href="appendix/data/papers/raw/openalex-fd3152997bbc-001.json"><code>appendix/data/papers/raw/openalex-fd3152997bbc-001.json</code></a> (22,251 bytes — external artifact)</li><li><a href="appendix/download_log.csv"><code>appendix/download_log.csv</code></a> (26,616 bytes — external artifact)</li><li><a href="appendix/papers.csv"><code>appendix/papers.csv</code></a> (23,331 bytes — external artifact)</li><li><a href="appendix/preregistration.json"><code>appendix/preregistration.json</code></a> (1,900 bytes — external artifact)</li><li><a href="appendix/run.json"><code>appendix/run.json</code></a> (89 bytes — external artifact)</li><li><a href="appendix/search_log.csv"><code>appendix/search_log.csv</code></a> (2,769 bytes — external artifact)</li></ul>
+</section>
+    <footer class="paper-footer">Prepared with Heurisma</footer>
+  </article>
+</body>
+</html>

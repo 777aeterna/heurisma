@@ -1,0 +1,19 @@
+query_id,provider,query,filters,n_hits,retrieved_utc,raw_file
+Q1,openalex,More Is Different Anderson 1972,{},5,2026-11-23T19:31:48Z,appendix/data/papers/raw/openalex-d6f7d6665267-001.json
+Q2,openalex,More Is Different broken symmetry Anderson,{},5,2026-11-23T19:34:43Z,appendix/data/papers/raw/openalex-7f3d41dc24da-001.json
+Q3,openalex,The Theory of Everything Laughlin Pines,{},5,2026-11-23T19:34:44Z,appendix/data/papers/raw/openalex-ea92cf6dd30b-001.json
+Q4,openalex,Crystal Statistics Two-Dimensional Model Order-Disorder Transition Onsager,{},5,2026-11-23T19:34:45Z,appendix/data/papers/raw/openalex-1ce57c6b7332-001.json
+Q5,openalex,Statistical Theory of Equations of State Phase Transitions Yang Lee,{},5,2026-11-23T19:34:46Z,appendix/data/papers/raw/openalex-2d1224b20b86-001.json
+Q6,openalex,Renormalization group theory basis formulation statistical physics Fisher,{},5,2026-11-23T19:34:48Z,appendix/data/papers/raw/openalex-de430cbd3fef-001.json
+Q7,openalex,Less is Different Emergence and Reduction Reconciled Butterfield,{},5,2026-11-23T19:34:49Z,appendix/data/papers/raw/openalex-396b61bf9e37-001.json
+Q8,openalex,Emergence singularities and symmetry breaking Batterman,{},5,2026-11-23T19:34:50Z,appendix/data/papers/raw/openalex-fd3152997bbc-001.json
+Q9,arxiv,Less is Different Emergence and Reduction Reconciled Butterfield,{},0,2026-11-23T19:34:51Z,appendix/data/papers/raw/arxiv-36afe825ce2d-001.xml
+Q10,openalex,Undecidability of the spectral gap Cubitt Perez-Garcia Wolf,{},5,2026-11-23T19:34:52Z,appendix/data/papers/raw/openalex-4a1e674aaa1b-001.json
+Q11,arxiv,Undecidability of the spectral gap Cubitt,{},0,2026-11-23T19:34:52Z,appendix/data/papers/raw/arxiv-24aa21717e61-001.xml
+Q12,arxiv,More really is different Gu Weedbrook,{},0,2026-11-23T19:34:53Z,appendix/data/papers/raw/arxiv-eac748cdbfa3-001.xml
+Q13,openalex,Choreographed entanglement dances topological states matter Wen,{},5,2026-11-23T19:34:54Z,appendix/data/papers/raw/openalex-b1ce9a9d4e36-001.json
+Q14,arxiv,Emergent gauge fields topological order Wen,{},5,2026-11-23T19:34:54Z,appendix/data/papers/raw/arxiv-56913b70fa1d-001.xml
+Q15,openalex,Finite size scaling analysis of Ising model block distribution functions Binder,{},5,2026-11-23T19:34:55Z,appendix/data/papers/raw/openalex-5a1ede0b8a01-001.json
+Q16,openalex,Collective Monte Carlo Updating for Spin Systems Wolff,{},5,2026-11-23T19:34:56Z,appendix/data/papers/raw/openalex-73229f3b3bab-001.json
+Q17,arxiv,Batterman emergence singularities phase transitions,{},0,2026-11-23T19:44:57Z,appendix/data/papers/raw/arxiv-d60a0f38afb1-001.xml
+Q18,openalex,experimental heat capacity two-dimensional Ising ferromagnet dataset,{},5,2026-11-23T19:44:58Z,appendix/data/papers/raw/openalex-ebd4310e7cae-001.json

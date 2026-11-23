@@ -1,0 +1,63 @@
+================================================================================
+HEURISMA COMPUTATIONAL APPENDIX — EMERGENCE IN PHYSICS (2D ISING UNIVERSALITY)
+================================================================================
+Seed: 42 | Lattices: [8, 12, 16, 24, 32] | Temps: 17 points [1.8..3.0]
+Wolff MC protocol: N_THERM=500, N_BLOCKS=20, STEPS_PER_BLOCK=180 (3600 measured updates per (L,T)), N_BOOT=2000
+Exact square Tc = 2.269185 | Exact triangular Tc_tri = 3.640957 | Exact gamma/nu = 1.7500 | Exact beta/nu = 0.1250
+
+--- 1. EXACT ENUMERATION AT Tc (FINITE-N ANALYTICITY & Z2 SYMMETRY) ---
+   L     N   <m> (signed)      <|m|>       chi0        chi         Cv         U4
+   2     4            0.0     0.8993     1.5411     0.1156     0.4039     0.6269
+   3     9            0.0     0.8711     3.2103     0.2009     0.6287     0.6201
+   4    16            0.0     0.8439     5.3683     0.3473     0.7833     0.6172
+
+--- 2. SQUARE-LATTICE OBSERVABLES AT Tc (T = 2.2692) ---
+   L     N       <|m|> +/- SE        chi0 +/- SE         chi +/- SE        Cv +/- SE        U4 +/- SE
+   8    64  0.7719 +/- 0.0050   18.05 +/-   0.18    1.24 +/-   0.06  1.213 +/- 0.044 0.6096 +/- 0.0024
+  12   144  0.7398 +/- 0.0069   37.15 +/-   0.52    2.42 +/-   0.15  1.341 +/- 0.063 0.6127 +/- 0.0036
+  16   256  0.7123 +/- 0.0056   61.18 +/-   0.76    3.95 +/-   0.23  1.372 +/- 0.042 0.6124 +/- 0.0030
+  24   576  0.6869 +/- 0.0066  127.68 +/-   1.83    7.93 +/-   0.55  1.661 +/- 0.087 0.6162 +/- 0.0034
+  32  1024  0.6565 +/- 0.0073  207.56 +/-   3.54   13.08 +/-   0.89  1.856 +/- 0.114 0.6118 +/- 0.0040
+
+--- 3. EQUILIBRATION & AUTOCORRELATION DIAGNOSTICS (L = 32) ---
+Hot vs Cold start at (L=32, Tc): cold chi0 = 207.56 +/- 3.54, hot chi0 = 206.91 +/- 4.98 (z = -0.11)
+L=32 at Tc:   lag-1 block autocorr r1(m^2) = +0.513, eff. sweeps/block = 84.1
+L=32 at 2.75: lag-1 block autocorr r1(m^2) = +0.174, eff. sweeps/block = 3.7
+
+--- 4. SECOND MICROSCOPIC HAMILTONIAN: 2D TRIANGULAR ISING AT Tc_tri (3.6410) ---
+   L     N       <|m|> +/- SE        chi0 +/- SE        U4 +/- SE
+   8    64  0.7680 +/- 0.0065   11.04 +/-   0.14 0.6151 +/- 0.0031
+  12   144  0.7296 +/- 0.0058   22.48 +/-   0.26 0.6128 +/- 0.0032
+  16   256  0.7003 +/- 0.0052   36.79 +/-   0.41 0.6129 +/- 0.0025
+  24   576  0.6636 +/- 0.0069   74.71 +/-   1.22 0.6110 +/- 0.0035
+  32  1024  0.6308 +/- 0.0076  121.26 +/-   2.17 0.6031 +/- 0.0048
+
+--- 5. FINITE-SIZE SCALING REGRESSIONS (EXACT STUDENT-t CIs & BLOCK BOOTSTRAP) ---
+[Pre-registered] log(chi_max) vs log(L): OLS=1.7816 (block-bootstrap 95% CI [1.736, 1.824]); WLS=1.7858 +/- 0.0336 (t-95% CI [1.679, 1.893], chi2/df=1.97, R^2=0.9990)
+[Square Tc]      chi0(Tc, L) ~ L^(g/n):  g/n = 1.7687 +/- 0.0119 (t-95% CI [1.731, 1.807], chi2/df=0.49, R^2=0.99992) | L>=12: 1.7658 +/- 0.0201
+[Triangular Tc]  chi0(Tc, L) ~ L^(g/n):  g/n = 1.7309 +/- 0.0137 (t-95% CI [1.687, 1.774], chi2/df=0.19, R^2=0.99996)
+[Square Tc]      <|m|>(Tc, L) ~ L^(-b/n): b/n = 0.1132 +/- 0.0078 (t-95% CI [0.089, 0.138], chi2/df=0.33, R^2=0.9940) | L>=12: 0.1156 +/- 0.0133
+[Triangular Tc]  <|m|>(Tc, L) ~ L^(-b/n): b/n = 0.1391 +/- 0.0090 (t-95% CI [0.111, 0.168], chi2/df=0.23, R^2=0.9968)
+[Square Tc]      Cv(Tc, L) ~ a*ln(L)+b:  a   = 0.3736 +/- 0.0855 (t-95% CI [0.102, 0.646], chi2/df=1.92, R^2=0.8736) | Onsager asymp. = 0.4945
+Growth from L=8 to L=32 (4x linear size): chi0 x11.5, chi x10.5, Cv x1.53
+
+--- 6. BINDER CUMULANT U4 CROSSINGS (WITH BLOCK-JACKKNIFE SEs) & 3-SEED CHECK ---
+U4 crossing (L= 8, L=16): Tc_est = 2.2714 +/- 0.0281 (diff = +0.10%, z = +0.08)
+U4 crossing (L=12, L=24): Tc_est = 2.2751 +/- 0.0080 (diff = +0.26%, z = +0.74)
+U4 crossing (L=16, L=32): Tc_est = 2.2631 +/- 0.0253 (diff = -0.27%, z = -0.24)
+3-seed (L=16, 32) U4 crossings (seeds 42, 137, 2026): [2.2631, 2.2654, 2.2722] | range = [2.2631, 2.2722]
+
+Pseudocritical temperature T_peak(L) maximizing connected susceptibility chi(T, L):
+  L= 8: T_peak = 2.5500 (shift = +0.2808), chi_max = 1.69 +/- 0.04
+  L=12: T_peak = 2.4200 (shift = +0.1508), chi_max = 3.77 +/- 0.09
+  L=16: T_peak = 2.4200 (shift = +0.1508), chi_max = 6.18 +/- 0.18
+  L=24: T_peak = 2.3500 (shift = +0.0808), chi_max = 12.34 +/- 0.38
+  L=32: T_peak = 2.3500 (shift = +0.0808), chi_max = 20.46 +/- 0.57
+
+--- 7. FINITE-N VS. THERMODYNAMIC LIMIT (ONSAGER) MAGNETIZATION ---
+  T=1.8000: Onsager=0.9569 | L=8: 0.9566 | L=16: 0.9559 | L=32: 0.9569
+  T=2.0000: Onsager=0.9113 | L=8: 0.9121 | L=16: 0.9110 | L=32: 0.9115
+  T=2.1200: Onsager=0.8569 | L=8: 0.8659 | L=16: 0.8619 | L=32: 0.8556
+  T=2.2692: Onsager=0.0000 | L=8: 0.7719 | L=16: 0.7123 | L=32: 0.6565
+  T=2.4200: Onsager=0.0000 | L=8: 0.6586 | L=16: 0.4899 | L=32: 0.2750
+  T=2.7500: Onsager=0.0000 | L=8: 0.4452 | L=16: 0.2186 | L=32: 0.1091

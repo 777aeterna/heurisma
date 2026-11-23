@@ -1,0 +1,12 @@
+{
+ "sealed_utc": "2026-11-23T19:31:06Z",
+ "hypotheses": {
+  "H0": "Macroscopic phase behavior in local many-body Hamiltonians is a smooth, additive function of microscopic constituents with no sharp scaling divergence or formal barrier between micro and macro descriptions.",
+  "H1": "H1 (Weak/Asymptotic Emergence): Exact non-analyticities occur only in the thermodynamic limit N->inf, but finite-N local 2D Ising lattices exhibit systematic finite-size scaling precursors (power-law growth of peak susceptibility chi_max(L) with L, sharpening specific heat, and Binder cumulant crossings converging toward the exact Onsager Tc). H2 (Formal/Strong Emergence): Macroscopic phase properties can be formally undecidable from local microscopic Hamiltonians even without violating microscopic dynamics."
+ },
+ "plan": "1) Acquire peer-reviewed physics and philosophy of physics literature via papers.py (OpenAlex, Crossref, arXiv) covering Anderson 1972, Laughlin & Pines 2000, Butterfield 2011, Batterman, Cubitt et al. 2015 spectral gap undecidability, and renormalization group / effective field theory. 2) Run a reproducible Wolff-cluster Monte Carlo simulation of the 2D ferromagnetic Ising model across multiple lattice sizes L (e.g. L=8, 12, 16, 24, 32) and temperatures spanning Tc, comparing finite-size magnetization, susceptibility, specific heat, and Binder cumulant U4 against the exact Onsager thermodynamic-limit solution. 3) Perform finite-size scaling regression (log chi_max vs log L) with bootstrap CIs and compare extracted gamma/nu against the exact 2D Ising universality value 7/4. 4) Evaluate counter-evidence (strong vs weak emergence, finite-N vs infinite-N limits, undecidability) and run Reviewer #2, Source Verifier, and QA subagent gates.",
+ "known_artifacts": {
+  "run.json": "62566270cd43"
+ },
+ "sha256": "e3b7e18a406410f6c0fb770b8312af4df3676d49049d63d8f7a70846b34af7db"
+}

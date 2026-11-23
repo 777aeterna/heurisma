@@ -1,0 +1,116 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/IeJ/Ds6DedSIhj6q3TUGYG+3qgs</id>
+  <title>arXiv Query: search_query=all:Emergent AND all:gauge AND all:fields AND all:topological AND all:order AND all:Wen&amp;id_list=&amp;start=0&amp;max_results=5</title>
+  <updated>2026-11-23T19:34:54Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=all:Emergent+AND+(all:gauge+AND+(all:fields+AND+(all:topological+AND+(all:order+AND+all:Wen))))&amp;start=0&amp;max_results=5&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>5</opensearch:itemsPerPage>
+  <opensearch:totalResults>7</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/1210.1281v2</id>
+    <title>Topological order: from long-range entangled quantum matter to an unification of light and electrons</title>
+    <updated>2012-10-28T00:59:05Z</updated>
+    <link href="https://arxiv.org/abs/1210.1281v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/1210.1281v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>In primary school, we were told that there are four states of matter: solid, liquid, gas, and plasma. In college, we learned that there are much more than four states of matter. For example, there are ferromagnetic states as revealed by the phenomenon of magnetization and superfluid states as defined by the phenomenon of zero-viscosity. The various phases in our colorful world are so rich that it is amazing that they can be understood systematically by the symmetry breaking theory of Landau. In this paper, we will review the progress in last 20 -- 30 years, during which we discovered that there are even more interesting phases that are beyond Landau symmetry breaking theory. We discuss new "topological" phenomena, such as topological degeneracy, that reveal the existence of those new phases - topologically ordered phases. Just like zero-viscosity defines the superfluid order, the new "topological" phenomena define the topological order at macroscopic level. As a new type of order, topological order requires a new mathematical frame work, such as fusion category and group cohomology, to describe it. More recently, we find that, at microscopical level, topological order is due to long-range quantum entanglements, just like fermion superfluid is due to fermion-pair condensation. Long-range quantum entanglements lead to many amazing emergent phenomena, such as fractional quantum numbers, fractional/non-Abelian statistics, and perfect conducting boundary channels. Long-range quantum entanglements can even provide a unified origin of light and electrons (or more generally, gauge interactions and Fermi statistics): light waves (gauge fields) are fluctuations of long-range entanglements, and electrons (fermions) are defects of long-range entanglements.</summary>
+    <category term="cond-mat.str-el" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="hep-th" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="quant-ph" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2012-10-04T02:56:53Z</published>
+    <arxiv:comment>A gentle review of topological order. 43 pages 22 figures</arxiv:comment>
+    <arxiv:primary_category term="cond-mat.str-el"/>
+    <arxiv:journal_ref>ISRN Condensed Matter Physics, vol. 2013, Article ID 198710, 20 pages, 2013</arxiv:journal_ref>
+    <author>
+      <name>Xiao-Gang Wen</name>
+    </author>
+    <arxiv:doi>10.1155/2013/198710</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1155/2013/198710" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/1812.02517v5</id>
+    <title>Emergent (anomalous) higher symmetries from topological orders and from dynamical electromagnetic field in condensed matter systems</title>
+    <updated>2019-04-21T02:02:31Z</updated>
+    <link href="https://arxiv.org/abs/1812.02517v5" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/1812.02517v5" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The usual condensed matter lattice theories do not include dynamical electromagnetic (EM) field and do not have higher symmetries naturally (unless we engineer fine-tuned toy models to realize higher symmetries). However, for gapped systems, (anomalous) higher symmetries can emerge from the usual condensed matter theories at low energies (usually in a spontaneously broken form). We pointed out that spontaneously broken emergent higher symmetries are nothing but a kind of topological orders. The emergent (anomalous) higher symmetries can be used to constrain possible phase transitions and possible phases induced by certain types of excitations in topological orders. (Anomalous) higher symmetry can also emerge in gapless systems if the gapless excitations contain gapless gauge fields. In particular, EM condensed matter systems that include the dynamical EM field have an anomalous $U(1)$ 1-symmetry if we ignore the magnetic monopoles. So EM condensed matter systems can realize some physical phenomena of anomalous higher symmetry. In particular, any gapped liquid phases of EM condensed matter systems (induced by arbitrary electric charge fluctuations and condensations) must have non-trivial bosonic topological orders.</summary>
+    <category term="cond-mat.str-el" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="hep-th" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2018-12-06T13:26:43Z</published>
+    <arxiv:comment>32 pages, 8 figures</arxiv:comment>
+    <arxiv:primary_category term="cond-mat.str-el"/>
+    <arxiv:journal_ref>Phys. Rev. B 99, 205139 (2019)</arxiv:journal_ref>
+    <author>
+      <name>Xiao-Gang Wen</name>
+    </author>
+    <arxiv:doi>10.1103/PhysRevB.99.205139</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1103/PhysRevB.99.205139" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2207.03544v2</id>
+    <title>Emergent higher-symmetry protected topological orders in the confined phase of $U(1)$ gauge theory</title>
+    <updated>2023-02-06T18:06:29Z</updated>
+    <link href="https://arxiv.org/abs/2207.03544v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2207.03544v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We consider compact $U^κ(1)$ gauge theory in 3+1D with the $2π$-quantized topological term ${\sum_{I, J =1}^κ\frac{K_{IJ}}{4π}\int_{M^4}F^I\wedge F^J}$. At energies below the gauge charges' gaps but above the monopoles' gaps, this field theory has an emergent ${\mathbb{Z}_{k_1}^{(1)}\times\mathbb{Z}_{k_2}^{(1)}\times\cdots}$ 1-symmetry, where $k_i$ are the diagonal elements of the Smith normal form of $K$ and $\mathbb{Z}_{0}^{(1)}$ is regarded as $U(1)^{(1)}$. In the $U^κ(1)$ confined phase, the boundary's IR properties are described by Chern-Simons field theory and has a ${\mathbb{Z}_{k_1}^{(1)}\times\mathbb{Z}_{k_2}^{(1)}\times\cdots}$ 1-symmetry that can be anomalous. To show these results, we develop a bosonic lattice model whose IR properties are described by this field theory, thus acting as its UV completion. The lattice model in the aforementioned limit has an exact ${\mathbb{Z}_{k_1}^{(1)}\times\mathbb{Z}_{k_2}^{(1)}\times\cdots}$ 1-symmetry. We find that a gapped phase of the lattice model, corresponding to the confined phase of the $U^κ(1)$ gauge theory, is a symmetry protected topological (SPT) phase for the ${\mathbb{Z}_{k_1}^{(1)}\times\mathbb{Z}_{k_2}^{(1)}\times\cdots}$ 1-symmetry, whose SPT invariant is ${e^{iπ\sum_{I, J}K_{IJ}\int B_I\smile B_J+B_I\underset{1}{\smile} d B_J}e^{iπ\sum_{I&lt; J}K_{IJ}\int d B_I\underset{2}{\smile}d B_J}}$. Here, the background 2-cochains $B_I$ satisfy ${d B_I=\sum_I B_{I}K_{IJ} = 0}$ mod $1$ and describe the symmetry twist of the ${\mathbb{Z}_{k_1}^{(1)}\times\mathbb{Z}_{k_2}^{(1)}\times\cdots}$ 1-symmetry. We apply this general result to a few examples with simple $K$ matrices. We find the non-trivial SPT order in the confined phases of these models and discuss its classifications using the fourth cohomology group of the corresponding 2-group.</summary>
+    <category term="cond-mat.str-el" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="hep-lat" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="hep-th" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2022-07-07T19:31:25Z</published>
+    <arxiv:comment>Published version</arxiv:comment>
+    <arxiv:primary_category term="cond-mat.str-el"/>
+    <arxiv:journal_ref>Phys. Rev. B 107, 075112 (2023)</arxiv:journal_ref>
+    <author>
+      <name>Salvatore D. Pace</name>
+    </author>
+    <author>
+      <name>Xiao-Gang Wen</name>
+    </author>
+    <arxiv:doi>10.1103/PhysRevB.107.075112</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1103/PhysRevB.107.075112" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/1808.09394v1</id>
+    <title>Topological non-linear $σ$-model, higher gauge theory, and a realization of all 3+1D topological orders for boson systems</title>
+    <updated>2018-08-28T16:30:24Z</updated>
+    <link href="https://arxiv.org/abs/1808.09394v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/1808.09394v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>A discrete non-linear $σ$-model is obtained by triangulate both the space-time $M^{d+1}$ and the target space $K$. If the path integral is given by the sum of all the complex homomorphisms $φ: M^{d+1} \to K$, with an partition function that is independent of space-time triangulation, then the corresponding non-linear $σ$-model will be called topological non-linear $σ$-model which is exactly soluble. Those exactly soluble models suggest that phase transitions induced by fluctuations with no topological defects (i.e. fluctuations described by homomorphisms $φ$) usually produce a topologically ordered state and are topological phase transitions, while phase transitions induced by fluctuations with all the topological defects give rise to trivial product states and are not topological phase transitions. If $K$ is a space with only non-trivial first homotopy group $G$ which is finite, those topological non-linear $σ$-models can realize all 3+1D bosonic topological orders without emergent fermions, which are described by Dijkgraaf-Witten theory with gauge group $π_1(K)=G$. Here, we show that the 3+1D bosonic topological orders with emergent fermions can be realized by topological non-linear $σ$-models with $π_1(K)=$ finite groups, $π_2(K)=Z_2$, and $π_{n&gt;2}(K)=0$. A subset of those topological non-linear $σ$-models corresponds to 2-gauge theories, which realize and classify bosonic topological orders with emergent fermions that have no emergent Majorana zero modes at triple string intersections. The classification of 3+1D bosonic topological orders may correspond to a classification of unitary fully dualizable fully extended topological quantum field theories in 4-dimensions.</summary>
+    <category term="cond-mat.str-el" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2018-08-28T16:30:24Z</published>
+    <arxiv:comment>32 pages, 14 figures</arxiv:comment>
+    <arxiv:primary_category term="cond-mat.str-el"/>
+    <arxiv:journal_ref>Phys. Rev. B 100, 045105 (2019)</arxiv:journal_ref>
+    <author>
+      <name>Chenchang Zhu</name>
+    </author>
+    <author>
+      <name>Tian Lan</name>
+    </author>
+    <author>
+      <name>Xiao-Gang Wen</name>
+    </author>
+    <arxiv:doi>10.1103/PhysRevB.100.045105</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1103/PhysRevB.100.045105" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/1612.01418v4</id>
+    <title>Exactly soluble local bosonic cocycle models, statistical transmutation, and simplest time-reversal symmetric topological orders in 3+1D</title>
+    <updated>2017-06-15T16:48:59Z</updated>
+    <link href="https://arxiv.org/abs/1612.01418v4" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/1612.01418v4" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We propose a generic construction of exactly soluble \emph{local bosonic models} that realize various topological orders with gappable boundaries. In particular, we construct an exactly soluble bosonic model that realizes a 3+1D $Z_2$ gauge theory with emergent fermionic Kramer doublet. We show that the emergence of such a fermion will cause the nucleation of certain topological excitations in space-time without pin$^+$ structure. The exactly soluble model also leads to a statistical transmutation in 3+1D. In addition, we construct exactly soluble bosonic models that realize 2 types of time-reversal symmetry enriched $Z_2$-topological orders in 2+1D, and 20 types of simplest time-reversal symmetry enriched topological (SET) orders which have only one non-trivial point-like and string-like topological excitations. Many physical properties of those topological states are calculated using the exactly soluble models. We find that some time-reversal SET orders have point-like excitations that carry Kramer doublet -- a fractionalized time-reversal symmetry. We also find that some $Z_2$ SET orders have string-like excitations that carry anomalous (non-on-site) $Z_2$ symmetry, which can be viewed as a fractionalization of $Z_2$ symmetry on strings. Our construction is based on cochains and cocycles in algebraic topology, which is very versatile. In principle, it can also realize emergent topological field theory beyond the twisted gauge theory.</summary>
+    <category term="cond-mat.str-el" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="hep-th" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="math-ph" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2016-12-05T16:23:43Z</published>
+    <arxiv:comment>50 pages, 12 figures, 3 tables. This is a much extended version</arxiv:comment>
+    <arxiv:primary_category term="cond-mat.str-el"/>
+    <arxiv:journal_ref>Phys. Rev. B 95, 205142 (2017)</arxiv:journal_ref>
+    <author>
+      <name>Xiao-Gang Wen</name>
+    </author>
+    <arxiv:doi>10.1103/PhysRevB.95.205142</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1103/PhysRevB.95.205142" title="doi"/>
+  </entry>
+</feed>

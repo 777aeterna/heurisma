@@ -60,14 +60,14 @@
     <text x="32" y="226" class="mono warn">! <tspan class="code">[GATE-DISP]</tspan> Reviewer #2 raised 4 critiques; Disposition Table resolves only 3</text>
   </g>
 
-  <!-- Step 3: Clean run passes strict reproduce -->
+  <!-- Step 3: Clean Level 3 run passes strict reproduce -->
   <g class="s5">
-    <text x="32" y="266" class="mono"><tspan class="prompt">$</tspan> <tspan class="cmd">python3 -B scripts/validate_report.py examples/showcase-hybrid-work/report.md \</tspan></text>
-    <text x="52" y="286" class="mono cmd">--level 2 --html examples/showcase-hybrid-work/report.html --strict --reproduce</text>
+    <text x="32" y="266" class="mono"><tspan class="prompt">$</tspan> <tspan class="cmd">python3 -B scripts/validate_report.py examples/level3-emergence-in-physics/report.md \</tspan></text>
+    <text x="52" y="286" class="mono cmd">--level 3 --html examples/level3-emergence-in-physics/report.html --strict --reproduce</text>
   </g>
   <g class="s6">
-    <text x="32" y="314" class="mono ok">✓ Heurisma report validation PASSED: examples/showcase-hybrid-work/report.md</text>
-    <text x="32" y="336" class="mono dim">  SHA-256 verified · analysis.py reproduced byte-for-byte · HTML fresh · 0 external requests</text>
+    <text x="32" y="314" class="mono ok">✓ Heurisma report validation PASSED (Level 3 · 0 errors, 0 warnings)</text>
+    <text x="32" y="336" class="mono dim">  3 subagent gates · 10 verified papers · 2D Ising analysis.py reproduced byte-for-byte</text>
     <text x="32" y="358" class="mono"><tspan class="ok">✓ 54/54 adversarial mutations caught</tspan> <tspan class="dim">· 610/610 tests · Ubuntu / macOS / Windows</tspan> <tspan class="prompt cursor">▌</tspan></text>
   </g>
 </svg>
