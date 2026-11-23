@@ -89,7 +89,7 @@
    [
     "GATE-BINDING",
     "appendix/gates/qa.md",
-    "appendix/gates/qa.md reviewed an earlier version: REVIEWED-SHA256 dfecc0f1214a03f8 != current edef87afd0ef477f; re-run the gate on the current files."
+    "appendix/gates/qa.md reviewed an earlier version: REVIEWED-SHA256 156154e188023d26 != current 35903622b512b70f; re-run the gate on the current files."
    ]
   ],
   "M05": [
@@ -243,7 +243,7 @@
    [
     "HTML-STALE",
     "report.html",
-    "HTML 'report.html' is stale (out of date): sources hash 32b0005f63e8 != embedded a122d5ca3609; re-run render_report.py."
+    "HTML 'report.html' is stale (out of date): sources hash 071e88f455eb != embedded 1491e5f88c79; re-run render_report.py."
    ]
   ],
   "M17": [
@@ -847,7 +847,21 @@
     "appendix/sources.csv",
     "Source 'C5' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
    ]
+  ],
+  "M53": [
+   [
+    "GATE-SV",
+    "appendix/gates/source_verifier.md",
+    "appendix/gates/source_verifier.md ends in SOURCE-VERIFIER: FAIL; fix the problems and re-run the gate, or name each accepted problem with its justification in the report (cite appendix/gates/source_verifier.md in Section 7)."
+   ]
+  ],
+  "M54": [
+   [
+    "GATE-BINDING",
+    "appendix/gates/source_verifier.md",
+    "appendix/gates/source_verifier.md has 2 REVIEWED-SHA256 lines; a later pass must replace the file, not append."
+   ]
   ]
  },
- "version": "0.10.0"
+ "version": "0.10.1"
 }

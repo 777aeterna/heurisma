@@ -307,6 +307,7 @@ One two three four five six
 | Flaw # | Reviewer Critique | Action | Evidence / Artifact |
 | :- | :- | :- | :- |
 | 1 | Cold water kinetics missing | `Fixed` | Added Q10 sensitivity in appendix/analysis.py |
+| 2 | Kinetics without temperature control | `Fixed` | Q10 sensitivity rerun in appendix/analysis.py |
 """
             _seed_gates(root)
             self.assertEqual(validate_report.validate_report(with_backtick_fixed, level=3, report_dir=root), [])
@@ -316,6 +317,7 @@ One two three four five six
 | Flaw # | Reviewer Critique | Action | Evidence / Artifact |
 | :- | :- | :- | :- |
 | 1 | Missing proprietary customs series | `Deferred` | Unavailable |
+| 2 | Kinetics without temperature control | `Fixed` | Q10 sensitivity rerun in appendix/analysis.py |
 """
             errs_missing_log = validate_report.validate_report(with_deferred_no_log, level=3, report_dir=root)
             self.assertTrue(any("data_attempts" in e.lower() or "attempt" in e.lower() for e in errs_missing_log), msg=errs_missing_log)
@@ -654,6 +656,7 @@ One two three four five six
 | Flaw # | Reviewer Critique | Action | Evidence / Artifact |
 | :- | :- | :- | :- |
 | 1 | Cold water kinetics missing | `Fixed` | Added Q10 sensitivity in appendix/analysis.py |
+| 2 | Kinetics without temperature control | `Fixed` | Q10 sensitivity rerun in appendix/analysis.py |
 """
             errs3 = validate_report.validate_report(r3, level=3, report_dir=root)
             self.assertTrue(any("C2" in e and "never cited" in e for e in errs3), msg=errs3)
@@ -735,6 +738,7 @@ One two three four five six
 | Flaw # | Reviewer Critique | Action | Evidence / Artifact |
 | :- | :- | :- | :- |
 | 1 | Band series missing | `Deferred` | Logged in appendix/data_attempts.csv |
+| 2 | Kinetics without temperature control | `Fixed` | Q10 sensitivity rerun in appendix/analysis.py |
 """
 
     def test_inherited_failed_attempt_is_error_at_level3_warning_at_level2(self) -> None:
@@ -845,6 +849,7 @@ One two three four five six
 | Flaw # | Reviewer Critique | Action | Evidence / Artifact |
 | :- | :- | :- | :- |
 | 9 | Serie oficial del techo y piso sin rungs completos | `Deferred` | data_attempts.csv |
+| 2 | Kinetics without temperature control | `Fixed` | Q10 sensitivity rerun in appendix/analysis.py |
 """
             errs3, _ = validate_report.validate_report_full(text, level=3, report_dir=root, run_since="2026-11-20")
             inherited = [e for e in errs3 if "inherited" in e.lower()]
@@ -1121,6 +1126,7 @@ One two three four five six
 | Flaw # | Reviewer Critique | Action | Evidence / Artifact |
 | :- | :- | :- | :- |
 | 1 | Cold water kinetics missing | `Fixed` | Added Q10 sensitivity in appendix/analysis.py |
+| 2 | Kinetics without temperature control | `Fixed` | Q10 sensitivity rerun in appendix/analysis.py |
 """
             _seed_gates(root)
             errs2, _ = validate_report.validate_report_full(report, level=2, report_dir=root)

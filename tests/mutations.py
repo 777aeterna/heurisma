@@ -802,6 +802,20 @@ def m52_publisher_url_hides_the_doi(ws: Path) -> None:
     _cite_literature(ws, doi, title, "Tier 1", url=f"https://www.example.org/articles/{doi}")
 
 
+# ---- v0.10.1: gate laws the validator now counts (second audit)
+def m53_source_verifier_fail_not_named(ws: Path) -> None:
+    """The source verifier ended in FAIL and the report no longer names and justifies the accepted problems."""
+    report = ws / "report.md"
+    report.write_text(report.read_text(encoding="utf-8").replace("appendix/gates/source_verifier.md", "the source-verification gate"), encoding="utf-8")
+
+
+def m54_second_gate_pass_appended(ws: Path) -> None:
+    """A second source-verifier pass is appended below the first instead of replacing the file."""
+    gate = ws / "appendix" / "gates" / "source_verifier.md"
+    text = gate.read_text(encoding="utf-8")
+    gate.write_text(text + "\n\n" + text, encoding="utf-8")
+
+
 MUTATIONS: dict[str, tuple[str, Mutation, bool]] = {
     # name: (description, function, re-render after applying)
     "M01": ("data value changed, HTML re-rendered", m01_data_value_changed, True),
@@ -856,6 +870,8 @@ MUTATIONS: dict[str, tuple[str, Mutation, bool]] = {
     "M50": ("a hand-dropped, unlogged cache file used to explain a papers.csv row", m50_forged_cache_file_explains_a_row, True),
     "M51": ("a recorded full text that is any file, with no SHA-256", m51_fulltext_points_at_any_file, True),
     "M52": ("a preprint declared Tier 1 through a publisher URL that contains the DOI", m52_publisher_url_hides_the_doi, True),
+    "M53": ("a source-verifier FAIL the report no longer names and justifies", m53_source_verifier_fail_not_named, True),
+    "M54": ("a second source-verifier pass appended instead of replacing the file", m54_second_gate_pass_appended, True),
 }
 
 # Mutations the validator does not yet catch -> the v0.8.0 phase that will. Remove an entry when its phase lands.
@@ -917,6 +933,8 @@ EXPECT: dict[str, str] = {
     "M50": r"(?i)no matching SHA-256 in download_log",
     "M51": r"(?i)full text.*(?:SHA-256|appendix/data/papers)",
     "M52": r"(?i)preprint.*Tier 1",
+    "M53": r"SOURCE-VERIFIER: FAIL",
+    "M54": r"REVIEWED-SHA256 lines",
 }
 # Mutations about the gates themselves keep the gates as the mutation left them; every other mutation re-stamps
 # REVIEWED-SHA256 afterwards, as an agent covering its tracks would.

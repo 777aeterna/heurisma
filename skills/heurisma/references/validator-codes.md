@@ -3,7 +3,7 @@
 `python3 -B <skill-dir>/scripts/validate_report.py report.md --level 2 --html report.html --json` prints one JSON object:
 
 ```json
-{"version": "0.10.0", "passed": false, "strict": false,
+{"version": "0.10.1", "passed": false, "strict": false,
  "errors":   [{"severity": "error",   "code": "P0-SHA", "file": "appendix/sources.csv", "line": null, "message": "…"}],
  "warnings": [{"severity": "warning", "code": "P1-ORPHAN", "file": "appendix/data/", "line": null, "message": "…"}]}
 ```
@@ -53,7 +53,9 @@ Codes are stable: a fix script can act on `code` without parsing the English mes
 | `GATE-MISSING` | warning / error | A gate file is missing, empty, or under 400 characters. |
 | `GATE-MARKERS` | warning / error | A gate file lacks the markers its prompt fixes. |
 | `GATE-QA` | warning / error | `qa.md` has no `QA: PASS` and the report does not accept the FAIL. |
-| `GATE-BINDING` | warning / error | A gate's header is incomplete, its hash is stale (for `reviewer.md`, exempted once Section 5 has a closed Disposition Table), a quote does not match, it is a self-review not declared in Section 3, or `reviewer.md` records an `ANALYSIS-SHA256` that `appendix/analysis.py` no longer matches and Section 5 has no *Post-review changes* subsection (checked whenever `reviewer.md` exists). |
+| `GATE-SV` | warning / error | `source_verifier.md` ends in `SOURCE-VERIFIER: FAIL` and the report does not cite `appendix/gates/source_verifier.md` to name and justify the accepted problems. |
+| `GATE-DISP` | error | Level 3: `reviewer.md` raises N numbered critiques (`N. [category]`, `UNVERIFIED:` included; the coverage block is not counted) but the report's Disposition Table has a different number of rows with an action (Fixed / Refuted / Deferred). |
+| `GATE-BINDING` | warning / error | A gate's header is incomplete, its hash is stale (for `reviewer.md`, exempted once Section 5 has a closed Disposition Table), a quote does not match, it is a self-review not declared in Section 3, or `reviewer.md` records an `ANALYSIS-SHA256` that `appendix/analysis.py` no longer matches and Section 5 has no *Post-review changes* subsection (checked whenever `reviewer.md` exists). A gate with more than one `REVIEWED-SHA256` line (a second pass appended instead of replacing the file) is always an error. |
 | `GATE-PRIVACY` | warning / error | A gate file quotes a home-directory path or an unquoted literal marker outside `QUOTE:` lines. |
 | `PRIV-HOME` | error | `report.md` or `report.html` contains a home-directory path. |
 | `HYG-FILES` | warning | Bytecode artifacts or 0-byte files in `appendix/`. |

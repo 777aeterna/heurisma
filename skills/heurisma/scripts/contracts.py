@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-__version__ = "0.10.0"
+__version__ = "0.10.1"
 
 # Epistemic confidence tags (canonical English + localized Spanish)
 TAG_TO_CANONICAL: dict[str, str] = {

@@ -244,6 +244,9 @@ from fetch_lib import fetch  # noqa: E402  retries + backoff, UA, checksum, down
 # Downloading: one call per file. On success it writes appendix/data/<file> and a download_log.csv row with its
 # SHA-256; on failure (or with HEURISMA_OFFLINE=1) it returns None after logging a dated data_attempts.csv row.
 #   fetch("Wholesale FX", "Central Bank API v4", "https://api.example.org/v4/series.csv", "series.csv", APPENDIX)
+# A URL the user typed may use the default (allow_private=True) so a local institutional file remains reachable.
+# A URL taken from a file, a page, or an API response must pass allow_private=False:
+#   fetch(target, source, url_from_file, name, APPENDIX, allow_private=False)
 # Searches done outside this script (web search, catalogue browsing, local inventory) are logged with:
 #   python3 -B <skill-dir>/scripts/local_data.py attempt --csv appendix/data_attempts.csv --target ... --source ... --query ... --outcome ...
 

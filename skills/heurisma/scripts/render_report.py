@@ -170,9 +170,22 @@ def _apply_scientific_notation(text: str) -> str:
     return _SCI_RE.sub(_sci, out)
 
 
+# The validator's HOME_PATH_RE (checks/common.py), widened to the whole path; duplicated so the renderer never imports checks/.
+_HOME_PATH_RE = re.compile(r"(?:/home/[^/\s]+|/Users/[^/\s]+|[A-Za-z]:\\Users\\[^\\\s]+)[^\s\"'`<>|)]*")
+_UNVERIFIED_RE = re.compile(r"^(?!\s*QUOTE:)(.*?UNVERIFIED:).*$", re.MULTILINE)
+
+
 def _redact_local_paths(text: str) -> str:
-    """Replace absolute file:// URIs with their basename so reports never leak the author's home directory."""
-    return FILE_URI_RE.sub(lambda m: "file://" + Path(unquote(m.group(0)[len("file://"):])).name, text)
+    """Replace absolute file:// URIs with their basename, and any other home-directory path with ``[path]``, so the
+    embedded appendix never leaks the author's machine (a gate that quotes a validator message about one, for example)."""
+    text = FILE_URI_RE.sub(lambda m: "file://" + Path(unquote(m.group(0)[len("file://"):])).name, text)
+    return _HOME_PATH_RE.sub("[path]", text)
+
+
+def _omit_unverified(text: str) -> str:
+    """Reviewer #2 marks a fact no source supports with ``UNVERIFIED:``; the gate on disk keeps it, the published HTML does not.
+    ``QUOTE:`` lines are left alone (they are copies of report lines that the validator compares)."""
+    return _UNVERIFIED_RE.sub(lambda m: f"{m.group(1)} [unverified claim omitted]", text)
 
 
 def _convert_math_expr(expr: str) -> str:
@@ -248,7 +261,10 @@ def _is_safe_url(escaped_url: str) -> bool:
 def _is_local_url(escaped_url: str) -> bool:
     """A relative path or fragment: the only kind of address an ``<img>`` may load, so opening the HTML never contacts a server."""
     u = re.sub(r"[\x00-\x20]", "", html.unescape(escaped_url))
-    return _is_safe_url(escaped_url) and re.match(r"[A-Za-z][A-Za-z0-9+.\-]*:", u) is None
+    if not _is_safe_url(escaped_url) or re.match(r"[A-Za-z][A-Za-z0-9+.\-]*:", u) is not None:
+        return False
+    path = re.split(r"[?#]", u, maxsplit=1)[0].replace("\\", "/")
+    return not path.startswith("/") and ".." not in path.split("/")  # nothing outside the report folder
 
 
 def _image_html(alt: str, src: str) -> str:
@@ -660,7 +676,7 @@ def _render_appendices(appendix_dir: Path | None, i18n: dict[str, str]) -> str:
 
         if is_allowed_text and size <= MAX_APPENDIX_FILE_BYTES:
             raw_text = path.read_text(encoding="utf-8", errors="replace")
-            content = html.escape(_redact_local_paths(raw_text))
+            content = html.escape(_redact_local_paths(_omit_unverified(raw_text) if is_gate_trace else raw_text))
             if is_gate_trace:
                 content = content.replace("{{", "&#123;&#123;")
             label = (

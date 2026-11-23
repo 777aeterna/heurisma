@@ -94,7 +94,13 @@ def _check_gate_binding(
     section_positions: dict[str, int],
     gate_sink: list[str],
     warnings: list[str],
+    errors: list[str] | None = None,
 ) -> None:
+    headers = len(re.findall(r"^\s*REVIEWED-SHA256:", gtext, re.MULTILINE))
+    if headers >= 2:  # the validator reads the first header, so an appended pass would be judged by the stale one
+        (gate_sink if errors is None else errors).append(
+            f"appendix/gates/{gate}.md has {headers} REVIEWED-SHA256 lines; a later pass must replace the file, not append."
+        )
     missing = [label for label, pattern in GATE_HEADER_FIELDS if not re.search(pattern, gtext, re.MULTILINE)]
     quotes = _QUOTE_RE.findall(gtext)
     if len(quotes) < GATE_MIN_QUOTES:
@@ -150,3 +156,25 @@ def _check_gate_binding(
                 f"appendix/gates/{gate}.md is a self-review (MODE: self-review), not an independent subagent; say so in "
                 f"Section 3 (e.g. 'gates run as self-review: no subagent tool available')."
             )
+
+
+_REVIEWER_ITEM = re.compile(r"^\s*(?:UNVERIFIED:\s*)?\d+\.\s+\[", re.MULTILINE)
+_DISPOSITION_ACTIONS = {"fixed", "refuted", "deferred", "corregida", "refutada", "diferida"}
+
+
+def reviewer_items(text: str) -> int:
+    """Critiques in a Reviewer #2 answer: numbered lines that open with a ``[category]`` (the coverage block does not)."""
+    return len(_REVIEWER_ITEM.findall(text))
+
+
+def disposition_rows(section5: str) -> int:
+    """Table rows in Section 5 with a cell that is exactly one of the six actions (backticks and asterisks ignored)."""
+    count = 0
+    for line in section5.splitlines():
+        line = line.strip()
+        if not line.startswith("|") or re.fullmatch(r"[|:\-\s]+", line):
+            continue
+        cells = {c.strip().strip("`*").strip().lower() for c in line.strip("|").split("|")}
+        if cells & _DISPOSITION_ACTIONS:
+            count += 1
+    return count

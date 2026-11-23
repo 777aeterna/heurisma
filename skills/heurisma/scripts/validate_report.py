@@ -95,6 +95,8 @@ from checks.gates import (  # noqa: E402
     _SELF_REVIEW_DECLARED_RE as _SELF_REVIEW_DECLARED_RE,
     _gate_files as _gate_files,
     gate_hash as gate_hash,
+    disposition_rows as disposition_rows,
+    reviewer_items as reviewer_items,
     _POST_REVIEW_RE as _POST_REVIEW_RE,
     _analysis_anchor as _analysis_anchor,
     _check_analysis_anchor as _check_analysis_anchor,
@@ -677,13 +679,22 @@ def validate_report_full(
                         f"appendix/gates/{gate}.md is missing marker(s) its prompt requires: {', '.join(missing)} "
                         f"(see references/agents/{gate.replace('_', '-')}.md, Output section)."
                     )
-                _check_gate_binding(gate, gtext, report_dir, clean_text, section_positions, gate_sink, warnings)
+                _check_gate_binding(gate, gtext, report_dir, clean_text, section_positions, gate_sink, warnings, errors=errors)
                 if gate == "qa" and not re.search(r"^QA:\s*PASS\b", gtext, re.MULTILINE):
                     if "gates/qa.md" not in markdown_text:
                         gate_sink.append(
                             "appendix/gates/qa.md has no 'QA: PASS' line; fix the failed checks, or name each accepted "
                             "FAIL with its justification in the report (cite appendix/gates/qa.md in Section 7)."
                         )
+                if (
+                    gate == "source_verifier"
+                    and re.search(r"^\s*SOURCE-VERIFIER:\s*FAIL\b", gtext, re.MULTILINE)
+                    and "gates/source_verifier.md" not in markdown_text
+                ):
+                    gate_sink.append(
+                        "appendix/gates/source_verifier.md ends in SOURCE-VERIFIER: FAIL; fix the problems and re-run the gate, or "
+                        "name each accepted problem with its justification in the report (cite appendix/gates/source_verifier.md in Section 7)."
+                    )
 
             # C8: gate files are embedded in report.html, so they must not quote home paths or literal markers
             if gates_dir.is_dir():
@@ -866,6 +877,15 @@ def validate_report_full(
                 "Level 3 report requires a Reviewer #2 Disposition table recording each critique "
                 "and its action (Fixed / Refuted / Deferred)."
             )
+        reviewer_gate = report_dir / "appendix" / "gates" / "reviewer.md" if report_dir is not None else None
+        if reviewer_gate is not None and reviewer_gate.is_file():
+            n_items = reviewer_items(reviewer_gate.read_text(encoding="utf-8", errors="replace"))
+            n_rows = disposition_rows(clean_text)  # same scope as the existence check above: the table belongs in Section 5
+            if n_items and n_rows != n_items:
+                errors.append(
+                    f"Reviewer #2 raised {n_items} item(s) in appendix/gates/reviewer.md but the Disposition Table has "
+                    f"{n_rows} row(s) with an action; give every critique its own row (Fixed / Refuted / Deferred)."
+                )
 
         has_deferred = bool(
             re.search(

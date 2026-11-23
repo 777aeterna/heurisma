@@ -120,5 +120,48 @@ class TestFencedBlocks(unittest.TestCase):
             self.assertFalse([e for e in errs if "unresolved marker" in e], errs)
 
 
+class TestEmbeddedGatesPublishNothingPrivateOrUnverified(unittest.TestCase):
+    """v0.10.1: a gate file is embedded in report.html, so what the validator refuses in a gate must not reach the reader."""
+
+    def render_gate(self, text: str) -> tuple[str, str]:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = Path(tmp) / "appendix" / "gates" / "reviewer.md"
+            gate.parent.mkdir(parents=True)
+            gate.write_text(text, encoding="utf-8")
+            out = render_report._render_appendices(Path(tmp) / "appendix", render_report.I18N["en"])
+            return out, gate.read_text(encoding="utf-8")
+
+    def test_home_directory_paths_are_redacted(self) -> None:
+        for path in ("/home/alice/studies/x.csv", "/Users/bob/Desktop/y.csv", "C:\\Users\\carol\\z.csv"):
+            out, _ = self.render_gate(f"QA ran on {path} today.\n")
+            self.assertNotIn(path.split("/")[2] if "/" in path else "carol", out, path)
+            self.assertIn("[path]", out, path)
+
+    def test_unverified_claims_are_omitted_but_the_file_and_quote_lines_are_kept(self) -> None:
+        text = (
+            "QUOTE: report.md:3: \"UNVERIFIED: a quoted line stays as it is\"\n"
+            "UNVERIFIED: 2. [4] the 2019 swap line was 4.2 — not in sources.csv — verify it\n"
+            "1. [1] a verified critique stays\n"
+            "3. [2] UNVERIFIED: a policy cap of 17 percent — mid-line prefix\n"
+        )
+        out, on_disk = self.render_gate(text)
+        self.assertNotIn("4.2", out)
+        self.assertNotIn("swap line", out)
+        self.assertNotIn("17 percent", out)
+        self.assertIn("[unverified claim omitted]", out)
+        self.assertIn("a quoted line stays as it is", out)
+        self.assertIn("a verified critique stays", out)
+        self.assertEqual(on_disk, text)
+
+
+class TestImagesNeverReachOutsideTheReport(unittest.TestCase):
+    def test_absolute_and_parent_paths_are_not_embedded(self) -> None:
+        for src in ("/etc/passwd", "../secret", "figures/../../secret.png", "/home/x/a.png"):
+            self.assertNotIn("<img", body(render(f"![x]({src})")), src)
+        self.assertIn('<img src="figures/a.png"', body(render("![y](figures/a.png)")))
+
+
 if __name__ == "__main__":
     unittest.main()
