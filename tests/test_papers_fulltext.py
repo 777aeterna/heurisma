@@ -59,7 +59,7 @@ class TestFulltext(Base):
     def test_an_open_access_pdf_is_saved_hashed_and_registered(self) -> None:
         path = papers.fulltext(self.ctx(), self.record())
         assert path is not None
-        self.assertEqual(path.parent, self.appendix / "data" / "papers")
+        self.assertEqual(path.parent.resolve(), (self.appendix / "data" / "papers").resolve())
         self.assertTrue(path.name.endswith(".pdf") and "10.1038" in path.name)
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         row = next(r for r in read_csv(self.appendix / "papers.csv") if r["doi"] == REAL)
