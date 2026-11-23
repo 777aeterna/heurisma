@@ -1,0 +1,616 @@
+{
+ "abstract_inverted_index": {
+  "(+1.0%)": [
+   232
+  ],
+  "(−2.6%": [
+   221
+  ],
+  ".": [
+   50,
+   77
+  ],
+  "1,2": [
+   49
+  ],
+  "1,612": [
+   95
+  ],
+  "100": [
+   22
+  ],
+  "2021–2022.": [
+   103
+  ],
+  "395": [
+   199
+  ],
+  "3–5": [
+   76
+  ],
+  "America,": [
+   29
+  ],
+  "Chinese": [
+   99
+  ],
+  "Europe": [
+   26
+  ],
+  "Finally,": [
+   174
+  ],
+  "Here": [
+   78
+  ],
+  "However,": [
+   51
+  ],
+  "North": [
+   28
+  ],
+  "Null": [
+   134
+  ],
+  "The": [
+   12,
+   118
+  ],
+  "These": [
+   236
+  ],
+  "We": [
+   104,
+   153,
+   194
+  ],
+  "Working": [
+   0
+  ],
+  "a": [
+   9,
+   31,
+   38,
+   81,
+   98,
+   158,
+   217,
+   228,
+   240,
+   246
+  ],
+  "about": [
+   208
+  ],
+  "adopted": [
+   19
+  ],
+  "affect": [
+   143
+  ],
+  "after": [
+   233
+  ],
+  "also": [
+   195
+  ],
+  "and": [
+   27,
+   44,
+   59,
+   64,
+   73,
+   112,
+   129
+  ],
+  "any": [
+   170
+  ],
+  "argue": [
+   67
+  ],
+  "around": [
+   21
+  ],
+  "at": [
+   42,
+   45
+  ],
+  "average)": [
+   223
+  ],
+  "become": [
+   4
+  ],
+  "been": [
+   18,
+   62
+  ],
+  "before": [
+   224
+  ],
+  "by": [
+   20,
+   116,
+   191
+  ],
+  "career": [
+   74
+  ],
+  "code": [
+   189
+  ],
+  "common": [
+   14
+  ],
+  "commutes.": [
+   133
+  ],
+  "company": [
+   101
+  ],
+  "computer-engineer": [
+   192
+  ],
+  "control": [
+   84
+  ],
+  "damage": [
+   253
+  ],
+  "damages": [
+   70
+  ],
+  "days": [
+   41,
+   245
+  ],
+  "debated,": [
+   63
+  ],
+  "degree.": [
+   11
+  ],
+  "development": [
+   75
+  ],
+  "did": [
+   141
+  ],
+  "difference": [
+   159
+  ],
+  "does": [
+   251
+  ],
+  "each": [
+   47
+  ],
+  "effect": [
+   184,
+   210,
+   220
+  ],
+  "effects": [
+   53,
+   88
+  ],
+  "employee": [
+   172
+  ],
+  "employees": [
+   7,
+   24,
+   58,
+   96,
+   128
+  ],
+  "employees.": [
+   193
+  ],
+  "equivalence": [
+   135,
+   176
+  ],
+  "evidence": [
+   156
+  ],
+  "executives": [
+   66
+  ],
+  "experiment": [
+   203,
+   226
+  ],
+  "experiment.": [
+   235
+  ],
+  "female": [
+   127
+  ],
+  "firms": [
+   60
+  ],
+  "for": [
+   6,
+   125,
+   157,
+   169
+  ],
+  "found": [
+   105,
+   154,
+   196
+  ],
+  "from": [
+   1,
+   92,
+   216,
+   249
+  ],
+  "grades": [
+   145
+  ],
+  "had": [
+   182
+  ],
+  "has": [
+   3,
+   17
+  ],
+  "have": [
+   61
+  ],
+  "home": [
+   2,
+   43,
+   93,
+   250
+  ],
+  "hybrid": [
+   32,
+   55,
+   90,
+   107,
+   139,
+   180,
+   212,
+   241
+  ],
+  "improved": [
+   109
+  ],
+  "in": [
+   25,
+   34,
+   97,
+   102,
+   120,
+   160,
+   201
+  ],
+  "indicate": [
+   238
+  ],
+  "individuals": [
+   36
+  ],
+  "innovation": [
+   72
+  ],
+  "investigating": [
+   86
+  ],
+  "is": [
+   30
+  ],
+  "it": [
+   69
+  ],
+  "job": [
+   110
+  ],
+  "lines": [
+   187
+  ],
+  "long": [
+   132
+  ],
+  "major": [
+   171
+  ],
+  "managers": [
+   200
+  ],
+  "million": [
+   23
+  ],
+  "mix": [
+   39
+  ],
+  "most": [
+   13
+  ],
+  "negative": [
+   219
+  ],
+  "next": [
+   148,
+   164
+  ],
+  "no": [
+   155,
+   183
+  ],
+  "non-managers,": [
+   126
+  ],
+  "not": [
+   142,
+   252
+  ],
+  "null": [
+   175
+  ],
+  "of": [
+   40,
+   54,
+   89,
+   151,
+   188,
+   211
+  ],
+  "on": [
+   57,
+   94,
+   185,
+   214,
+   222
+  ],
+  "one": [
+   231
+  ],
+  "one-third.": [
+   117
+  ],
+  "or": [
+   168
+  ],
+  "over": [
+   146,
+   162
+  ],
+  "overall,": [
+   167
+  ],
+  "perceived": [
+   218,
+   229
+  ],
+  "performance": [
+   144
+  ],
+  "performance.": [
+   254
+  ],
+  "positive": [
+   230
+  ],
+  "productivity,": [
+   71,
+   215
+  ],
+  "promotions": [
+   161
+  ],
+  "quit": [
+   114,
+   121
+  ],
+  "ran": [
+   80
+  ],
+  "randomized": [
+   83
+  ],
+  "rates": [
+   115,
+   122
+  ],
+  "reduced": [
+   113
+  ],
+  "reduction": [
+   119
+  ],
+  "results": [
+   237
+  ],
+  "reviews.": [
+   152
+  ],
+  "revised": [
+   204
+  ],
+  "satisfaction": [
+   111
+  ],
+  "schedule": [
+   242
+  ],
+  "schedule,": [
+   33
+  ],
+  "scheme,": [
+   15
+  ],
+  "showed": [
+   137,
+   178
+  ],
+  "significant": [
+   124
+  ],
+  "six-month": [
+   82
+  ],
+  "some": [
+   65
+  ],
+  "spend": [
+   37
+  ],
+  "standard": [
+   5
+  ],
+  "subgroup.": [
+   173
+  ],
+  "surveyed": [
+   206
+  ],
+  "technology": [
+   100
+  ],
+  "tests": [
+   136,
+   177
+  ],
+  "that": [
+   68,
+   106,
+   138,
+   179,
+   197,
+   239
+  ],
+  "the": [
+   52,
+   87,
+   147,
+   163,
+   186,
+   198,
+   202,
+   209,
+   225,
+   234
+  ],
+  "their": [
+   205
+  ],
+  "those": [
+   130
+  ],
+  "to": [
+   227
+  ],
+  "trial": [
+   85
+  ],
+  "two": [
+   149,
+   165,
+   244
+  ],
+  "university": [
+   10
+  ],
+  "views": [
+   207
+  ],
+  "was": [
+   123
+  ],
+  "we": [
+   79
+  ],
+  "week": [
+   48,
+   247
+  ],
+  "which": [
+   16,
+   35
+  ],
+  "with": [
+   8,
+   131,
+   243
+  ],
+  "work": [
+   46
+  ],
+  "working": [
+   56,
+   91,
+   108,
+   140,
+   181,
+   213,
+   248
+  ],
+  "written": [
+   190
+  ],
+  "years": [
+   150,
+   166
+  ]
+ },
+ "authorships": [
+  {
+   "author": {
+    "display_name": "Nicholas Bloom"
+   },
+   "author_position": "first"
+  },
+  {
+   "author": {
+    "display_name": "Ruobing Han"
+   },
+   "author_position": "middle"
+  },
+  {
+   "author": {
+    "display_name": "James Liang"
+   },
+   "author_position": "last"
+  }
+ ],
+ "cited_by_count": 679,
+ "doi": "https://doi.org/10.1038/s41586-024-07500-2",
+ "has_fulltext": true,
+ "id": "https://openalex.org/W4399567465",
+ "is_retracted": false,
+ "language": "en",
+ "open_access": {
+  "is_oa": true,
+  "oa_status": "hybrid",
+  "oa_url": "https://example.invalid/oa/s41586-024-07500-2.pdf"
+ },
+ "primary_location": {
+  "is_oa": true,
+  "landing_page_url": "https://doi.org/10.1038/s41586-024-07500-2",
+  "license": "cc-by",
+  "pdf_url": "https://example.invalid/oa/s41586-024-07500-2.pdf",
+  "source": {
+   "display_name": "Nature"
+  },
+  "version": "publishedVersion"
+ },
+ "publication_date": "2024-06-12",
+ "publication_year": 2024,
+ "study_designs": [
+  {
+   "display_name": "Randomized Controlled Trial",
+   "id": "https://openalex.org/study-designs/randomized-controlled-trial"
+  },
+  {
+   "display_name": "Clinical Trial",
+   "id": "https://openalex.org/study-designs/clinical-trial"
+  }
+ ],
+ "title": "Hybrid working from home improves retention without damaging performance",
+ "type": "article"
+}

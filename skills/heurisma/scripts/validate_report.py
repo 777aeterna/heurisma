@@ -131,6 +131,9 @@ from checks.provenance import (  # noqa: E402
     _intake_listed_paths as _intake_listed_paths,
     check_inbox as check_inbox,
 )
+from checks.papers import (  # noqa: E402
+    check_papers as check_papers,
+)
 from checks.prereg import (  # noqa: E402
     _files_added_after_prereg as _files_added_after_prereg,
     _NUM_TOKEN_RE as _NUM_TOKEN_RE,
@@ -521,6 +524,9 @@ def validate_report_full(
                 )
                 errors.extend(pre_err)
                 warnings.extend(pre_warn)
+                paper_err, paper_warn = check_papers(report_dir, sources_rows, set(_extract_citation_ids(clean_text)), level, _run_start_dt)
+                errors.extend(paper_err)
+                warnings.extend(paper_warn)
 
                 # V5a: file:// rows in sources.csv must include a sha256 hash
                 for row_idx, srow in enumerate(sources_rows, start=1):
@@ -1068,7 +1074,7 @@ def main(argv: list[str] | None = None) -> int:
         "--gate-header",
         choices=GATE_FILES,
         default=None,
-        help="Print the 3-line gate binding header (MODE, REVIEWED-SHA256, real REVIEWED-UTC) and exit.",
+        help="Print the gate binding header (MODE, REVIEWED-SHA256, real REVIEWED-UTC; plus ANALYSIS-SHA256 for reviewer) and exit.",
     )
     parser.add_argument(
         "--mode",

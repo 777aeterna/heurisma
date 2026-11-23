@@ -1,0 +1,31 @@
+{
+ "message": {
+  "DOI": "10.9999/fake.preprint.1",
+  "URL": "https://doi.org/10.9999/fake.preprint.1",
+  "author": [
+   {
+    "family": "Author",
+    "given": "Fixture",
+    "sequence": "first"
+   }
+  ],
+  "container-title": [],
+  "is-referenced-by-count": 3,
+  "issued": {
+   "date-parts": [
+    [
+     2024,
+     5,
+     1
+    ]
+   ]
+  },
+  "publisher": "Fixture Preprint Server",
+  "title": [
+   "A synthetic preprint about fixtures"
+  ],
+  "type": "posted-content"
+ },
+ "message-type": "work",
+ "status": "ok"
+}

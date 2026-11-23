@@ -243,7 +243,7 @@
    [
     "HTML-STALE",
     "report.html",
-    "HTML 'report.html' is stale (out of date): sources hash c18a17bb9622 != embedded a3d272550c48; re-run render_report.py."
+    "HTML 'report.html' is stale (out of date): sources hash 32b0005f63e8 != embedded a122d5ca3609; re-run render_report.py."
    ]
   ],
   "M17": [
@@ -546,7 +546,308 @@
     "appendix/sources.csv",
     "inbox/sources/stray.pdf is not registered in appendix/sources.csv; run `local_data.py intake` or remove it."
    ]
+  ],
+  "M40": [
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C2 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C5' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C5 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P3-PAPER",
+    "appendix/papers.csv",
+    "Source 'C5' (10.9999/typed.from.memory.1) is not in appendix/papers.csv: the connector never retrieved it, so the reference was typed from memory; find it with `papers.py search` or `lookup` first."
+   ]
+  ],
+  "M41": [
+   [
+    "P3-PAPER",
+    "appendix/papers.csv",
+    "Source 'C5' (10.9999/fake.preprint.1) is a preprint in appendix/papers.csv (not peer reviewed as published) but is declared Tier 1; a preprint is Tier 2 at most (cite the published version if there is one)."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C2 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C5' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C5 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C5' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ]
+  ],
+  "M42": [
+   [
+    "P3-PAPER",
+    "appendix/papers.csv",
+    "Source 'C5' (10.9999/fake.retracted.1) is retracted according to appendix/papers.csv and the report cites it; remove the claim it supports."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C2 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C5' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C5 or its URL; log the retrieval with `local_data.py attempt`."
+   ]
+  ],
+  "M43": [
+   [
+    "P3-PAPER",
+    "appendix/papers.csv",
+    "appendix/papers.csv: 'appendix/data/papers/10.9999_fake.fulltext.1.txt' changed since it was recorded: SHA-256 770a83d18df9 != recorded 1781d7392415."
+   ],
+   [
+    "P0-SHA",
+    "appendix/download_log.csv",
+    "appendix/download_log.csv: 'papers/10.9999_fake.fulltext.1.txt' changed since it was logged: SHA-256 770a83d18df9 != declared 1781d7392415."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C2 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ]
+  ],
+  "M44": [
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C2 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C5' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C5 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P3-PAPER",
+    "appendix/papers.csv",
+    "Source 'C5' (10.9999/fake.title.1): the title in sources.csv does not match the title papers.csv records for the same DOI ('Quarterly attrition among hospital nurses'); a reference whose title was changed or invented is not the paper the DOI names."
+   ]
+  ],
+  "M45": [
+   [
+    "PRIV-CRED",
+    "appendix/",
+    "appendix/search_log.csv contains a credential (api_key= followed by a value): a key or contact address must never be written to the appendix; remove it and rotate the key."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C2 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ],
+   [
+    "P3-PAPER",
+    "appendix/papers.csv",
+    "appendix/papers.csv: Q1: the cache file https://api.openalex.org/works?search=x&api_key=abc123def456&mailto=alias@example.org listed in search_log.csv is missing"
+   ]
+  ],
+  "M46": [
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C2 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C5' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C5 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C5' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ],
+   [
+    "P3-PAPER",
+    "appendix/papers.csv",
+    "Source 'C5' (10.9999/fake.imported.1) is Tier 1 but its record was imported (attested by the agent, not retrieved by the connector); retrieve it with `papers.py lookup` so the connector can vouch for it."
+   ]
+  ],
+  "M47": [
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C2 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ],
+   [
+    "P3-PAPER",
+    "appendix/papers.csv",
+    "appendix/papers.csv: 10.9999/fake.edited.1: title 'A title nobody retrieved' differs from every cached response"
+   ]
+  ],
+  "M48": [
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C2 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C5' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C5 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C5' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ],
+   [
+    "P3-PAPER",
+    "appendix/papers.csv",
+    "appendix/papers.csv: 10.9999/fake.relabelled.1: via is 'api' but the cached responses give 'import'"
+   ]
+  ],
+  "M49": [
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C2 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C5' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C5 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P3-PAPER",
+    "appendix/papers.csv",
+    "appendix/papers.csv: 10.9999/fake.backdated.1: retrieved_utc is '2026-11-20T13:00:00Z' but the newest cached response was logged at '2026-11-20T11:00:00Z'"
+   ]
+  ],
+  "M50": [
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C2 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ],
+   [
+    "P3-PAPER",
+    "appendix/papers.csv",
+    "appendix/papers.csv: openalex-fa1540b14156-001.json: no matching SHA-256 in download_log.csv (a response the connector did not fetch, or one edited since); it explains no row"
+   ],
+   [
+    "P3-PAPER",
+    "appendix/papers.csv",
+    "appendix/papers.csv: 10.9999/fake.forged.1: no cached response supports this row (added by hand, or its cache file is missing)"
+   ],
+   [
+    "P1-ORPHAN",
+    "appendix/data/",
+    "Orphan data file 'appendix/data/papers/raw/openalex-fa1540b14156-001.json' is not logged in appendix/download_log.csv or appendix/sources.csv."
+   ]
+  ],
+  "M51": [
+   [
+    "P3-PAPER",
+    "appendix/papers.csv",
+    "appendix/papers.csv: the full text 'report.md' of 10.9999/fake.fulltext.2 is not a file under appendix/data/papers/, where `papers.py cite --fulltext` saves it; a path elsewhere cannot show what was downloaded."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C2 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ]
+  ],
+  "M52": [
+   [
+    "P3-PAPER",
+    "appendix/papers.csv",
+    "Source 'C5' (10.9999/fake.publisher.1) is a preprint in appendix/papers.csv (not peer reviewed as published) but is declared Tier 1; a preprint is Tier 2 at most (cite the published version if there is one)."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C2 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C5' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C5 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C5' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ]
   ]
  },
- "version": "0.9.0"
+ "version": "0.10.0"
 }

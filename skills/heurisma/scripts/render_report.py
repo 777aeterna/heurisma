@@ -245,6 +245,21 @@ def _is_safe_url(escaped_url: str) -> bool:
     return m is None or m.group(1).lower() in _SAFE_SCHEMES
 
 
+def _is_local_url(escaped_url: str) -> bool:
+    """A relative path or fragment: the only kind of address an ``<img>`` may load, so opening the HTML never contacts a server."""
+    u = re.sub(r"[\x00-\x20]", "", html.unescape(escaped_url))
+    return _is_safe_url(escaped_url) and re.match(r"[A-Za-z][A-Za-z0-9+.\-]*:", u) is None
+
+
+def _image_html(alt: str, src: str) -> str:
+    """``![alt](src)``: embed a local image; a remote one becomes a plain link (no request until the reader clicks), anything unsafe its alt text."""
+    if _is_local_url(src):
+        return f'<img src="{src}" alt="{alt}" loading="lazy">'
+    if _is_safe_url(src) and re.match(r"https?:", html.unescape(src).strip(), re.IGNORECASE):
+        return f'<a href="{src}">{alt or src}</a>'
+    return alt
+
+
 def _split_table_cells(row: str) -> list[str]:
     """Split a Markdown table row on unescaped pipes; ``\\|`` stays inside its cell."""
     inner = row.strip()
@@ -312,12 +327,7 @@ def _format_inline(text: str, tracker: _CitationTracker | None = None) -> str:
     escaped = _AUTOLINK_RE.sub(
         lambda m: f'<a href="{m.group(1)}">{m.group(1)}</a>' if _is_safe_url(m.group(1)) else m.group(1), escaped
     )
-    escaped = _IMAGE_RE.sub(
-        lambda m: (
-            f'<img src="{m.group(2)}" alt="{m.group(1)}" loading="lazy">' if _is_safe_url(m.group(2)) else m.group(1)
-        ),
-        escaped,
-    )
+    escaped = _IMAGE_RE.sub(lambda m: _image_html(m.group(1), m.group(2)), escaped)
     escaped = _LINK_RE.sub(
         lambda m: f'<a href="{m.group(2)}">{m.group(1)}</a>' if _is_safe_url(m.group(2)) else m.group(1),
         escaped,

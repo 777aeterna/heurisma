@@ -1,0 +1,15 @@
+{
+ "best_oa_location": {
+  "host_type": "publisher",
+  "license": "cc-by",
+  "url": "https://example.invalid/oa/s41586-024-07500-2",
+  "url_for_pdf": "https://example.invalid/oa/s41586-024-07500-2.pdf",
+  "version": "publishedVersion"
+ },
+ "doi": "10.1038/s41586-024-07500-2",
+ "is_oa": true,
+ "journal_name": "Nature",
+ "oa_status": "hybrid",
+ "title": "Hybrid working from home improves retention without damaging performance",
+ "year": 2024
+}

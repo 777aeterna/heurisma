@@ -44,7 +44,8 @@ Every major claim in Section 1, Section 4, and **every row** of Section 6 (`Clai
    - Never embed scripts or raw console outputs inside `report.md`. Keep it focused on scientific argument, tables, citations, and `{{fig:id}}` figures.
 8. **Commands:** run every script with `python3 -B` in instructions, `appendix/README.md`, and examples.
 9. **Voice:** write in the impersonal or first-person plural voice — *"the analysis shows"*, *"only the abstract could be retrieved"*, *"we re-ran the integration with half the step"*; in Spanish, *"el análisis muestra"*, *"solo pudo recuperarse el resumen"*, *"repetimos la integración con la mitad del paso"*. This applies to every section, including Limitations.
-10. **Re-render after every edit:** the HTML carries a hash of `report.md`, `charts.json` and `appendix/`; the validator reports a stale HTML when any of them changed after rendering.
+10. **Nothing copied from outside:** never paste Markdown links, images or HTML from a web page, an API response or a user document into `report.md`; quote it as plain text and link only URLs registered in `sources.csv`. An image is embedded only from a relative path (your own figures go through `{{fig:id}}`); `![…](https://…)` renders as a plain link, so opening the HTML never contacts another server.
+11. **Re-render after every edit:** the HTML carries a hash of `report.md`, `charts.json` and `appendix/`; the validator reports a stale HTML when any of them changed after rendering.
 
 ---
 

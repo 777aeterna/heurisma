@@ -66,6 +66,30 @@ class TestImages(unittest.TestCase):
         self.assertIn("alt text", out)
 
 
+class TestRemoteImages(unittest.TestCase):
+    """An image copied from a web page into report.md must not make the finished HTML contact that server when it is opened."""
+
+    def test_a_remote_image_is_a_link_not_an_embedded_resource(self) -> None:
+        out = body(render("![Chart from a site](https://tracker.example/pixel.png?id=1)"))
+        self.assertNotIn("<img", out)
+        self.assertIn('<a href="https://tracker.example/pixel.png?id=1">Chart from a site</a>', out)
+
+    def test_a_remote_image_without_alt_text_shows_its_address(self) -> None:
+        out = body(render("![](https://tracker.example/p.png)"))
+        self.assertNotIn("<img", out)
+        self.assertIn('<a href="https://tracker.example/p.png">https://tracker.example/p.png</a>', out)
+
+    def test_nothing_in_a_whole_document_loads_from_the_network(self) -> None:
+        html_out = render("![a](https://x.example/a.png) ![b](http://x.example/b.png) ![c](//x.example/c.png) [link](https://x.example/)")
+        self.assertNotRegex(html_out, r'(?:src|srcset|data)="(?:https?:)?//')
+        self.assertNotRegex(html_out, r"url\(\s*['\"]?(?:https?:)?//")
+
+    def test_relative_images_and_other_schemes(self) -> None:
+        self.assertIn('<img src="appendix/fig.png" alt="ok"', body(render("![ok](appendix/fig.png)")))
+        for src in ("mailto:a@example.org", "//evil.example/p.png", "data:image/png;base64,AAAA", "ftp://x.example/p.png"):
+            self.assertNotIn("<img", body(render(f"![x]({src})")), src)
+
+
 class TestTables(unittest.TestCase):
     def test_escaped_pipe_stays_inside_its_cell(self) -> None:
         out = body(render("| A | B |\n| :- | :- |\n| a \\| b | 2 |\n"))

@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-__version__ = "0.9.0"
+__version__ = "0.10.0"
 
 # Epistemic confidence tags (canonical English + localized Spanish)
 TAG_TO_CANONICAL: dict[str, str] = {
@@ -55,6 +55,32 @@ CANONICAL_DATA_ATTEMPTS_COLS: tuple[str, ...] = (
 )
 
 ATTEMPT_COLS: tuple[str, ...] = CANONICAL_DATA_ATTEMPTS_COLS + ("attempted_utc",)
+
+# Paper connector (scripts/papers.py): the registry columns and the work types it can tell apart
+PAPER_COLS: tuple[str, ...] = (
+    "doi",
+    "title",
+    "first_author",
+    "n_authors",
+    "year",
+    "venue",
+    "work_type",
+    "is_retracted",
+    "is_oa",
+    "oa_url",
+    "pmcid",
+    "abstract_sha256",
+    "fulltext_file",
+    "fulltext_sha256",
+    "providers",
+    "via",
+    "retrieved_utc",
+    "query_id",
+)
+SEARCH_LOG_COLS: tuple[str, ...] = ("query_id", "provider", "query", "filters", "n_hits", "retrieved_utc", "raw_file")
+WORK_TYPES: tuple[str, ...] = ("article", "preprint", "report", "conference", "book", "dataset", "other")
+# Not peer reviewed as published: capped at Tier 2 (a working paper is not a journal article, whoever hosts it)
+NON_PEER_REVIEWED: tuple[str, ...] = ("preprint", "report")
 
 # Verification gates
 GATE_FILES: tuple[str, ...] = ("source_verifier", "reviewer", "qa")

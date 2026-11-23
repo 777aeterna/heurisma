@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/XRfvktfZS5/KeCSnVSDb7kNn8vw</id>
+  <title>arXiv Query: search_query=all:"hybrid work"&amp;id_list=&amp;start=0&amp;max_results=2</title>
+  <updated>2026-11-23T13:20:17Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=all:%22hybrid+work%22&amp;start=0&amp;max_results=2&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>2</opensearch:itemsPerPage>
+  <opensearch:totalResults>62</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2503.13002v1</id>
+    <title>Hybrid Work in Agile Software Development: Recurring Meetings</title>
+    <updated>2025-03-17T09:58:06Z</updated>
+    <link href="https://arxiv.org/abs/2503.13002v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2503.13002v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The Covid-19 pandemic established hybrid work as the new norm in software development companies. In large-scale agile, meetings of different types are pivotal for collaboration, and decisions need to be taken on how they are organized and carried out in hybrid work. This study investigates how recurring meetings are organized and carried out in hybrid work in a large-scale agile environment. We performed a single case study by conducting 27 semi-structured interviews with members of 15 agile teams, product owners, managers, and specialists from two units of Ericsson, a multinational telecommunications company with a "2 days per week at the office" policy. A key insight from this study is that different types of meetings in agile software development should be primarily organized onsite or remotely based on the meeting intent, i.e., meetings requiring active discussion or brainstorming, such as retrospectives or technical discussions, benefit from onsite attendance, whereas large information sharing meetings work well remotely. In hybrid work, community meetings can contribute to knowledge sharing within organizations, help strengthen social ties, and prevent siloed collaboration. Additionally, the use of cameras is recommended for small discussion-oriented remote and hybrid meetings.</summary>
+    <category term="cs.SE" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2025-03-17T09:58:06Z</published>
+    <arxiv:comment>Preprint of accepted paper for CHASE 2025 (18th International Conference on Cooperative and Human Aspects of Software Engineering)</arxiv:comment>
+    <arxiv:primary_category term="cs.SE"/>
+    <author>
+      <name>Emily Laue Christensen</name>
+    </author>
+    <author>
+      <name>Maria Paasivaara</name>
+    </author>
+    <author>
+      <name>Iflaah Salman</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2401.08922v1</id>
+    <title>Post-Pandemic Hybrid Work in Software Companies: Findings from an Industrial Case Study</title>
+    <updated>2024-01-17T02:08:37Z</updated>
+    <link href="https://arxiv.org/abs/2401.08922v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2401.08922v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Context. Software professionals learned from their experience during the pandemic that most of their work can be done remotely, and now software companies are expected to adopt hybrid work models to avoid the resignation of talented professionals who require more flexibility and work-life balance. However, hybrid work is a spectrum of flexible work arrangements, and currently, there are no well-established hybrid work configurations to be followed in the post-pandemic period. Goal. We investigated how software engineers are experiencing the post-pandemic hybrid work landscape, aiming to understand the factors that influence their choices between remote and in-office work. Method. We explored a large South American company by collecting quantitative and qualitative data from 545 software professionals who are currently navigating diverse hybrid work arrangements tailored to their individual and team requirements. Findings. Our study revealed an array of factors that significantly impact hybrid work within the software industry, including individual preferences, work-life balance, commute time, social interactions, productivity, and more. Team dynamics, project demands, client expectations, and organizational strategies also play an important role in shaping the complex landscape of hybrid work configurations in software engineering. Conclusions. In summary, the success of hybrid work models depends on balancing individual preferences, team dynamics, and organizational strategies. Our study demonstrated that, at present, there is no one-size-fits-all individual approach to hybrid work in the software industry.</summary>
+    <category term="cs.SE" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-01-17T02:08:37Z</published>
+    <arxiv:primary_category term="cs.SE"/>
+    <author>
+      <name>Ronnie de Souza Santos</name>
+    </author>
+    <author>
+      <name>Willian Grillo</name>
+    </author>
+    <author>
+      <name>Djafran Cabral</name>
+    </author>
+    <author>
+      <name>Catarina de Castro</name>
+    </author>
+    <author>
+      <name>Nicole Albuquerque</name>
+    </author>
+    <author>
+      <name>Cesar França</name>
+    </author>
+  </entry>
+</feed>

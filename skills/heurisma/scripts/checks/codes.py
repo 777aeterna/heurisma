@@ -9,6 +9,10 @@ import re
 # Stable machine-readable codes for --json (documented in references/validator-codes.md; keep the two in sync).
 # (message regex, code, file template: \1 = first group of the regex). The first matching rule wins.
 CODE_RULES: list[tuple[str, str, str]] = [
+    (r"^appendix/papers\.csv: ", "P3-PAPER", "appendix/papers.csv"),
+    (r"^Source '[^']*' \(\S+\) (?:is not in appendix/papers\.csv|was retrieved by the connector|is a (?:preprint|report) in appendix/papers\.csv|is retracted according to appendix/papers\.csv|is Tier 1 but its record was imported)", "P3-PAPER", "appendix/papers.csv"),
+    (r"^Source '[^']*' \(\S+\): the title in sources\.csv does not match the title papers\.csv records", "P3-PAPER", "appendix/papers.csv"),
+    (r"^appendix/\S+ contains a credential", "PRIV-CRED", "appendix/"),
     (r"^Report is empty", "STRUCT-EMPTY", "report.md"),
     (r"^Missing required section", "STRUCT-SECTION", "report.md"),
     (r"^Section out of order", "STRUCT-ORDER", "report.md"),

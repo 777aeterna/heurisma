@@ -1,0 +1,83 @@
+{
+ "hitCount": 2,
+ "request": {
+  "pageSize": 2,
+  "queryString": "fixture",
+  "resultType": "core"
+ },
+ "resultList": {
+  "result": [
+   {
+    "abstractText": "Synthetic abstract text standing in for the one this record did not return.",
+    "authorString": "Kovács KE.",
+    "citedByCount": 0,
+    "doi": "10.3389/fpsyg.2026.1921608",
+    "fullTextUrlList": {
+     "fullTextUrl": [
+      {
+       "availability": "Subscription required",
+       "availabilityCode": "S",
+       "documentStyle": "doi",
+       "site": "DOI",
+       "url": "https://doi.org/10.3389/fpsyg.2026.1921608"
+      },
+      {
+       "availability": "Open access",
+       "availabilityCode": "OA",
+       "documentStyle": "html",
+       "site": "Europe_PMC",
+       "url": "https://europepmc.org/articles/PMC13729011"
+      },
+      {
+       "availability": "Open access",
+       "availabilityCode": "OA",
+       "documentStyle": "pdf",
+       "site": "Europe_PMC",
+       "url": "https://europepmc.org/articles/PMC13729011?pdf=render"
+      }
+     ]
+    },
+    "hasPDF": "Y",
+    "id": "42979280",
+    "inEPMC": "Y",
+    "isOpenAccess": "Y",
+    "journalInfo": {
+     "journal": {
+      "title": "Frontiers in psychology"
+     }
+    },
+    "language": "eng",
+    "license": "cc by",
+    "pmcid": "PMC13729011",
+    "pmid": "42979280",
+    "pubTypeList": {
+     "pubType": [
+      "data-paper",
+      "Journal Article"
+     ]
+    },
+    "pubYear": "2026",
+    "source": "MED",
+    "title": "The sport persistence training dataset: a randomized controlled pre-post dataset on sport persistence and related psychological resources among young athletes in Hungary."
+   },
+   {
+    "abstractText": "A synthetic preprint abstract.",
+    "authorString": "Author F.",
+    "doi": "10.9999/fake.preprint.1",
+    "hasPDF": "N",
+    "id": "PPR999999",
+    "inEPMC": "N",
+    "isOpenAccess": "Y",
+    "pubTypeList": {
+     "pubType": [
+      "Preprint"
+     ]
+    },
+    "pubYear": "2024",
+    "source": "PPR",
+    "title": "A synthetic preprint about fixtures"
+   }
+  ]
+ },
+ "version": "6.9"
+}

@@ -17,7 +17,7 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "skills" / "heurisma" / "scripts"
@@ -595,6 +595,213 @@ def m39_unprocessed_file_left_in_inbox(ws: Path) -> None:
     )
 
 
+# ------------------------------------------------------------------------------------------ v0.10.0 mutations (M40+)
+from contracts import PAPER_COLS, SEARCH_LOG_COLS  # noqa: E402  (the connector's schemas live in contracts.py)
+
+BLOOM_DOI = "10.1038/s41586-024-07500-2"
+BLOOM_TITLE = "Hybrid working from home improves retention without damaging performance"
+
+
+def _paper(doi: str, title: str, **kw: str) -> dict[str, str]:
+    row = {
+        "doi": doi, "title": title, "first_author": "Fixture Author", "n_authors": "1", "year": "2024", "venue": "Journal of Fixtures",
+        "work_type": "article", "is_retracted": "false", "is_oa": "false", "abstract_sha256": "a" * 64, "fulltext_file": "",
+        "fulltext_sha256": "", "providers": "openalex", "via": "api", "retrieved_utc": "2026-11-20T12:00:00Z", "query_id": "Q1",
+    }
+    row.update(kw)
+    return row
+
+
+_ABSTRACT = "A short abstract."
+
+
+def _cache_for(ws: Path, rec: dict[str, str], *, prefix: str = "", retrieved: str = "2026-11-20T12:00:00Z", log: bool = True) -> str:
+    """Write the OpenAlex response the connector would have cached for ``rec``, hash it in download_log.csv, so replay explains the row.
+
+    ``prefix="import_"`` caches it the way ``papers.py import`` does; ``log=False`` leaves it unlogged (a file dropped in by hand)."""
+    import hashlib
+    import json
+
+    work = {
+        "id": f"https://openalex.org/W{int(hashlib.sha256(rec['doi'].encode('utf-8')).hexdigest()[:8], 16) % 10**8}", "doi": f"https://doi.org/{rec['doi']}", "title": rec["title"],
+        "publication_year": int(rec["year"]), "type": rec["work_type"], "is_retracted": rec["is_retracted"] == "true",
+        "authorships": [{"author": {"display_name": rec["first_author"]}}] * int(rec["n_authors"]),
+        "primary_location": {"source": {"display_name": rec["venue"]}}, "open_access": {"is_oa": rec["is_oa"] == "true", "oa_url": None},
+        "abstract_inverted_index": {w: [i] for i, w in enumerate(_ABSTRACT.split())},
+    }
+    payload = json.dumps(work).encode("utf-8")
+    digest = hashlib.sha256(payload).hexdigest()
+    name = f"papers/raw/{prefix}openalex-{digest[:12]}-001.json"
+    target = ws / "appendix" / "data" / name
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(payload)
+    if log:
+        log_path = ws / "appendix" / "download_log.csv"
+        new = not log_path.exists()
+        with log_path.open("a", encoding="utf-8", newline="") as fh:
+            if new:
+                fh.write("file,url,retrieved_utc,bytes,sha256\n")
+            fh.write(f"{name},https://api.openalex.org/works/doi:{rec['doi']},{retrieved},{len(payload)},{digest}\n")
+    return f"appendix/data/{name}"
+
+
+def _papers_workspace(
+    ws: Path,
+    extra: list[dict[str, str]] | None = None,
+    search_rows: list[dict[str, str]] | None = None,
+    cache_opts: dict[str, dict[str, Any]] | None = None,
+) -> None:
+    """Give the golden copy a connector registry: papers.csv with the real article (and ``extra`` records), their cached
+    responses and a search log. A clean registry replays cleanly; each mutation then breaks exactly one thing."""
+    import hashlib
+
+    _add_selection_columns(ws)
+    rows = [_paper(BLOOM_DOI, BLOOM_TITLE, first_author="Bloom", n_authors="3", venue="Nature", is_oa="true")]
+    rows += extra or []
+    cached = []
+    unlogged: set[int] = set()
+    for i, r in enumerate(rows):
+        r["abstract_sha256"] = hashlib.sha256(_ABSTRACT.encode("utf-8")).hexdigest()
+        opts = (cache_opts or {}).get(r["doi"], {})
+        cached.append(_cache_for(ws, r, **opts))
+        if opts.get("log") is False:
+            unlogged.add(i)
+    for name, cols, data in (
+        ("papers.csv", PAPER_COLS, rows),
+        ("search_log.csv", SEARCH_LOG_COLS, search_rows or [
+            {"query_id": f"Q{i + 1}", "provider": "openalex", "query": "hybrid work attrition", "filters": "", "n_hits": "1",
+             "retrieved_utc": "2026-11-20T12:00:00Z", "raw_file": raw}
+            for i, raw in enumerate(cached) if i not in unlogged  # one logged search per legitimate cache file
+        ]),
+    ):
+        with (ws / "appendix" / name).open("w", encoding="utf-8", newline="") as fh:
+            w = csv.DictWriter(fh, fieldnames=cols)
+            w.writeheader()
+            w.writerows(data)
+
+
+def _cite_literature(ws: Path, doi: str, title: str, tier: str, claim_id: str = "C5", url: str = "") -> None:
+    """Register a literature source for ``doi`` (``url`` defaults to its doi.org link) and cite it in the report."""
+
+    def fn(rows: list[dict[str, str]], cols: list[str]) -> tuple[list[dict[str, str]], list[str]]:
+        rows.append({
+            "claim_id": claim_id, "source_title": title, "url": url or f"https://doi.org/{doi}", "tier": tier, "accessed_date": "2026-11-20",
+            "data_as_of": "2024-06", "kind": "literature", "selection": "agent-fetched", "retrieved_utc": "2026-11-20T12:00:00Z",
+        })
+        return rows, cols
+
+    _rewrite_csv(ws, "appendix/sources.csv", fn)
+    _edit(ws, "report.md", _ROW2, _ROW2.replace("[@C4]", f"[@C4; @{claim_id}]"))
+
+
+def m40_typed_doi_not_in_papers_csv(ws: Path) -> None:
+    """An agent-fetched literature row names a DOI that the connector never retrieved (typed from memory)."""
+    _papers_workspace(ws)
+    _cite_literature(ws, "10.9999/typed.from.memory.1", "A paper cited from memory", "Tier 2")
+
+
+def m41_preprint_declared_tier1(ws: Path) -> None:
+    """A work the connector recorded as a preprint is registered as Tier 1."""
+    _papers_workspace(ws, [_paper("10.9999/fake.preprint.1", "A synthetic preprint about fixtures", work_type="preprint")])
+    _cite_literature(ws, "10.9999/fake.preprint.1", "A synthetic preprint about fixtures", "Tier 1")
+
+
+def m42_retracted_work_cited(ws: Path) -> None:
+    """A work recorded as retracted is cited in the report."""
+    _papers_workspace(ws, [_paper("10.9999/fake.retracted.1", "A synthetic retracted article", is_retracted="true")])
+    _cite_literature(ws, "10.9999/fake.retracted.1", "A synthetic retracted article", "Tier 2")
+
+
+def m43_fulltext_edited_after_registration(ws: Path) -> None:
+    """The open-access full text saved by the connector is edited after its hash was logged (regression of P0-SHA)."""
+    import hashlib
+
+    rel = "appendix/data/papers/10.9999_fake.fulltext.1.txt"
+    target = ws / rel
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("The full text as it was downloaded.\n", encoding="utf-8")
+    digest = hashlib.sha256(target.read_bytes()).hexdigest()
+    (ws / "appendix" / "download_log.csv").write_text(
+        "file,url,retrieved_utc,bytes,sha256\n"  # `file` is relative to appendix/data/, as fetch_lib writes it
+        + f"papers/{target.name},https://doi.org/10.9999/fake.fulltext.1,2026-11-20T12:00:00Z,{target.stat().st_size},{digest}\n",
+        encoding="utf-8",
+    )
+    _papers_workspace(ws, [_paper("10.9999/fake.fulltext.1", "A synthetic article with saved full text", fulltext_file=rel, fulltext_sha256=digest)])
+    target.write_text("The full text, quietly rewritten afterwards.\n", encoding="utf-8")
+
+
+def m44_title_differs_from_papers_csv(ws: Path) -> None:
+    """sources.csv gives the DOI a title unrelated to the one the connector recorded."""
+    _papers_workspace(ws, [_paper("10.9999/fake.title.1", "Quarterly attrition among hospital nurses")])
+    _cite_literature(ws, "10.9999/fake.title.1", "Remote work and productivity gains in software teams", "Tier 2")
+
+
+def m45_credentials_left_in_appendix(ws: Path) -> None:
+    """A logged request URL keeps the API key and the contact address in appendix/."""
+    _papers_workspace(
+        ws,
+        search_rows=[{
+            "query_id": "Q1", "provider": "openalex", "query": "hybrid work attrition", "filters": "", "n_hits": "6",
+            "retrieved_utc": "2026-11-20T12:00:00Z",
+            "raw_file": "https://api.openalex.org/works?search=x&api_key=abc123def456&mailto=alias@example.org",
+        }],
+    )
+
+
+def m47_papers_csv_edited_by_hand(ws: Path) -> None:
+    """A title in papers.csv is edited after the connector cached the response that gave the original one."""
+    _papers_workspace(ws, [_paper("10.9999/fake.edited.1", "The title the databases gave")])
+    p = ws / "appendix" / "papers.csv"
+    p.write_text(p.read_text(encoding="utf-8").replace("The title the databases gave", "A title nobody retrieved"), encoding="utf-8")
+
+
+def m46_imported_record_carries_tier1(ws: Path) -> None:
+    """A record the agent imported by hand (not retrieved by the connector) sustains a Tier 1 source."""
+    _papers_workspace(
+        ws,
+        [_paper("10.9999/fake.imported.1", "A synthetic article whose record was imported", via="import")],
+        cache_opts={"10.9999/fake.imported.1": {"prefix": "import_"}},
+    )
+    _cite_literature(ws, "10.9999/fake.imported.1", "A synthetic article whose record was imported", "Tier 1")
+
+
+# ---- v0.10.0 audit: ways to make a connector registry say what the cache does not (M48+)
+def m48_via_import_relabelled_api(ws: Path) -> None:
+    """A record the agent imported is relabelled ``via=api`` in papers.csv so it can sustain Tier 1."""
+    doi, title = "10.9999/fake.relabelled.1", "A synthetic article whose provenance was relabelled"
+    _papers_workspace(ws, [_paper(doi, title, via="api")], cache_opts={doi: {"prefix": "import_"}})
+    _cite_literature(ws, doi, title, "Tier 1")
+
+
+def m49_retrieved_utc_moved_into_the_run(ws: Path) -> None:
+    """papers.csv says the work was retrieved inside the run; the cache says it was retrieved before it started."""
+    doi, title = "10.9999/fake.backdated.1", "A synthetic article retrieved before the run"
+    _papers_workspace(
+        ws,
+        [_paper(doi, title, retrieved_utc="2026-11-20T13:00:00Z")],
+        cache_opts={doi: {"retrieved": "2026-11-20T11:00:00Z"}},
+    )
+    _cite_literature(ws, doi, title, "Tier 2")
+
+
+def m50_forged_cache_file_explains_a_row(ws: Path) -> None:
+    """A response file dropped into raw/ by hand (no search_log row, no download_log hash) is used to explain a hand-written row."""
+    doi = "10.9999/fake.forged.1"
+    _papers_workspace(ws, [_paper(doi, "A synthetic article nobody retrieved")], cache_opts={doi: {"log": False}})
+
+
+def m51_fulltext_points_at_any_file(ws: Path) -> None:
+    """A recorded full text is the report itself and has no SHA-256, so nothing can ever show it changed."""
+    _papers_workspace(ws, [_paper("10.9999/fake.fulltext.2", "A synthetic article with a fake full text", fulltext_file="report.md", fulltext_sha256="")])
+
+
+def m52_publisher_url_hides_the_doi(ws: Path) -> None:
+    """A preprint is declared Tier 1 with the publisher's URL (the DOI is inside the path) instead of a doi.org link."""
+    doi, title = "10.9999/fake.publisher.1", "A synthetic preprint cited by its publisher link"
+    _papers_workspace(ws, [_paper(doi, title, work_type="preprint")])
+    _cite_literature(ws, doi, title, "Tier 1", url=f"https://www.example.org/articles/{doi}")
+
+
 MUTATIONS: dict[str, tuple[str, Mutation, bool]] = {
     # name: (description, function, re-render after applying)
     "M01": ("data value changed, HTML re-rendered", m01_data_value_changed, True),
@@ -636,11 +843,23 @@ MUTATIONS: dict[str, tuple[str, Mutation, bool]] = {
     "M37": ("a source's data_as_of is later than the report As-Of Date", m37_data_as_of_after_report_date, True),
     "M38": ("a matrix row writes its tag in lowercase ('[preliminary]')", m38_lowercase_tag_in_matrix_row, True),
     "M39": ("a file in inbox/ that neither sources.csv nor intake.md accounts for", m39_unprocessed_file_left_in_inbox, True),
+    "M40": ("agent-fetched literature row whose DOI is not in papers.csv (typed from memory)", m40_typed_doi_not_in_papers_csv, True),
+    "M41": ("a preprint recorded by the connector registered as Tier 1", m41_preprint_declared_tier1, True),
+    "M42": ("a work recorded as retracted is cited in the report", m42_retracted_work_cited, True),
+    "M43": ("open-access full text edited after its hash was logged", m43_fulltext_edited_after_registration, True),
+    "M44": ("sources.csv title unrelated to the papers.csv title of the same DOI", m44_title_differs_from_papers_csv, True),
+    "M45": ("API key and contact address left in a logged URL under appendix/", m45_credentials_left_in_appendix, True),
+    "M46": ("an imported (agent-attested) record sustains a Tier 1 source", m46_imported_record_carries_tier1, True),
+    "M47": ("a papers.csv title edited by hand after the response was cached", m47_papers_csv_edited_by_hand, True),
+    "M48": ("an imported record relabelled via=api in papers.csv sustains Tier 1", m48_via_import_relabelled_api, True),
+    "M49": ("papers.csv retrieved_utc moved into the run while the cache says it was before", m49_retrieved_utc_moved_into_the_run, True),
+    "M50": ("a hand-dropped, unlogged cache file used to explain a papers.csv row", m50_forged_cache_file_explains_a_row, True),
+    "M51": ("a recorded full text that is any file, with no SHA-256", m51_fulltext_points_at_any_file, True),
+    "M52": ("a preprint declared Tier 1 through a publisher URL that contains the DOI", m52_publisher_url_hides_the_doi, True),
 }
 
 # Mutations the validator does not yet catch -> the v0.8.0 phase that will. Remove an entry when its phase lands.
-PENDING: dict[str, int] = {
-}
+PENDING: dict[str, int] = {}
 
 
 # Every mutation must be caught by the check that targets it, never as a side effect (e.g. a gate going stale):
@@ -685,6 +904,19 @@ EXPECT: dict[str, str] = {
     "M37": r"(?i)data_as_of",
     "M38": r"writes '\[preliminary\]'.*exactly as '\[Preliminary\]'",
     "M39": r"^inbox/sources/stray\.pdf is not registered",
+    "M40": r"(?i)not in appendix/papers\.csv",
+    "M41": r"(?i)preprint.*Tier 1",
+    "M42": r"(?i)retracted",
+    "M43": r"changed since it was (?:registered|logged)",
+    "M44": r"(?i)title.*papers\.csv",
+    "M45": r"(?i)credential",
+    "M46": r"(?i)imported|attested",
+    "M47": r"differs from every cached response",
+    "M48": r"(?i)\bvia\b",
+    "M49": r"(?i)retrieved_utc",
+    "M50": r"(?i)no matching SHA-256 in download_log",
+    "M51": r"(?i)full text.*(?:SHA-256|appendix/data/papers)",
+    "M52": r"(?i)preprint.*Tier 1",
 }
 # Mutations about the gates themselves keep the gates as the mutation left them; every other mutation re-stamps
 # REVIEWED-SHA256 afterwards, as an agent covering its tracks would.

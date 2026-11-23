@@ -113,6 +113,28 @@ class TestFetch(unittest.TestCase):
             fetch_lib.fetch("S", "src", "https://x.org/g", "g", self.appendix, opener=op2, sleep=self.sleep)
             self.assertEqual(op2.calls[0][1].get("User-agent"), "FromEnv/2")
 
+    def test_log_url_keeps_credentials_out_of_both_logs_but_the_request_uses_the_real_url(self) -> None:
+        op = opener_from([b"ok"])
+        real = "https://api.example.org/works?q=x&api_key=SECRETKEY&mailto=alias@example.org"
+        shown = "https://api.example.org/works?q=x&api_key=REDACTED&mailto=REDACTED"
+        fetch_lib.fetch("S", "src", real, "f", self.appendix, opener=op, sleep=self.sleep, log_url=shown)
+        self.assertEqual(op.calls[0][0], real)
+        self.assertEqual(rows(self.appendix / "download_log.csv")[0]["url"], shown)
+        bad = opener_from([http_error(404)])
+        fetch_lib.fetch("S", "src", real, "g", self.appendix, opener=bad, sleep=self.sleep, log_url=shown)
+        attempts = (self.appendix / "data_attempts.csv").read_text(encoding="utf-8")
+        self.assertIn("api_key=REDACTED", attempts)
+        for path in self.appendix.rglob("*.csv"):
+            self.assertNotIn("SECRETKEY", path.read_text(encoding="utf-8"))
+            self.assertNotIn("alias@example.org", path.read_text(encoding="utf-8"))
+
+    def test_extra_headers_are_sent_with_the_user_agent(self) -> None:
+        op = opener_from([b"ok"])
+        fetch_lib.fetch("S", "src", "https://x.org/h", "h", self.appendix, opener=op, sleep=self.sleep, headers={"Accept": "application/json"})
+        _, headers, _ = op.calls[0]
+        self.assertEqual(headers.get("Accept"), "application/json")
+        self.assertIn("User-agent", headers)
+
     def test_offline_mode_skips_the_network_and_logs(self) -> None:
         op = opener_from([b"never"])
         with mock.patch.dict(os.environ, {"HEURISMA_OFFLINE": "1"}):

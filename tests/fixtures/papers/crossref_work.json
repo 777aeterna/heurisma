@@ -1,0 +1,55 @@
+{
+ "message": {
+  "DOI": "10.1038/s41586-024-07500-2",
+  "URL": "https://doi.org/10.1038/s41586-024-07500-2",
+  "abstract": "<jats:title>Abstract</jats:title>\n                  <jats:p>\n                    Working from home has become standard for employees with a university degree. The most common scheme, which has been adopted by around 100 million employees in Europe and North America, is a hybrid schedule, in which individuals spend a mix of days at home and at work each week\n                    <jats:sup>1,2</jats:sup>\n                    . However, the effects of hybrid working on employees and firms have been debated, and some executives argue that it damages productivity, innovation and career development\n                    <jats:sup>3–5</jats:sup>\n                    . Here we ran a six-month randomized control trial investigating the effects of hybrid working from home on 1,612 employees in a Chinese technology company in 2021–2022. We found that hybrid working improved job satisfaction and reduced quit rates by one-third. The reduction in quit rates was significant for non-managers, female employees and those with long commutes. Null equivalence tests showed that hybrid working did not affect performance grades over the next two years of reviews. We found no evidence for a difference in promotions over the next two years overall, or for any major employee subgroup. Finally, null equivalence tests showed that hybrid working had no effect on the lines of code written by computer-engineer employees. We also found that the 395 managers in the experiment revised their surveyed views about the effect of hybrid working on productivity, from a perceived negative effect (−2.6% on average) before the experiment to a perceived positive one (+1.0%) after the experiment. These results indicate that a hybrid schedule with two days a week working from home does not damage performance.\n                  </jats:p>",
+  "author": [
+   {
+    "family": "Bloom",
+    "given": "Nicholas",
+    "sequence": "first"
+   },
+   {
+    "family": "Han",
+    "given": "Ruobing",
+    "sequence": "additional"
+   },
+   {
+    "family": "Liang",
+    "given": "James",
+    "sequence": "additional"
+   }
+  ],
+  "container-title": [
+   "Nature"
+  ],
+  "is-referenced-by-count": 320,
+  "issued": {
+   "date-parts": [
+    [
+     2024,
+     6,
+     12
+    ]
+   ]
+  },
+  "language": "en",
+  "license": [
+   {
+    "URL": "https://creativecommons.org/licenses/by/4.0",
+    "content-version": "tdm"
+   },
+   {
+    "URL": "https://creativecommons.org/licenses/by/4.0",
+    "content-version": "vor"
+   }
+  ],
+  "publisher": "Springer Science and Business Media LLC",
+  "title": [
+   "Hybrid working from home improves retention without damaging performance"
+  ],
+  "type": "journal-article"
+ },
+ "message-type": "work",
+ "status": "ok"
+}

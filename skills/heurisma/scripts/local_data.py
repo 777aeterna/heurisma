@@ -4,8 +4,8 @@
 Usage:
   python3 -B local_data.py inventory [dir ...]
   python3 -B local_data.py preview <file> [--n 10] [--sheet NAME]
-  python3 -B local_data.py register <file> --sources appendix/sources.csv --tier "Tier 1" --title "..." [--claim L1] [--as-of YYYY-MM-DD] [--lang en|es]
-  python3 -B local_data.py import <file> --into appendix/data --sources appendix/sources.csv --tier "Tier 1" --title "..." [--lang en|es]
+  python3 -B local_data.py register <file> --sources appendix/sources.csv --tier "Tier 3" --title "..." [--claim L1] [--as-of YYYY-MM-DD] [--lang en|es]
+  python3 -B local_data.py import <file> --into appendix/data --sources appendix/sources.csv --tier "Tier 3" --title "..." [--lang en|es]
   python3 -B local_data.py run-start --appendix appendix
   python3 -B local_data.py attempt --csv appendix/data_attempts.csv --target "..." --source "..." --query "..." --outcome "..." [--failure-reason "..."] [--fallback "..."]
 
@@ -558,15 +558,25 @@ def offline_enabled() -> bool:
 
 
 def _read_rows(csv_path: Path) -> list[dict[str, str]]:
+    """Rows of a CSV as dicts ([] if the file does not exist); a byte-order mark saved by a spreadsheet is tolerated."""
     if not csv_path.is_file():
         return []
-    with csv_path.open(encoding="utf-8", newline="") as fh:
+    with csv_path.open(encoding="utf-8-sig", newline="") as fh:
         return list(csv.DictReader(fh))
 
 
 def utc_now() -> str:
     """ISO-8601 UTC timestamp (second precision) for ``data_attempts.csv`` ``attempted_utc``."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _ends_with_newline(path: Path) -> bool:
+    with path.open("rb") as fh:
+        fh.seek(0, 2)
+        if fh.tell() == 0:
+            return True
+        fh.seek(-1, 2)
+        return fh.read(1) in (b"\n", b"\r")
 
 
 def _append_row(csv_path: Path, columns: tuple[str, ...], row: dict[str, str]) -> None:
@@ -593,6 +603,8 @@ def _append_row(csv_path: Path, columns: tuple[str, ...], row: dict[str, str]) -
         writer = csv.DictWriter(fh, fieldnames=fieldnames, extrasaction="ignore", restval="")
         if is_new:
             writer.writeheader()
+        elif not _ends_with_newline(csv_path):
+            fh.write("\n")  # a file saved by hand without a final newline: do not glue the new row to its last line
         writer.writerow(row)
 
 

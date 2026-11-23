@@ -40,11 +40,21 @@ skills/heurisma/
     │   ├── numeric.py                 # Numeric closure (Section 4 tables, chart text) & verdict size
     │   ├── provenance.py              # Tiers, selection, source catalogue, local data & inbox/
     │   ├── prereg.py                  # Preregistration sealing, post-seal files & HARKing
+    │   ├── papers.py                  # Paper-connector rules (opt-in): DOI anywhere in a URL, preprint tier, retracted, title, confined & hashed full text, replay, credentials
     │   ├── html.py                    # report.html sections, language, markers, privacy & freshness
     │   └── codes.py                   # Stable --json codes (CODE_RULES, classify_message)
+    ├── providers/                     # Paper-database sources used by papers.py, one module per provider
+    │   ├── __init__.py                # Package marker
+    │   ├── base.py                    # DOI normalisation, credential redaction, request context (cached, hashed, rate-limited)
+    │   ├── openalex.py                # OpenAlex: search and DOI lookup (type, retraction, open access)
+    │   ├── crossref.py                # Crossref: DOI lookup to verify a reference exists
+    │   ├── europepmc.py               # Europe PMC: search for biomedicine and open-access work
+    │   ├── arxiv.py                   # arXiv: preprint search
+    │   └── unpaywall.py               # Unpaywall: open-access copy of a DOI (needs a contact address)
+    ├── papers.py                      # Paper connector CLI: search, lookup, cite, verify, import, replay (papers.csv, search_log.csv; lock file; replay trusts only logged hashes)
     ├── contracts.py                   # Single source of truth for version, tags, schemas, gates & section patterns
     ├── local_data.py                  # Inventory, preview, per-column CSV/XLSX/JSON reader, register, import, intake, prereg, run-start
-    ├── fetch_lib.py                   # Retry/backoff HTTP fetcher with checksums, size caps, download_log & offline guard
+    ├── fetch_lib.py                   # Retry/backoff HTTP fetcher with checksums, size caps, download_log, offline guard, URL redaction & private-host/redirect guard
     ├── svg_charts.py                  # Zero-dependency SVG chart engine & charts.json schema validator
     ├── render_report.py               # Working-paper HTML/SVG renderer with URL allowlist, {{num:}} & freshness hash
     └── validate_report.py             # Epistemic & structural linter: orchestrator + CLI (--strict, --json, --reproduce, --diff, --gate-hash)
