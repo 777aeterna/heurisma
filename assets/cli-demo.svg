@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 390" width="920" height="390" role="img" aria-label="Heurisma CLI animated demo showing preprint Tier 1 refusal, HARKing and untraced number detection, and strict reproducible validation passing">
+  <defs>
+    <filter id="termShadow" x="-3%" y="-4%" width="106%" height="110%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#020617" flood-opacity="0.28"/>
+    </filter>
+    <style>
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13.5px; }
+      .dim { fill: #94a3b8; }
+      .cmd { fill: #f8fafc; font-weight: 600; }
+      .prompt { fill: #38bdf8; font-weight: 700; }
+      .err { fill: #f87171; }
+      .warn { fill: #fbbf24; }
+      .ok { fill: #4ade80; font-weight: 600; }
+      .code { fill: #c084fc; font-weight: 700; }
+
+      /* 12s smooth loop revealing each step */
+      .s1 { opacity: 0; animation: show1 12s infinite; }
+      .s2 { opacity: 0; animation: show2 12s infinite; }
+      .s3 { opacity: 0; animation: show3 12s infinite; }
+      .s4 { opacity: 0; animation: show4 12s infinite; }
+      .s5 { opacity: 0; animation: show5 12s infinite; }
+      .s6 { opacity: 0; animation: show6 12s infinite; }
+      .cursor { animation: blink 1s step-end infinite; }
+
+      @keyframes show1 { 0%, 2% { opacity: 0; } 5%, 94% { opacity: 1; } 98%, 100% { opacity: 0; } }
+      @keyframes show2 { 0%, 14% { opacity: 0; } 17%, 94% { opacity: 1; } 98%, 100% { opacity: 0; } }
+      @keyframes show3 { 0%, 30% { opacity: 0; } 33%, 94% { opacity: 1; } 98%, 100% { opacity: 0; } }
+      @keyframes show4 { 0%, 44% { opacity: 0; } 47%, 94% { opacity: 1; } 98%, 100% { opacity: 0; } }
+      @keyframes show5 { 0%, 62% { opacity: 0; } 65%, 94% { opacity: 1; } 98%, 100% { opacity: 0; } }
+      @keyframes show6 { 0%, 74% { opacity: 0; } 77%, 94% { opacity: 1; } 98%, 100% { opacity: 0; } }
+      @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+    </style>
+  </defs>
+
+  <!-- Terminal Window -->
+  <rect x="14" y="10" width="892" height="366" rx="12" fill="#0f172a" stroke="#334155" stroke-width="1.2" filter="url(#termShadow)"/>
+  <!-- Title Bar -->
+  <path d="M26 10 h868 a12 12 0 0 1 12 12 v24 h-892 v-24 a12 12 0 0 1 12 -12 z" fill="#1e293b"/>
+  <circle cx="38" cy="28" r="6" fill="#ef4444"/>
+  <circle cx="58" cy="28" r="6" fill="#f59e0b"/>
+  <circle cx="78" cy="28" r="6" fill="#22c55e"/>
+  <text x="460" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#cbd5e1">heurisma — paper connector &amp; epistemic linter (Python ≥ 3.9 stdlib only)</text>
+
+  <!-- Step 1: Preprint Tier 1 refused -->
+  <g class="s1">
+    <text x="32" y="76" class="mono"><tspan class="prompt">$</tspan> <tspan class="cmd">python3 -B scripts/papers.py cite arxiv:2401.08922 --tier "Tier 1"</tspan></text>
+  </g>
+  <g class="s2">
+    <text x="32" y="100" class="mono err">✗ Error: work_type 'preprint' cannot be cited as Tier 1 (max Tier 2).</text>
+    <text x="32" y="120" class="mono dim">  # Objective ceiling enforced before the row can enter appendix/sources.csv</text>
+  </g>
+
+  <!-- Step 2: Validator catches HARKing & untraced number -->
+  <g class="s3">
+    <text x="32" y="158" class="mono"><tspan class="prompt">$</tspan> <tspan class="cmd">python3 -B scripts/validate_report.py draft/report.md --level 3 --strict</tspan></text>
+  </g>
+  <g class="s4">
+    <text x="32" y="182" class="mono err">✗ <tspan class="code">[P2-PREREG]</tspan> H1 contains rounded computed figures (31, 4.5; possible HARKing)</text>
+    <text x="32" y="204" class="mono err">✗ <tspan class="code">[P1-UNTRACED-NUM]</tspan> Section 4 table statistic '93.6%' absent from output.txt / numbers.json</text>
+    <text x="32" y="226" class="mono warn">! <tspan class="code">[GATE-DISP]</tspan> Reviewer #2 raised 4 critiques; Disposition Table resolves only 3</text>
+  </g>
+
+  <!-- Step 3: Clean run passes strict reproduce -->
+  <g class="s5">
+    <text x="32" y="266" class="mono"><tspan class="prompt">$</tspan> <tspan class="cmd">python3 -B scripts/validate_report.py examples/showcase-hybrid-work/report.md \</tspan></text>
+    <text x="52" y="286" class="mono cmd">--level 2 --html examples/showcase-hybrid-work/report.html --strict --reproduce</text>
+  </g>
+  <g class="s6">
+    <text x="32" y="314" class="mono ok">✓ Heurisma report validation PASSED: examples/showcase-hybrid-work/report.md</text>
+    <text x="32" y="336" class="mono dim">  SHA-256 verified · analysis.py reproduced byte-for-byte · HTML fresh · 0 external requests</text>
+    <text x="32" y="358" class="mono"><tspan class="ok">✓ 54/54 adversarial mutations caught</tspan> <tspan class="dim">· 610/610 tests · Ubuntu / macOS / Windows</tspan> <tspan class="prompt cursor">▌</tspan></text>
+  </g>
+</svg>

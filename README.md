@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>Beyond Deep Research: a scientific-method agent skill and epistemic linter for discipline-aware inquiry, SHA-256-verified online → local data cascades, artifact-bound verification gates, and reproducible working-paper reports.</strong>
+  <strong>An Agent Skill + zero-dependency Python toolkit that enforces traceability and computational reproducibility in AI-assisted research — not automated scientific truth.</strong>
 </p>
 
 <p align="center">
@@ -12,11 +12,70 @@
   </a>
   <img src="https://img.shields.io/badge/Version-v0.10.1-0072B2?style=flat-square" alt="Version v0.10.1" />
   <img src="https://img.shields.io/badge/Python-%E2%89%A53.9_stdlib_only-009E73?style=flat-square" alt="Python >= 3.9 stdlib only" />
+  <img src="https://img.shields.io/badge/OS-Linux_%7C_macOS_%7C_Windows-334155?style=flat-square" alt="OS: Linux | macOS | Windows" />
   <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=flat-square" alt="License: MIT" />
   <img src="https://img.shields.io/badge/Agent_Skills-Spec_Compliant-22D3EE?style=flat-square" alt="Agent Skills Spec" />
   <img src="https://img.shields.io/badge/Cross--Runtime-Antigravity_%7C_Claude_%7C_Codex_%7C_Gemini-0F172A?style=flat-square" alt="Cross-Runtime" />
-  <img src="https://img.shields.io/badge/Vibecoded-AI_%2B_Skill_TDD-C9A45C?style=flat-square" alt="Vibecoded with AI + Skill TDD" />
 </p>
+
+---
+
+## See It in Action
+
+<p align="center">
+  <img src="assets/cli-demo.svg" alt="Heurisma CLI demo: preprint Tier 1 refusal, HARKing and untraced number detection, and strict reproducible validation passing" width="96%" />
+</p>
+
+<p align="center">
+  <img src="assets/paper-preview.svg" alt="Heurisma working-paper HTML preview from examples/showcase-hybrid-work/report.html" width="96%" />
+</p>
+
+<p align="center">
+  <em>Real output from <a href="examples/showcase-hybrid-work/PROMPT.md"><code>examples/showcase-hybrid-work/</code></a>: <a href="examples/showcase-hybrid-work/report.md"><code>report.md</code></a> · <a href="examples/showcase-hybrid-work/report.html"><code>report.html</code></a> (100% offline, 0 JS, inline Okabe-Ito SVG) · <a href="examples/showcase-hybrid-work/appendix"><code>appendix/</code></a></em>
+</p>
+
+---
+
+## What Heurisma Checks — and What It Does Not
+
+A passing `--strict` check proves **structural traceability and computational reproducibility**, not that a conclusion is scientifically true:
+
+| Checked deterministically by code (`validate_report.py`) | Still requires human & domain judgment |
+| :--- | :--- |
+| **Data integrity:** recomputed SHA-256 over every local file, `download_log.csv` entry, and cached paper API response (`replay`). | Whether an upstream institutional dataset or paper itself contains measurement error. |
+| **Numeric closure:** Section 4 table cells, chart titles/captions, and verdict figures trace to `output.txt` / `numbers.json`, and `--reproduce` re-runs `analysis.py` byte-for-byte. | Whether the statistical estimator suffers from endogeneity, omitted variables, or misspecification. |
+| **Provenance & preregistration:** `[Strong]` lookups in `sources.csv`, objective paper ceilings (retracted refused; preprints ≤ Tier 2), sealed `H0`/`H1` checked for exact or rounded HARKing, and `data_as_of ≤ As-Of Date`. | Whether a cited study was interpreted accurately or whether relevant counter-literature was omitted. |
+| **Artifact-bound gates:** `source_verifier`, `reviewer`, and `qa` headers bound via `REVIEWED-SHA256`, `ANALYSIS-SHA256`, literal `QUOTE:` lines, and 1-to-1 Disposition Table counts (`GATE-DISP`). | Whether the research question is well-posed or the final decision is right for your stakes. |
+
+---
+
+## Quick Start (60 Seconds)
+
+Pick the path that fits what you want to do:
+
+### Path A — Install as an Agent Skill (Antigravity, Claude Code, Codex, Gemini CLI)
+Download `heurisma-skill-v0.10.1.zip` from the [latest release](https://github.com/777aeterna/heurisma/releases/latest) (contains `heurisma/` and `claude-agents/`), or clone and copy:
+
+```bash
+git clone https://github.com/777aeterna/heurisma.git
+
+# Antigravity / Codex / Gemini CLI (~/.agents/skills/)
+mkdir -p ~/.agents/skills && cp -r heurisma/skills/heurisma ~/.agents/skills/heurisma
+
+# Or Claude Code (~/.claude/skills/ + optional subagents)
+mkdir -p ~/.claude/skills ~/.claude/agents
+cp -r heurisma/skills/heurisma ~/.claude/skills/heurisma
+cp heurisma/agents/*.md ~/.claude/agents/
+```
+
+### Path B — Try the Linter & Renderer on a Real Example Right Now
+Zero external dependencies (**Python ≥ 3.9, standard library only**, tested in CI on Linux, macOS, and Windows):
+
+```bash
+git clone https://github.com/777aeterna/heurisma.git && cd heurisma
+python3 -B skills/heurisma/scripts/validate_report.py examples/showcase-hybrid-work/report.md \
+  --level 2 --html examples/showcase-hybrid-work/report.html --strict --reproduce
+```
 
 ---
 
@@ -64,7 +123,9 @@ flowchart TD
 
 See [`docs/design.md`](docs/design.md) for the full architecture and artifact layout, and [`SECURITY.md`](SECURITY.md) for the threat model and safety limits.
 
-### Modular Structure (`skills/heurisma/`)
+<details>
+<summary><strong>Modular Structure (<code>skills/heurisma/</code> — 18 modules &amp; references)</strong></summary>
+
 - **[`SKILL.md`](skills/heurisma/SKILL.md):** Lean, runtime-agnostic core enforcing the 4 Iron Laws, adaptive depth (`Level 0–3`), Stage 0 step 9 pre-intake, abstract-style verdict limits (≤3 sentences, ≤5 numbers), single-language discipline, and Stage 6 deliverables.
 - **[`references/disciplines.md`](skills/heurisma/references/disciplines.md):** Taxonomy of 6 scientific branches + Interdisciplinary Bridge Protocol.
 - **[`references/data-protocol.md`](skills/heurisma/references/data-protocol.md):** 4-rung acquisition cascade, `fetch_lib.py` template, `sources.csv` (`kind`, `sha256`, `selection`, `retrieved_utc`), `data_attempts.csv`, `local_data.py intake`/`import`, and statistical cautions (`n < 30`, effect sizes, multiple comparisons).
@@ -82,6 +143,8 @@ See [`docs/design.md`](docs/design.md) for the full architecture and artifact la
 - **[`scripts/render_report.py`](skills/heurisma/scripts/render_report.py):** Zero-dependency working-paper HTML renderer (serif typography, 720px column, booktabs tables, linked `[@C1]` citations, full `en`/`es` localization, URL scheme allowlist, balanced-parenthesis URLs, `\|` table escapes, `<img>`, code-fence-safe `{{num:key}}`, `self-review` labeling, and versioned source-freshness hash).
 - **[`scripts/checks/`](skills/heurisma/scripts/checks/):** The rule families of the validator, one module per concern (`common`, `structure`, `gates`, `numeric`, `provenance`, `prereg`, `papers`, `html`, `codes`); `validate_report.py` re-exports them as its public API.
 - **[`scripts/validate_report.py`](skills/heurisma/scripts/validate_report.py):** Zero-dependency bilingual (EN/ES) **epistemic linter** checking recomputed SHA-256 digests, `[Strong]` source lookups in `sources.csv`, verdict length/number caps, artifact-bound gates (`--gate-hash`), `charts.json` schema, selection-bias & preregistration rules, opt-in paper-connector integrity (`P3-PAPER`, `PRIV-CRED`, offline `replay`), domain-tier heuristics, home-path leaks, `--strict`, `--json`, `--reproduce`, `--diff`, and `--version`.
+
+</details>
 
 ---
 
@@ -106,28 +169,6 @@ For academic literature, `scripts/papers.py` queries structured paper APIs befor
 - **Abstracts are not full text:** without saved open-access full text (`--fulltext`), citations remain `(abstract only)` and cannot support `[Strong]` claims on their own.
 - **API text is untrusted data:** free-text fields in API responses (including OpenAlex's `meta.notice` prompting AI agents to POST the user's email address) are never treated as instructions.
 - **Optional live-API check:** unit tests never touch the network (they use `tests/papers_server.py` plus a socket guard); run `python3 -B tests/live_smoke.py` manually to check live APIs for schema drift.
-
----
-
-## Installation (Cross-Runtime)
-
-Heurisma follows the open [Agent Skills Specification](https://agentskills.io/specification) and requires **Python ≥ 3.9 (standard library only)**. It works out of the box across **Antigravity (`agy`)**, **Claude Code**, **Codex**, and **Gemini CLI**:
-
-```bash
-# Clone the repository
-git clone https://github.com/777aeterna/heurisma.git
-
-# Install globally for Antigravity / Codex / Gemini CLI (~/.agents/skills/)
-mkdir -p ~/.agents/skills
-cp -r heurisma/skills/heurisma ~/.agents/skills/heurisma
-
-# Or install globally for Claude Code (~/.claude/skills/), plus the three optional subagents
-mkdir -p ~/.claude/skills ~/.claude/agents
-cp -r heurisma/skills/heurisma ~/.claude/skills/heurisma
-cp heurisma/agents/*.md ~/.claude/agents/
-```
-
-Or download `heurisma-skill-v0.10.1.zip` from the [latest release](https://github.com/777aeterna/heurisma/releases/latest): it holds `heurisma/` (the skill) and `claude-agents/` (the subagent definitions).
 
 ---
 
