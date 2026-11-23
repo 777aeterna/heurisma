@@ -7,986 +7,152 @@ import argparse
 import csv
 import json
 import re
-import unicodedata
 import sys
 from pathlib import Path
 from typing import Any
-from urllib.parse import unquote, urlparse
 
 _SCRIPTS_DIR = str(Path(__file__).resolve().parent)
 if _SCRIPTS_DIR not in sys.path:
     sys.path.insert(0, _SCRIPTS_DIR)
 from contracts import (  # noqa: E402
-    ALL_TAGS,
-    CANONICAL_DATA_ATTEMPTS_COLS,
-    DOCUMENT_KINDS,
-    GATE_FILES,
-    HTML_SECTION_PATTERNS,
-    REQUIRED_SECTIONS,
-    STRONG_TAGS,
+    ALL_TAGS as ALL_TAGS,
+    CANONICAL_DATA_ATTEMPTS_COLS as CANONICAL_DATA_ATTEMPTS_COLS,
+    DOCUMENT_KINDS as DOCUMENT_KINDS,
+    GATE_FILES as GATE_FILES,
+    HTML_SECTION_PATTERNS as HTML_SECTION_PATTERNS,
+    REQUIRED_SECTIONS as REQUIRED_SECTIONS,
+    STRONG_TAGS as STRONG_TAGS,
     TAG_TO_CANONICAL as TAG_TO_CANONICAL,
-    VALID_KINDS,
-    VALID_SELECTIONS,
-    VALID_TIERS,
-    WEAK_KINDS,
-    WEB_SUMMARY_LABELS,
-    __version__,
+    VALID_KINDS as VALID_KINDS,
+    VALID_SELECTIONS as VALID_SELECTIONS,
+    VALID_TIERS as VALID_TIERS,
+    WEAK_KINDS as WEAK_KINDS,
+    WEB_SUMMARY_LABELS as WEB_SUMMARY_LABELS,
+    __version__ as __version__,
 )
 
-LOW_TIER_SOURCE_RE = re.compile(
-    r"\b(?:Tier\s*3|press\s+release|press\s+article|nota\s+de\s+prensa|prensa|news\s+article|blog\s+post|unverified|roadmap)\b",
-    re.IGNORECASE,
+# Rule families live in checks/; they are re-exported here so validate_report stays the single public API.
+from checks.common import (  # noqa: E402
+    LOW_TIER_SOURCE_RE as LOW_TIER_SOURCE_RE,
+    FENCED_CODE_RE as FENCED_CODE_RE,
+    FIG_MARKER_RE as FIG_MARKER_RE,
+    NUM_MARKER_RE as NUM_MARKER_RE,
+    LEFTOVER_BRACES_RE as LEFTOVER_BRACES_RE,
+    CITE_GROUP_RE as CITE_GROUP_RE,
+    NUMERIC_CITE_RE as NUMERIC_CITE_RE,
+    UNCONVERTED_LATEX_RE as UNCONVERTED_LATEX_RE,
+    SHA_HEX_RE as SHA_HEX_RE,
+    SPANISH_LEAKED_CHROME as SPANISH_LEAKED_CHROME,
+    _strip_fenced_code_blocks as _strip_fenced_code_blocks,
+    _split_md_table_row as _split_md_table_row,
+    _is_separator_row as _is_separator_row,
+    _extract_section_slice as _extract_section_slice,
+    _load_sources_rows as _load_sources_rows,
+    _declared_sha as _declared_sha,
+    _local_source_path as _local_source_path,
+    _file_sha256 as _file_sha256,
+    _norm_text as _norm_text,
+    _extract_citation_ids as _extract_citation_ids,
+    _find_charts_json as _find_charts_json,
+    HARDCODED_NUM_RE as HARDCODED_NUM_RE,
+    MIN_TYPED_NUMBERS as MIN_TYPED_NUMBERS,
+    MIN_MARKER_SHARE as MIN_MARKER_SHARE,
+    MIN_TYPED_SUMMARY as MIN_TYPED_SUMMARY,
+    SUMMARY_NUM_RE as SUMMARY_NUM_RE,
+    SECTION_REF_RE as SECTION_REF_RE,
+    LIMITATION_FALLBACKS as LIMITATION_FALLBACKS,
+    HOME_PATH_RE as HOME_PATH_RE,
+    GATE_MIN_CHARS as GATE_MIN_CHARS,
+    SELECTION_LABEL_RE as SELECTION_LABEL_RE,
+    MAX_SNAPSHOT_AGE_DAYS as MAX_SNAPSHOT_AGE_DAYS,
+    VERDICT_MAX_SENTENCES as VERDICT_MAX_SENTENCES,
+    VERDICT_MAX_NUMBERS as VERDICT_MAX_NUMBERS,
+    _VERDICT_SENTENCE_RE as _VERDICT_SENTENCE_RE,
+    _VERDICT_NUMBER_RE as _VERDICT_NUMBER_RE,
+    _WEAK_TITLE_RE as _WEAK_TITLE_RE,
+    _REVIEWER_CATEGORIES as _REVIEWER_CATEGORIES,
+    GATE_MARKERS as GATE_MARKERS,
+    DATE_RE as DATE_RE,
+    _NAME_STOPWORDS as _NAME_STOPWORDS,
+    _name_tokens as _name_tokens,
+    _named_in_any as _named_in_any,
+    _parse_utc as _parse_utc,
+    AS_OF_RE as AS_OF_RE,
+    _as_of_date as _as_of_date,
+    _resolve_run_start as _resolve_run_start,
+    _resolve_run_since as _resolve_run_since,
 )
-
-FENCED_CODE_RE = re.compile(r"^```.*?^```[ \t]*$", flags=re.MULTILINE | re.DOTALL)
-FIG_MARKER_RE = re.compile(r"\{\{fig:([A-Za-z0-9_-]+)\}\}")
-NUM_MARKER_RE = re.compile(r"\{\{num:([A-Za-z0-9_.-]+)\}\}")
-LEFTOVER_BRACES_RE = re.compile(r"\{\{[^{}\n]{1,80}\}\}")
-CITE_GROUP_RE = re.compile(r"\[(@[A-Za-z0-9_.-]+(?:\s*[;,]\s*@[A-Za-z0-9_.-]+)*)\]")
-NUMERIC_CITE_RE = re.compile(r"\[[0-9]+\]")
-UNCONVERTED_LATEX_RE = re.compile(r"(?<!\\)\$(?!\s)(?!\d[\d.,]*(?:\s|$|[^\\_^=a-zA-Z]))([^$\n]+?)(?<!\s)\$")
-SHA_HEX_RE = re.compile(r"\b[0-9a-fA-F]{12,64}\b")
-
-SPANISH_LEAKED_CHROME: tuple[tuple[str, str], ...] = (
-    ("Figure N.", r"<strong>Figure\s+\d+\.</strong>"),
-    ("Note:", r"<em>Note:</em>"),
-    ("Source:", r"<em>Source:</em>"),
-    ("Abstract", r'<div class="abstract-label">\s*Abstract\s*</div>'),
-    ("References", r"<h2>\s*References\s*</h2>"),
-    ("Median (P50)", r">Median\s*\(P50\)<"),
+from checks.structure import (  # noqa: E402
+    _TAG_WORD_RE as _TAG_WORD_RE,
+    _noncanonical_tags as _noncanonical_tags,
+    _canonical_spelling as _canonical_spelling,
 )
-
-
-def _strip_fenced_code_blocks(text: str) -> str:
-    return FENCED_CODE_RE.sub("", text)
-
-
-def _split_md_table_row(row: str) -> list[str]:
-    stripped = row.strip()
-    if stripped.startswith("|"):
-        stripped = stripped[1:]
-    if stripped.endswith("|") and not stripped.endswith("\\|"):
-        stripped = stripped[:-1]
-    return [cell.replace("\\|", "|").strip() for cell in re.split(r"(?<!\\)\|", stripped)]
-
-
-def _is_separator_row(cells: list[str]) -> bool:
-    """Accept valid Markdown table separators including single-dash ':-', '-:', ':-:', '-'."""
-    return bool(cells) and all(re.fullmatch(r":?-{1,}:?", c.replace(" ", "")) for c in cells)
-
-
-def _extract_section_slice(clean_text: str, section_positions: dict[str, int], target_label: str) -> str:
-    if target_label not in section_positions:
-        return ""
-    start = section_positions[target_label]
-    later_positions = [pos for pos in section_positions.values() if pos > start]
-    end = min(later_positions) if later_positions else len(clean_text)
-    return clean_text[start:end]
-
-
-def _load_sources_rows(report_dir: Path | None) -> tuple[list[dict[str, str]], list[str]]:
-    if report_dir is None:
-        return [], []
-    sources_csv = report_dir / "appendix" / "sources.csv"
-    if not sources_csv.is_file():
-        return [], []
-    try:
-        with sources_csv.open(encoding="utf-8", newline="") as fh:
-            reader = csv.DictReader(fh)
-            fieldnames = list(reader.fieldnames or [])
-            return list(reader), fieldnames
-    except OSError:
-        return [], []
-
-
-def _is_weak_source(row: dict[str, str] | None) -> bool:
-    """A source that cannot carry a [Strong] claim on its own, decided from sources.csv (never from prose)."""
-    if not row:
-        return False
-    if re.search(r"\bTier\s*3\b", row.get("tier") or "", re.IGNORECASE):
-        return True
-    if (row.get("kind") or "").strip().lower() in WEAK_KINDS:
-        return True
-    return bool(_WEAK_TITLE_RE.search(row.get("source_title") or ""))
-
-
-def _local_table_worst_tier(report_dir: Path | None, row: dict[str, str] | None) -> str | None:
-    """Weakest tier a local CSV inherits through its ``primary_source_id`` column (see ``local_data.worst_tier``).
-
-    ``None`` when the source is not a local CSV, has no ``primary_source_id`` column, or the run has no
-    ``appendix/data/sources_metadata.csv``: then there is nothing to inherit from and the declared tier stands."""
-    if report_dir is None or not row:
-        return None
-    url = (row.get("url") or "").strip()
-    if not url or not (url.startswith("file://") or "://" not in url):
-        return None
-    path = _local_source_path(url, report_dir)
-    meta = report_dir / "appendix" / "data" / "sources_metadata.csv"
-    if path.suffix.lower() != ".csv" or not path.is_file() or not meta.is_file():
-        return None
-    try:
-        with path.open(encoding="utf-8-sig", newline="") as fh:
-            reader = csv.DictReader(fh)
-            if "primary_source_id" not in (reader.fieldnames or []):
-                return None
-            table_rows = list(reader)
-        import local_data
-
-        return str(local_data.worst_tier(table_rows, "primary_source_id", meta))
-    except (OSError, csv.Error, UnicodeDecodeError):
-        return None
-
-
-def _declared_sha(row: dict[str, str]) -> str:
-    """The SHA-256 prefix a source row declares (sha256 column, else 'sha256 <hex>' in the title)."""
-    col = SHA_HEX_RE.search((row.get("sha256") or "").strip())
-    if col:
-        return col.group(0).lower()
-    m = re.search(r"sha256\s*[:=]?\s*([0-9a-fA-F]{12,64})\b", row.get("source_title") or "", re.IGNORECASE)
-    return m.group(1).lower() if m else ""
-
-
-def _local_source_path(url: str, report_dir: Path) -> Path:
-    raw = url[len("file://"):] if url.startswith("file://") else url
-    path = Path(unquote(raw))
-    return path if path.is_absolute() else report_dir / path
-
-
-def _file_sha256(path: Path) -> str:
-    import hashlib
-
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def _registered_data_files(
-    report_dir: Path, appendix_dir: Path, sources_rows: list[dict[str, str]]
-) -> tuple[set[str], list[str]]:
-    """Files of appendix/data/ that sources.csv / download_log.csv register: (relative paths, declared hash prefixes)."""
-    paths: set[str] = set()
-    hashes: list[str] = []
-    data_dir = (appendix_dir / "data").resolve()
-    for row in sources_rows:
-        url = (row.get("url") or "").strip()
-        sha = _declared_sha(row)
-        if sha:
-            hashes.append(sha)
-        if url and (url.startswith("file://") or "://" not in url):
-            try:
-                paths.add(_local_source_path(url, report_dir).resolve().relative_to(data_dir).as_posix())
-            except ValueError:
-                pass
-    log = appendix_dir / "download_log.csv"
-    if log.is_file():
-        try:
-            with log.open(encoding="utf-8-sig", newline="") as fh:
-                for r in csv.DictReader(fh):
-                    name = (r.get("file") or "").strip()
-                    if name:
-                        paths.add(Path(unquote(name)).as_posix())
-                    h = SHA_HEX_RE.search((r.get("sha256") or "").strip())
-                    if h:
-                        hashes.append(h.group(0).lower())
-        except OSError:
-            pass
-    return paths, hashes
-
-
-# P0-2: a gate is bound to the files it reviewed (hash), quotes them verbatim, and says who wrote it (MODE)
-GATE_HASH_FILES: dict[str, tuple[str, ...]] = {
-    "source_verifier": ("appendix/sources.csv", "appendix/data_attempts.csv"),
-    "reviewer": ("appendix/output.txt", "charts.json", "appendix/sources.csv", "appendix/data_attempts.csv"),
-}
-GATE_HEADER_FIELDS: tuple[tuple[str, str], ...] = (
-    ("MODE:", r"^\s*MODE:\s*(?:subagent|self-review)\b"),
-    ("REVIEWED-SHA256:", r"^\s*REVIEWED-SHA256:\s*[0-9a-fA-F]{12,64}\b"),
-    ("REVIEWED-UTC:", r"^\s*REVIEWED-UTC:\s*\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?Z"),
+from checks.gates import (  # noqa: E402
+    GATE_HASH_FILES as GATE_HASH_FILES,
+    GATE_HEADER_FIELDS as GATE_HEADER_FIELDS,
+    GATE_MIN_QUOTES as GATE_MIN_QUOTES,
+    _QUOTE_RE as _QUOTE_RE,
+    _SELF_REVIEW_DECLARED_RE as _SELF_REVIEW_DECLARED_RE,
+    _gate_files as _gate_files,
+    gate_hash as gate_hash,
+    _POST_REVIEW_RE as _POST_REVIEW_RE,
+    _analysis_anchor as _analysis_anchor,
+    _check_analysis_anchor as _check_analysis_anchor,
+    _check_gate_binding as _check_gate_binding,
 )
-GATE_MIN_QUOTES = 2
-_QUOTE_RE = re.compile(r'^\s*QUOTE:\s*(\S+?):(\d+):\s*"(.+)"\s*$', re.MULTILINE)
-_SELF_REVIEW_DECLARED_RE = re.compile(r"self-review|auto-?revisi[oó]n|autorrevisi[oó]n", re.IGNORECASE)
-
-
-def _gate_files(report_dir: Path, gate: str) -> list[tuple[str, Path]]:
-    """(path relative to the report folder, file) pairs a gate reviews; relative paths keep the hash location-free."""
-    if gate in GATE_HASH_FILES:
-        return [(rel, report_dir / rel) for rel in GATE_HASH_FILES[gate]]
-    files = [("report.md", report_dir / "report.md"), ("charts.json", report_dir / "charts.json")]
-    appendix = report_dir / "appendix"
-    if appendix.is_dir():
-        for fp in sorted(appendix.rglob("*"), key=lambda p: p.relative_to(appendix).parts):
-            rel = fp.relative_to(appendix)
-            if fp.is_file() and rel.parts[0] != "gates" and "__pycache__" not in fp.parts and fp.suffix != ".pyc":
-                files.append(("appendix/" + rel.as_posix(), fp))
-    return files
-
-
-def gate_hash(report_dir: str | Path, gate: str) -> str:
-    """SHA-256 over the files a gate reviews (content + relative path; missing files count as absent).
-
-    source_verifier: sources.csv + data_attempts.csv · reviewer: output.txt + charts.json + sources.csv +
-    data_attempts.csv · qa: report.md + charts.json + every appendix file except appendix/gates/.
-    """
-    import hashlib
-
-    h = hashlib.sha256()
-    for rel, fp in _gate_files(Path(report_dir), gate):
-        digest = _file_sha256(fp) if fp.is_file() else "-"
-        h.update(f"{rel}\t{digest}\n".encode("utf-8"))
-    return h.hexdigest()
-
-
-_POST_REVIEW_RE = re.compile(r"post-review\s+changes|cambios\s+posteriores\s+a\s+la\s+revisi[oó]n", re.IGNORECASE)
-
-
-def _analysis_anchor(report_dir: Path) -> str:
-    """12-hex SHA-256 prefix of appendix/analysis.py ('' when absent): what the reviewer's code reading is bound to."""
-    fp = report_dir / "appendix" / "analysis.py"
-    return _file_sha256(fp)[:12] if fp.is_file() else ""
-
-
-def _check_analysis_anchor(
-    gtext: str,
-    report_dir: Path,
-    clean_text: str,
-    section_positions: dict[str, int],
-    sink: list[str],
-) -> None:
-    """reviewer.md may record ANALYSIS-SHA256; analysis.py edited after that needs a 'Post-review changes' subsection."""
-    declared = re.search(r"^\s*ANALYSIS-SHA256:\s*([0-9a-fA-F]{12,64})\b", gtext, re.MULTILINE)
-    current = _analysis_anchor(report_dir)
-    if not declared or not current or current.startswith(declared.group(1).lower()[:12]):
-        return
-    sec5 = _extract_section_slice(clean_text, section_positions, "Counter-Evidence & Alternative Explanations")
-    if _POST_REVIEW_RE.search(sec5):
-        return
-    sink.append(
-        f"appendix/gates/reviewer.md records ANALYSIS-SHA256 {declared.group(1)[:12]} but appendix/analysis.py is now "
-        f"{current}: analysis.py changed after the reviewer saw it; list what changed in a 'Post-review changes' "
-        f"subsection of Section 5, or run Reviewer #2 again."
-    )
-
-
-def _check_gate_binding(
-    gate: str,
-    gtext: str,
-    report_dir: Path,
-    clean_text: str,
-    section_positions: dict[str, int],
-    gate_sink: list[str],
-    warnings: list[str],
-) -> None:
-    missing = [label for label, pattern in GATE_HEADER_FIELDS if not re.search(pattern, gtext, re.MULTILINE)]
-    quotes = _QUOTE_RE.findall(gtext)
-    if len(quotes) < GATE_MIN_QUOTES:
-        missing.append(f"QUOTE: <file>:<line>: \"…\" (at least {GATE_MIN_QUOTES})")
-    if missing:
-        gate_sink.append(
-            f"appendix/gates/{gate}.md is missing header field(s): {', '.join(missing)}; the gate must say who wrote it, "
-            f"which version it reviewed (validate_report.py --gate-hash {gate}) and quote what it read."
-        )
-    declared = re.search(r"^\s*REVIEWED-SHA256:\s*([0-9a-fA-F]{12,64})", gtext, re.MULTILINE)
-    if declared:
-        current = gate_hash(report_dir, gate)
-        if not current.startswith(declared.group(1).lower()):
-            msg = (
-                f"appendix/gates/{gate}.md reviewed an earlier version: REVIEWED-SHA256 {declared.group(1)[:16]} != current "
-                f"{current[:16]}; re-run the gate on the current files."
-            )
-            if gate == "reviewer":  # fixes made after Reviewer #2 legitimately change what it read
-                sec5 = _extract_section_slice(clean_text, section_positions, "Counter-Evidence & Alternative Explanations")
-                has_closed_disp = bool(
-                    re.search(r"(?:Reviewer\s*#?2|Revisor\s*#?2|Disposition|Disposici[oó]n)", sec5, re.IGNORECASE)
-                    and re.search(
-                        r"\|\s*[`*]{0,2}(?:Fixed|Refuted|Deferred|Corregida|Refutada|Diferida)[`*]{0,2}\b",
-                        sec5,
-                        re.IGNORECASE,
-                    )
-                )
-                if not has_closed_disp:
-                    warnings.append(
-                        msg + " (Expected after Reviewer #2 fixes: every critique must be closed in the Disposition Table.)"
-                    )
-            else:
-                gate_sink.append(msg)
-    root = report_dir.resolve()
-    for rel, line_no, quoted in quotes:
-        target = (report_dir / rel).resolve()
-        try:
-            target.relative_to(root)
-        except ValueError:
-            gate_sink.append(f"appendix/gates/{gate}.md quotes '{rel}', which is outside the report folder.")
-            continue
-        lines = target.read_text(encoding="utf-8", errors="replace").splitlines() if target.is_file() else []
-        idx = int(line_no) - 1
-        norm = lambda t: re.sub(r"\s+", " ", t).strip()  # noqa: E731
-        if not (0 <= idx < len(lines)) or norm(quoted) not in norm(lines[idx]):
-            gate_sink.append(
-                f"appendix/gates/{gate}.md quotes {rel}:{line_no} but that line does not contain \"{quoted[:60]}\"."
-            )
-    if re.search(r"^\s*MODE:\s*self-review\b", gtext, re.MULTILINE):
-        method = _extract_section_slice(clean_text, section_positions, "Methodology & Evidence Standards")
-        if not _SELF_REVIEW_DECLARED_RE.search(method):
-            warnings.append(
-                f"appendix/gates/{gate}.md is a self-review (MODE: self-review), not an independent subagent; say so in "
-                f"Section 3 (e.g. 'gates run as self-review: no subagent tool available')."
-            )
-
-
-PRESS_DOMAINS = (
-    "nytimes.com", "washingtonpost.com", "bbc.com", "bbc.co.uk", "reuters.com", "bloomberg.com", "ft.com", "wsj.com",
-    "theguardian.com", "economist.com", "forbes.com", "businessinsider.com", "cnn.com", "techcrunch.com", "elpais.com",
-    "lanacion.com.ar", "clarin.com", "infobae.com", "ambito.com", "cronista.com", "pagina12.com.ar", "medium.com",
-    "substack.com", "blogspot.com", "wordpress.com", "tumblr.com", "twitter.com", "x.com", "facebook.com",
-    "linkedin.com", "reddit.com", "youtube.com",
+from checks.numeric import (  # noqa: E402
+    _TABLE_SKIP_RE as _TABLE_SKIP_RE,
+    _TABLE_STAT_RE as _TABLE_STAT_RE,
+    _closure_haystack as _closure_haystack,
+    _untraced_in as _untraced_in,
+    check_caption_closure as check_caption_closure,
+    check_numeric_closure as check_numeric_closure,
+    _verdict_stats as _verdict_stats,
 )
-
-
-def check_source_domains(sources_rows: list[dict[str, str]]) -> list[str]:
-    """P2 heuristic: warn when a declared tier or kind contradicts the source's domain (never raises a tier)."""
-    warnings: list[str] = []
-    for row in sources_rows:
-        cid = (row.get("claim_id") or "?").strip()
-        tier = (row.get("tier") or "").strip()
-        kind = (row.get("kind") or "").strip().lower()
-        url = (row.get("url") or "").strip()
-        host = (urlparse(url).hostname or "").lower() if url.startswith(("http://", "https://")) else ""
-        press_host = next((d for d in PRESS_DOMAINS if host == d or host.endswith("." + d)), "")
-        if kind == "press" and re.search(r"\bTier\s*[12]\b", tier, re.IGNORECASE):
-            warnings.append(
-                f"Source '{cid}' has kind=press but is declared {tier}; press belongs in Tier 3 (kind and tier contradict "
-                f"each other; if it only reproduces a primary source, cite that source instead)."
-            )
-        elif press_host and re.search(r"\bTier\s*[12]\b", tier, re.IGNORECASE):
-            warnings.append(
-                f"Source '{cid}' is declared {tier} but its domain ({press_host}) is a press/blog/social site; press belongs "
-                f"in Tier 3 unless it is a primary document hosted there (then say so in the title)."
-            )
-    return warnings
-
-
-def _curated_only_ids(row: str, source_by_id: dict[str, dict[str, str]]) -> list[str]:
-    """Ids of a matrix row when every non-own-computation source it cites is a user-curated document, else []."""
-    ids = [c for c in _extract_citation_ids(row) if c in source_by_id]
-    evidence = [c for c in ids if (source_by_id[c].get("kind") or "").strip().lower() != "own-computation"]
-    if not evidence:
-        return []
-    if all(
-        (source_by_id[c].get("selection") or "").strip().lower() == "user-curated"
-        and (source_by_id[c].get("kind") or "").strip().lower() in DOCUMENT_KINDS
-        for c in evidence
-    ):
-        return evidence
-    return []
-
-
-def _intake_user_curated_hashes(report_dir: Path | None) -> set[str]:
-    """Return 12-hex SHA-256 prefixes ingested with selection=user-curated in appendix/intake.md."""
-    if report_dir is None:
-        return set()
-    intake_md = report_dir / "appendix" / "intake.md"
-    if not intake_md.is_file():
-        return set()
-    text = intake_md.read_text(encoding="utf-8", errors="replace")
-    hashes: set[str] = set()
-    in_user_curated = False
-    for line in text.splitlines():
-        if line.startswith("## Channel:") or line.startswith("- folder:"):
-            if "selection:" in line:
-                in_user_curated = "selection: user-curated" in line
-        if in_user_curated and "accepted:" in line:
-            m = re.search(r"sha256\s+([0-9a-f]{12,64})", line, re.IGNORECASE)
-            if m:
-                hashes.add(m.group(1).lower()[:12])
-    return hashes
-
-
-_OK_OUTCOMES = {"used", "ok", "success", "succeeded", "retrieved", "http 200"}
-
-
-def _download_proof(
-    report_dir: Path | None, include_attempts: bool = True
-) -> tuple[set[str], set[str], set[str]]:
-    """Return (urls, filenames, sha12s) with logged acquisition proof in download_log.csv or successful data_attempts.csv.
-
-    ``include_attempts=False`` keeps only download_log.csv (a document that was actually saved to disk)."""
-    urls: set[str] = set()
-    names: set[str] = set()
-    shas: set[str] = set()
-    if report_dir is None:
-        return urls, names, shas
-    app = report_dir / "appendix"
-    dl_csv = app / "download_log.csv"
-    if dl_csv.is_file():
-        try:
-            with dl_csv.open(encoding="utf-8-sig", newline="") as fh:
-                for row in csv.DictReader(fh):
-                    if (row.get("url") or "").strip():
-                        urls.add(row["url"].strip())
-                    if (row.get("file") or "").strip():
-                        names.add(Path(row["file"].strip()).name)
-                    m = SHA_HEX_RE.search((row.get("sha256") or "").strip())
-                    if m:
-                        shas.add(m.group(0).lower()[:12])
-        except OSError:
-            pass
-    att_csv = app / "data_attempts.csv"
-    if include_attempts and att_csv.is_file():
-        ok_out = _OK_OUTCOMES
-        try:
-            with att_csv.open(encoding="utf-8-sig", newline="") as fh:
-                for row in csv.DictReader(fh):
-                    out = (row.get("outcome") or "").strip().lower()
-                    if out in ok_out or out.startswith("http 2"):
-                        q = (row.get("query_or_endpoint") or "").strip()
-                        if q:
-                            urls.add(q)
-                            for tok in q.split():
-                                if tok.startswith(("http://", "https://")):
-                                    urls.add(tok)
-        except OSError:
-            pass
-    return urls, names, shas
-
-
-def _attempt_proof(report_dir: Path | None, run_start: Any = None) -> list[dict[str, str]]:
-    """``used`` rows of data_attempts.csv stamped on or after the run start.
-
-    A row without a parseable ``attempted_utc`` (or a file without that column) never counts: without a time it could
-    belong to an earlier run."""
-    if report_dir is None:
-        return []
-    att = report_dir / "appendix" / "data_attempts.csv"
-    rows: list[dict[str, str]] = []
-    try:
-        with att.open(encoding="utf-8-sig", newline="") as fh:
-            for row in csv.DictReader(fh):
-                out = (row.get("outcome") or "").strip().lower()
-                if out not in _OK_OUTCOMES and not out.startswith("http 2"):
-                    continue
-                ts = _parse_utc((row.get("attempted_utc") or "").strip())
-                if ts is None or (run_start is not None and ts < run_start):
-                    continue
-                rows.append(row)
-    except (OSError, csv.Error):
-        return []
-    return rows
-
-
-def _strip_url(text: str) -> str:
-    return re.sub(r"https?://(?:www\.)?", "", text.lower()).rstrip("/")
-
-
-def _literature_proven(cid: str, url: str, attempts: list[dict[str, str]]) -> bool:
-    """A kept attempt names the source's claim_id (any of its text columns) or its URL (query or fallback)."""
-    token = re.compile(rf"(?<![A-Za-z0-9]){re.escape(cid)}(?![A-Za-z0-9])")
-    needle = _strip_url(url) if url else ""
-    for row in attempts:
-        if any(token.search(row.get(k) or "") for k in ("target_series", "query_or_endpoint", "fallback_used")):
-            return True
-        if needle and any(needle in _strip_url(row.get(k) or "") for k in ("query_or_endpoint", "fallback_used")):
-            return True
-    return False
-
-
-def check_selection(
-    sources_rows: list[dict[str, str]],
-    sources_cols: list[str],
-    as_of: str,
-    level: int,
-    report_dir: Path | None = None,
-    run_start: Any = None,
-) -> tuple[list[str], list[str]]:
-    """Pre-intake provenance rules (only when sources.csv has a ``selection`` column)."""
-    errors: list[str] = []
-    warnings: list[str] = []
-    if "selection" not in [c.strip() for c in sources_cols]:
-        return errors, warnings
-    as_of_dt = _parse_utc(as_of) if as_of else None
-    curated_hashes = _intake_user_curated_hashes(report_dir)
-    dl_urls, dl_names, dl_shas = _download_proof(report_dir)
-    saved_urls, saved_names, saved_shas = _download_proof(report_dir, include_attempts=False)
-    attempts = _attempt_proof(report_dir, run_start)
-    curated_docs = False
-    fetched = False
-    for row in sources_rows:
-        cid = (row.get("claim_id") or "?").strip()
-        sel = (row.get("selection") or "").strip().lower()
-        kind = (row.get("kind") or "").strip().lower()
-        tier = (row.get("tier") or "").strip()
-        ret = (row.get("retrieved_utc") or "").strip()
-        url = (row.get("url") or "").strip()
-        is_local = bool(url) and (url.startswith("file://") or "://" not in url)
-        sha = _declared_sha(row)
-        if sel not in VALID_SELECTIONS:
-            errors.append(f"Source '{cid}' in appendix/sources.csv has selection '{sel}'; use one of: {', '.join(VALID_SELECTIONS)}.")
-            continue
-        if sel == "user-curated":
-            curated_docs = curated_docs or kind in DOCUMENT_KINDS
-            if not ret:
-                errors.append(
-                    f"Source '{cid}' is user-curated but has no retrieved_utc: write when it was retrieved from its "
-                    f"origin (ISO UTC) or 'unknown'."
-                )
-            elif ret.lower() == "unknown" and re.search(r"\bTier\s*[12]\b", tier, re.IGNORECASE):
-                errors.append(
-                    f"Source '{cid}' is user-curated with retrieved_utc unknown, so it cannot be {tier}: without an origin "
-                    f"URL, a retrieval date and a hash an uploaded file stays Tier 3."
-                )
-            if is_local and re.search(r"\bTier\s*[12]\b", tier, re.IGNORECASE):
-                errors.append(
-                    f"Source '{cid}' is a local user-curated file ('{url}') and cannot be {tier} without a verified "
-                    f"external origin URL (it stays Tier 3; cite the online primary source separately)."
-                )
-        elif sel == "agent-fetched" and kind != "own-computation":
-            if sha and sha[:12] in curated_hashes:
-                errors.append(
-                    f"Source '{cid}' was ingested as user-curated in appendix/intake.md (sha256 {sha[:12]}) and cannot "
-                    f"be relabelled agent-fetched."
-                )
-            if kind in ("data", "literature") and re.search(r"\bTier\s*[12]\b", tier, re.IGNORECASE):
-                fetched = True
-        ret_dt = _parse_utc(ret) if ret and ret.lower() != "unknown" else None
-        if ret and ret.lower() != "unknown" and ret_dt is None:
-            errors.append(f"Source '{cid}' has an invalid retrieved_utc '{ret}' (use ISO 8601 UTC or 'unknown').")
-        if sel == "agent-fetched" and kind != "own-computation":
-            if run_start is not None and ret_dt is not None and ret_dt < run_start:
-                errors.append(
-                    f"Source '{cid}' is marked agent-fetched but retrieved_utc ({ret}) precedes run_started_utc "
-                    f"({run_start.strftime('%Y-%m-%dT%H:%M:%SZ')}); fetched sources must be acquired during this run."
-                )
-            if kind == "data" and report_dir is not None:
-                fname = Path(unquote(url)).name if url else ""
-                has_proof = (
-                    (url and any(url in u or u in url for u in dl_urls))
-                    or (fname and fname in dl_names)
-                    or (sha and sha[:12] in dl_shas)
-                )
-                if not has_proof:
-                    (errors if level == 3 else warnings).append(
-                        f"Source '{cid}' is marked agent-fetched (kind=data) with no matching record in "
-                        f"appendix/download_log.csv or appendix/data_attempts.csv."
-                    )
-            elif kind == "literature" and report_dir is not None:
-                if not _literature_proven(cid, url, attempts):
-                    (errors if level == 3 else warnings).append(
-                        f"Source '{cid}' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no "
-                        f"`used` attempt stamped at or after run start that names {cid} or its URL; log the retrieval "
-                        f"with `local_data.py attempt`."
-                    )
-                title = row.get("source_title") or ""
-                honest = _WEAK_TITLE_RE.search(title) or any(lbl in title.lower() for lbl in WEB_SUMMARY_LABELS)
-                fname = Path(unquote(url)).name if url else ""
-                saved = (
-                    (url and any(url in u or u in url for u in saved_urls))
-                    or (fname and fname in saved_names)
-                    or (sha and sha[:12] in saved_shas)
-                )
-                if re.search(r"\bTier\s*1\b", tier, re.IGNORECASE) and not saved and not honest:
-                    warnings.append(
-                        f"Source '{cid}' is agent-fetched literature declared Tier 1 with no downloaded primary document "
-                        f"in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the "
-                        f"title and lower the tier."
-                    )
-        if ret_dt is not None and as_of_dt is not None:
-            if as_of_dt.date() < ret_dt.date():
-                errors.append(f"As-Of Date {as_of} is earlier than {cid}'s retrieved_utc {ret}.")
-            elif (as_of_dt - ret_dt).days > MAX_SNAPSHOT_AGE_DAYS:
-                warnings.append(
-                    f"Source '{cid}' was retrieved {(as_of_dt - ret_dt).days} days before the As-Of Date; refresh the "
-                    f"snapshot or say in Section 3 why that vintage is the right one."
-                )
-    if curated_docs and not fetched:
-        (errors if level == 3 else warnings).append(
-            "no agent-fetched source outside the user's corpus (must be Tier 1 or Tier 2 data/literature): at Level 2+ "
-            "search for counter-evidence yourself and register what you find with selection=agent-fetched; a corpus the user "
-            "chose is never sufficient."
-        )
-    return errors, warnings
-
-
-def check_inbox(report_dir: Path, sources_rows: list[dict[str, str]]) -> list[str]:
-    inbox = report_dir / "inbox"
-    if not inbox.is_dir():
-        return []
-    declared = [h for h in (_declared_sha(r) for r in sources_rows) if h]
-    out = []
-    for fp in sorted(inbox.rglob("*")):
-        if fp.is_file() and not any(_file_sha256(fp).startswith(h) for h in declared):
-            out.append(
-                f"inbox/{fp.relative_to(inbox).as_posix()} is not registered in appendix/sources.csv; run "
-                f"`local_data.py intake` or remove it."
-            )
-    return out
-
-
-def _norm_text(t: str) -> str:
-    return re.sub(r"\s+", " ", re.sub(r"[`*_]", "", t)).strip().lower()
-
-
-def _files_added_after_prereg(report_dir: Path, rec: dict[str, Any]) -> list[str]:
-    """Files in appendix/data/ absent from the sealed ``known_artifacts`` and from download_log.csv / intake.md."""
-    known = rec.get("known_artifacts")
-    data_dir = report_dir / "appendix" / "data"
-    if not isinstance(known, dict) or not data_dir.is_dir():
-        return []  # a preregistration sealed before known_artifacts existed has nothing to compare against
-    _, saved_names, saved_shas = _download_proof(report_dir, include_attempts=False)
-    try:
-        intake = (report_dir / "appendix" / "intake.md").read_text(encoding="utf-8")
-    except OSError:
-        intake = ""
-    out: list[str] = []
-    for fp in sorted(data_dir.rglob("*"), key=lambda q: q.relative_to(data_dir).parts):
-        if not fp.is_file() or "__pycache__" in fp.parts or fp.suffix == ".pyc":
-            continue
-        rel = fp.relative_to(report_dir / "appendix").as_posix()
-        digest = _file_sha256(fp)[:12]
-        if rel in known or fp.name in saved_names or digest in saved_shas:
-            continue
-        if intake and (fp.name in intake or digest in intake):
-            continue
-        out.append(rel)
-    return out
-
-
-def check_preregistration(
-    report_dir: Path,
-    clean_text: str,
-    section_positions: dict[str, int],
-    level: int = 2,
-    run_start: Any = None,
-    numbers_data: dict[str, Any] | None = None,
-) -> tuple[list[str], list[str]]:
-    path = report_dir / "appendix" / "preregistration.json"
-    if not path.is_file():
-        if level == 3:
-            return [
-                "Level 3 report requires appendix/preregistration.json sealed before analysis "
-                "(run `local_data.py prereg` in Stage 1)."
-            ], []
-        return [], []
-    import hashlib
-
-    try:
-        rec = json.loads(path.read_text(encoding="utf-8"))
-        for req_k in ("sealed_utc", "hypotheses", "plan"):
-            _ = rec[req_k]
-        body = {k: rec[k] for k in ("sealed_utc", "hypotheses", "plan", "known_artifacts", "post_hoc") if k in rec}
-    except (OSError, json.JSONDecodeError, KeyError, TypeError) as exc:
-        return [f"appendix/preregistration.json is unreadable ({exc})."], []
-    digest = hashlib.sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
-    if digest != rec.get("sha256"):
-        return ["appendix/preregistration.json was edited after sealing (sha256 mismatch); a preregistration is sealed once."], []
-    errors: list[str] = []
-    warnings: list[str] = []
-    sink = errors if level == 3 else warnings
-    if rec.get("post_hoc"):
-        sink.append(
-            "appendix/preregistration.json is marked post_hoc=true (sealed after analysis outputs already existed)."
-        )
-    sealed_dt = _parse_utc(str(rec.get("sealed_utc") or ""))
-    if run_start is not None and sealed_dt is not None and sealed_dt < run_start:
-        sink.append(
-            f"appendix/preregistration.json sealed_utc ({rec['sealed_utc']}) precedes run_started_utc "
-            f"({run_start.strftime('%Y-%m-%dT%H:%M:%SZ')})."
-        )
-    for rel in _files_added_after_prereg(report_dir, rec):
-        warnings.append(
-            f"appendix/{rel} was added after preregistration sealing (appendix/preregistration.json) without a "
-            f"download_log.csv or intake.md entry; document its provenance in Section 3, or run `local_data.py intake` "
-            f"before `prereg`."
-        )
-    sec2 = _norm_text(_extract_section_slice(clean_text, section_positions, "Framing & Hypotheses"))
-    for key, text in (body["hypotheses"] or {}).items():
-        if _norm_text(str(text)) not in sec2:
-            warnings.append(
-                f"{key} in Section 2 differs from appendix/preregistration.json (sealed {body['sealed_utc']}); keep the "
-                f"sealed wording or say in Section 3 what changed after sealing and why."
-            )
-    # HARKing check: flag hypotheses containing >= 2 exact computed decimal figures from numbers.json
-    if numbers_data:
-        computed_nums: set[str] = set()
-        for val in numbers_data.values():
-            for tok in re.findall(r"\d+[.,]\d{2,}", str(val)):
-                computed_nums.add(tok.replace(",", "."))
-        if computed_nums:
-            hyp_text = " ".join(str(v) for v in (body["hypotheses"] or {}).values())
-            hyp_nums = {tok.replace(",", ".") for tok in re.findall(r"\d+[.,]\d{2,}", hyp_text)}
-            hits = sorted(hyp_nums & computed_nums)
-            if len(hits) >= 2:
-                sink.append(
-                    f"appendix/preregistration.json hypothesis contains exact computed result figures from "
-                    f"appendix/numbers.json ({', '.join(hits[:4])}, possible HARKing); state directional or threshold "
-                    f"predictions before running analysis.py."
-                )
-    return errors, warnings
-
-
-_TABLE_SKIP_RE = re.compile(
-    r"\{\{[^}]+\}\}|\[@[^\]]+\]|(?:Section|Secci[oó]n|§)\s*\d+(?:\.\d+)*"
-    r"|\bTier\s*[123]\b|\bN-[12]\b|\b\d+(?:/\d+)?\s*(?:kV|MW|GW|MWh|GWh|Hz)\b"
-    r"|\b\d{4}-\d{2}(?:-\d{2})?\b",
-    re.IGNORECASE,
+from checks.provenance import (  # noqa: E402
+    _is_weak_source as _is_weak_source,
+    _local_table_worst_tier as _local_table_worst_tier,
+    _registered_data_files as _registered_data_files,
+    PRESS_DOMAINS as PRESS_DOMAINS,
+    _AS_OF_PART_RE as _AS_OF_PART_RE,
+    _data_as_of_after as _data_as_of_after,
+    _catalogue_column as _catalogue_column,
+    check_source_metadata as check_source_metadata,
+    check_source_domains as check_source_domains,
+    _curated_only_ids as _curated_only_ids,
+    _intake_user_curated_hashes as _intake_user_curated_hashes,
+    _OK_OUTCOMES as _OK_OUTCOMES,
+    _download_proof as _download_proof,
+    _attempt_proof as _attempt_proof,
+    _strip_url as _strip_url,
+    _literature_proven as _literature_proven,
+    check_selection as check_selection,
+    _INTAKE_FILE_RE as _INTAKE_FILE_RE,
+    _intake_listed_paths as _intake_listed_paths,
+    check_inbox as check_inbox,
 )
-_TABLE_STAT_RE = re.compile(r"(?<![\w.])(?:[+\-\u2212]\d+(?:[.,]\d+)?%?|\d+[.,]\d+%?|\d+%)")
-
-
-def _closure_haystack(output_text: str, numbers_data: dict[str, Any] | None) -> tuple[str, str]:
-    """(raw, normalised) text of output.txt plus the numbers.json values, the only places a figure may come from."""
-    hay_parts = [output_text]
-    if numbers_data:
-        hay_parts.extend(str(v) for v in numbers_data.values())
-    hay_raw = "\n".join(hay_parts)
-    return hay_raw, hay_raw.replace("\u2212", "-").replace(",", ".")
-
-
-def _untraced_in(text: str, hay_raw: str, hay_norm: str, seen: set[str]) -> list[str]:
-    """Statistical-looking figures of ``text`` found in neither haystack (years, dates, tiers, section refs and
-    engineering constants are skipped; a bare ``1,00×`` is the trivial baseline of a ratio and needs no source)."""
-    found: list[str] = []
-    cleaned = _TABLE_SKIP_RE.sub(" ", text)
-    for m in _TABLE_STAT_RE.finditer(cleaned):
-        tok = m.group(0)
-        norm = tok.replace("\u2212", "-").replace(",", ".")
-        bare = norm.lstrip("+-").rstrip("%")
-        if re.fullmatch(r"(?:19|20)\d\d", bare):
-            continue
-        if cleaned[m.end():m.end() + 1] in ("\u00d7", "x", "X") and re.fullmatch(r"\+?1(?:\.0+)?", norm):
-            continue
-        if norm in seen:
-            continue
-        candidates = {tok, norm, bare, bare.replace(".", ",")}
-        if any(
-            re.search(rf"(?<![\d.,]){re.escape(c)}(?!\d)", hay_raw) or re.search(rf"(?<![\d.,]){re.escape(c)}(?!\d)", hay_norm)
-            for c in candidates
-            if c
-        ):
-            continue
-        seen.add(norm)
-        found.append(tok)
-    return found
-
-
-def check_caption_closure(
-    charts: Any,
-    output_text: str,
-    numbers_data: dict[str, Any] | None,
-    level: int,
-) -> tuple[list[str], list[str]]:
-    """Flag figures in the title/caption/source of a chart that appear in neither output.txt nor numbers.json."""
-    if not isinstance(charts, list):
-        return [], []
-    hay_raw, hay_norm = _closure_haystack(output_text, numbers_data)
-    msgs: list[str] = []
-    for i, ch in enumerate(charts):
-        if not isinstance(ch, dict):
-            continue
-        cid = str(ch.get("id") or f"fig_{i + 1}")
-        for field in ("title", "caption", "source"):
-            value = ch.get(field)
-            if not isinstance(value, str):
-                continue
-            untraced = _untraced_in(value, hay_raw, hay_norm, set())
-            if untraced:
-                msgs.append(
-                    f"Chart '{cid}' {field} contains untraced numeric figure(s) not found in appendix/output.txt or "
-                    f"appendix/numbers.json: {', '.join(untraced[:5])}; build the {field} from the analysis output instead "
-                    f"of typing the figure."
-                )
-    return (msgs, []) if level == 3 else ([], msgs)
-
-
-def check_numeric_closure(
-    clean_text: str,
-    section_positions: dict[str, int],
-    output_text: str,
-    numbers_data: dict[str, Any] | None,
-    level: int,
-) -> tuple[list[str], list[str]]:
-    """Flag statistical numbers hand-typed in Section 4 tables that appear in neither output.txt nor numbers.json."""
-    findings = _extract_section_slice(clean_text, section_positions, "Findings")
-    if not findings:
-        return [], []
-    hay_raw, hay_norm = _closure_haystack(output_text, numbers_data)
-
-    untraced: list[str] = []
-    seen: set[str] = set()
-    lines = findings.splitlines()
-    for idx, line in enumerate(lines):
-        stripped = line.strip()
-        if not (stripped.startswith("|") and stripped.endswith("|")):
-            continue
-        # Skip header and separator rows
-        if re.fullmatch(r"\|[\s:\-|]+\|", stripped):
-            continue
-        if idx + 1 < len(lines) and re.fullmatch(r"\|[\s:\-|]+\|", lines[idx + 1].strip()):
-            continue
-        untraced.extend(_untraced_in(stripped, hay_raw, hay_norm, seen))
-    if not untraced:
-        return [], []
-    msg = (
-        f"Section 4 table contains untraced numeric figure(s) not found in appendix/output.txt or "
-        f"appendix/numbers.json: {', '.join(untraced[:5])}; compute them in appendix/analysis.py and reference via "
-        f"{{{{num:key}}}}."
-    )
-    return ([msg], []) if level == 3 else ([], [msg])
-
-
-def _verdict_stats(verdict: str) -> tuple[int, int]:
-    """(sentences, numbers) of a calibrated verdict, ignoring citations, tags, years and digits inside words."""
-    body = re.sub(r"\[@[^\]]+\]", "", verdict)
-    body = re.sub(r"`?\[(?:Strong|Moderate|Preliminary|Speculative|Fuerte|Moderada|Preliminar|Especulativa)\]`?", "", body)
-    markers = len(NUM_MARKER_RE.findall(body))
-    plain = NUM_MARKER_RE.sub(" ", body)
-    numbers = [n for n in _VERDICT_NUMBER_RE.findall(plain) if not re.fullmatch(r"(?:19|20)\d\d", n)]
-    sentences = [x for x in _VERDICT_SENTENCE_RE.split(plain.strip()) if x.strip()]
-    return len(sentences), len(numbers) + markers
-
-
-def _extract_citation_ids(text: str) -> list[str]:
-    ids: list[str] = []
-    for m in CITE_GROUP_RE.finditer(text):
-        for tok in re.split(r"\s*[;,]\s*", m.group(1)):
-            cid = tok.strip().lstrip("@")
-            if cid:
-                ids.append(cid)
-    return ids
-
-
-def _find_charts_json(report_dir: Path, appendix_dir: Path, explicit: Path | None = None) -> Path | None:
-    """Locate charts.json: explicit path, then <report_dir>/charts.json, then <appendix>/charts.json."""
-    if explicit is not None:
-        return explicit if explicit.is_file() else None
-    for candidate in (report_dir / "charts.json", appendix_dir / "charts.json"):
-        if candidate.is_file():
-            return candidate
-    return None
-
-
-HARDCODED_NUM_RE = re.compile(r"(?<![\w.@#{:-])(\d+[.,]\d+|\d{3,})(?![\w{])")
-MIN_TYPED_NUMBERS = 5  # below this many retyped numbers the coverage warning stays quiet
-MIN_MARKER_SHARE = 0.60
-MIN_TYPED_SUMMARY = 3  # C5: verdict + Section 1 must not retype 3+ output figures without any placeholder
-SUMMARY_NUM_RE = re.compile(r"(?<![\w.@#{:-])(\d+[.,]\d+|\d{2,})(?![\w{])")
-SECTION_REF_RE = re.compile(r"(?:§\s*|\b(?:Secci[oó]n|Section|Sec\.)\s+)\d+(?:\.\d+)*", re.IGNORECASE)
-LIMITATION_FALLBACKS: tuple[str, ...] = ("limitation", "limitación", "limitacion", "none", "ninguno", "n/a")
-HOME_PATH_RE = re.compile(r"/home/[^/\s]+/|/Users/[^/\s]+|[A-Za-z]:\\Users\\", re.IGNORECASE)
-GATE_MIN_CHARS = 400
-SELECTION_LABEL_RE = re.compile(
-    r"Selection bias: user-curated corpus|Sesgo de selecci[oó]n: corpus elegido por el usuario", re.IGNORECASE
+from checks.prereg import (  # noqa: E402
+    _files_added_after_prereg as _files_added_after_prereg,
+    _NUM_TOKEN_RE as _NUM_TOKEN_RE,
+    _DATE_VALUE_RE as _DATE_VALUE_RE,
+    _HARK_IGNORED as _HARK_IGNORED,
+    _plain_readings as _plain_readings,
+    _canon_number as _canon_number,
+    _rounded_forms as _rounded_forms,
+    _hypothesis_number_hits as _hypothesis_number_hits,
+    check_preregistration as check_preregistration,
 )
-MAX_SNAPSHOT_AGE_DAYS = 365
-VERDICT_MAX_SENTENCES = 3
-VERDICT_MAX_NUMBERS = 5
-_VERDICT_SENTENCE_RE = re.compile(r"(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÑ¿¡`*\[(])")
-_VERDICT_NUMBER_RE = re.compile(r"(?<![\w.@#{:-])[+\-\u2212]?\d+(?:[.,]\d+)*%?(?![\w}]|-[A-Za-z])")
-_WEAK_TITLE_RE = re.compile(
-    r"abstract[\s-]only|abstract\s+read|full\s+text\s+not\s+(?:read|retrieved)|solo\s+(?:el\s+)?resumen"
-    r"|texto\s+no\s+recuperado|not\s+retrieved|no\s+recuperado",
-    re.IGNORECASE,
+from checks.html import (  # noqa: E402
+    validate_html_full as validate_html_full,
+    validate_html as validate_html,
+    SOURCE_HASH_RE as SOURCE_HASH_RE,
+    _load_render_module as _load_render_module,
+    check_html_freshness as check_html_freshness,
 )
-_REVIEWER_CATEGORIES = (
-    "Over-calibrated claims",
-    "Unattempted data shortcuts",
-    "Missing counter-evidence and controls",
-    "Interdisciplinary and forecasting flaws",
-    "Decisions inside the noise",
-    "Provenance contradictions",
+from checks.codes import (  # noqa: E402
+    CODE_RULES as CODE_RULES,
+    classify_message as classify_message,
 )
-# C1: the minimum shape each gate answer must have; mirrors the Output section of references/agents/*.md
-GATE_MARKERS: dict[str, list[tuple[str, str]]] = {
-    "source_verifier": [(f"check {n}", rf"^\s*{n}[.)]\s+(?:PASS|FAIL)\b") for n in range(1, 8)]
-    + [("SOURCE-VERIFIER: PASS|FAIL", r"^\s*SOURCE-VERIFIER:\s*(?:PASS|FAIL)\b")],
-    "reviewer": [(title, re.escape(title)) for title in _REVIEWER_CATEGORIES]
-    + [("MOST DAMAGING:", r"^\s*MOST DAMAGING:")],
-    "qa": [(f"check {n}", rf"^\s*{n}[.)]?\s+(?:PASS|FAIL)\b") for n in range(1, 9)]
-    + [("QA: PASS|FAIL", r"^\s*QA:\s*(?:PASS|FAIL)\b"), ("FAIL count: <n>", r"^\s*FAIL count:\s*\d+")],
-}
-DATE_RE = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
-
-
-_NAME_STOPWORDS = frozenset({"serie", "series", "datos", "data", "para", "from", "with", "sobre", "entre", "the"})
-
-
-def _name_tokens(text: str) -> set[str]:
-    folded = unicodedata.normalize("NFKD", text.lower()).encode("ascii", "ignore").decode()
-    return {w for w in re.findall(r"[a-z]{4,}", folded) if w not in _NAME_STOPWORDS}
-
-
-def _named_in_any(target: str, lines: list[str]) -> bool:
-    """True when one line mentions at least 2 (and at least half) of the target's significant words.
-
-    Reports paraphrase their data series ("Serie oficial del techo y piso" for "Serie diaria oficial del
-    techo/piso de la banda"), so an exact-substring test misses the very limitation it should catch.
-    """
-    want = _name_tokens(target)
-    if not want:
-        return False
-    for line in lines:
-        folded = unicodedata.normalize("NFKD", line.lower()).encode("ascii", "ignore").decode()
-        hits = sum(1 for w in want if w in folded)
-        if hits >= 2 and hits >= 0.5 * len(want):
-            return True
-    return False
-
-
-def _parse_utc(value: str):
-    """ISO-8601 UTC (``2026-11-20T09:30:00Z``) or a bare date (midnight UTC) -> aware datetime, else None."""
-    from datetime import datetime, timezone
-
-    v = (value or "").strip()
-    if not v:
-        return None
-    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", v):
-        v += "T00:00:00+00:00"
-    v = re.sub(r"Z$", "+00:00", v)
-    try:
-        dt = datetime.fromisoformat(v)
-    except ValueError:
-        return None
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
-
-
-AS_OF_RE = re.compile(r"As-Of(?:\s+Date)?\)?\s*:?\**\s*:?\**\s*(\d{4}-\d{2}-\d{2})", re.IGNORECASE)
-
-
-def _as_of_date(markdown_text: str) -> str:
-    for line in markdown_text.splitlines()[:20]:
-        m = AS_OF_RE.search(line)
-        if m:
-            return m.group(1)
-    return ""
-
-
-def _resolve_run_start(report_dir: Path | None, explicit: str | None, markdown_text: str):
-    """(run start, where it came from): appendix/run.json (tool-stamped), --run-since, or the report date."""
-    if report_dir is not None:
-        run_json = report_dir / "appendix" / "run.json"
-        if run_json.is_file():
-            try:
-                data = json.loads(run_json.read_text(encoding="utf-8"))
-                dt = _parse_utc(str(data.get("run_started_utc", ""))) if isinstance(data, dict) else None
-                if dt is not None:
-                    return dt, "appendix/run.json"
-            except (OSError, json.JSONDecodeError):
-                pass
-    if explicit:
-        dt = _parse_utc(_resolve_run_since(explicit, ""))
-        if dt is not None:
-            return dt, "--run-since"
-    dt = _parse_utc(_as_of_date(markdown_text) or _resolve_run_since(None, markdown_text))
-    return (dt, "report date") if dt is not None else (None, "")
-
-
-def _resolve_run_since(explicit: str | None, markdown_text: str) -> str:
-    """Run start (YYYY-MM-DD): the explicit value, else the first ISO date in the report's first 20 lines."""
-    if explicit:
-        m = DATE_RE.search(explicit)
-        return m.group(1) if m else ""
-    for line in markdown_text.splitlines()[:20]:
-        m = DATE_RE.search(line)
-        if m:
-            return m.group(1)
-    return ""
 
 
 def validate_report_full(
@@ -1074,10 +240,17 @@ def validate_report_full(
     # 3. Check global presence of canonical/localized epistemic calibration tags
     tag_count = sum(clean_text.count(tag) for tag in ALL_TAGS)
     if tag_count == 0:
-        errors.append(
-            "Missing epistemic calibration tags: report must include canonical tags "
-            "([Strong]/[Fuerte], [Moderate]/[Moderada], [Preliminary]/[Preliminar], or [Speculative]/[Especulativa])."
-        )
+        wrong = _noncanonical_tags(clean_text)
+        if wrong:
+            errors.append(
+                f"Missing epistemic calibration tags: the report writes {', '.join(repr(w) for w in wrong[:4])}, but tags are "
+                f"case-sensitive; write exactly {', '.join(repr(_canonical_spelling(w)) for w in wrong[:4])}."
+            )
+        else:
+            errors.append(
+                "Missing epistemic calibration tags: report must include canonical tags "
+                "([Strong]/[Fuerte], [Moderate]/[Moderada], [Preliminary]/[Preliminar], or [Speculative]/[Especulativa])."
+            )
 
     # 4. Check hypotheses ($H_0$ / H0 / H₀ and $H_1$ / H1 / H₁) strictly inside Section 2
     if "Framing & Hypotheses" in section_positions:
@@ -1129,10 +302,17 @@ def validate_report_full(
                 )
             for row_idx, row in enumerate(data_rows, start=1):
                 if not any(tag in row for tag in ALL_TAGS):
-                    errors.append(
-                        f"Claim-Evidence Matrix row {row_idx} is missing a canonical confidence tag "
-                        f"([Strong], [Moderate], [Preliminary], or [Speculative])."
-                    )
+                    wrong_tags = _noncanonical_tags(row)
+                    if wrong_tags:
+                        errors.append(
+                            f"Claim-Evidence Matrix row {row_idx} writes {', '.join(repr(w) for w in wrong_tags)}; write the "
+                            f"tag exactly as {', '.join(repr(_canonical_spelling(w)) for w in wrong_tags)} (tags are case-sensitive)."
+                        )
+                    else:
+                        errors.append(
+                            f"Claim-Evidence Matrix row {row_idx} is missing a canonical confidence tag "
+                            f"([Strong], [Moderate], [Preliminary], or [Speculative])."
+                        )
                 if source_by_id and any(st in row for st in STRONG_TAGS):
                     # P0-3: decided from sources.csv by claim_id, so relabelling a source in prose cannot hide it
                     row_ids = _extract_citation_ids(row)
@@ -1314,6 +494,9 @@ def validate_report_full(
                             )
 
                 warnings.extend(check_source_domains(sources_rows))
+                meta_err, meta_warn = check_source_metadata(report_dir, _as_of_date(markdown_text), level)
+                errors.extend(meta_err)
+                warnings.extend(meta_warn)
                 _resolved_start, _run_src = _resolve_run_start(report_dir, run_since, markdown_text)
                 _run_start_dt = _resolved_start if (_resolved_start is not None and "run.json" in _run_src) else None
                 sel_err, sel_warn = check_selection(
@@ -1715,107 +898,6 @@ def validate_report(
     return errors
 
 
-def validate_html_full(html_path: Path) -> tuple[list[str], list[str]]:
-    """Verify rendered HTML sections, Spanish language purity (V3), and unconverted LaTeX (V4)."""
-    if not html_path.is_file():
-        return [f"Rendered HTML file not found: {html_path}"], []
-
-    html_text = html_path.read_text(encoding="utf-8")
-    if not html_text.strip():
-        return [f"Rendered HTML file is empty: {html_path}"], []
-
-    errors: list[str] = []
-    if HOME_PATH_RE.search(html_text):
-        errors.append("report.html contains a home-directory path (e.g. /home/<user>/…); it leaks the author's machine.")
-    warnings: list[str] = []
-
-    for label, pattern in HTML_SECTION_PATTERNS:
-        if not re.search(pattern, html_text, flags=re.IGNORECASE):
-            errors.append(f"HTML deliverable missing required section heading: '{label}'")
-
-    # V3: Spanish HTML language purity check
-    is_spanish_html = bool(
-        re.search(r"<h2[^>]*>\s*(?:1\.\s*Resumen\s+ejecutivo|4\.\s*Hallazgos|6\.\s*Matriz\s+de\s+afirmaciones)", html_text, re.IGNORECASE)
-    )
-    if is_spanish_html:
-        if re.search(r'<html\b[^>]*\blang="en"', html_text, re.IGNORECASE):
-            errors.append("Spanish HTML report has wrong language attribute: expected <html lang=\"es\">, found lang=\"en\".")
-        leaked = [label for label, pat in SPANISH_LEAKED_CHROME if re.search(pat, html_text)]
-        if leaked:
-            errors.append(
-                f"Spanish HTML report leaks untranslated English chrome: {', '.join(leaked)}."
-            )
-
-    # W2: unresolved {{...}} markers left in visible HTML (strip <style>, <script>, <pre>, <code> first)
-    visible_for_braces = re.sub(
-        r"<(?:style|script|pre|code)\b[^>]*>.*?</(?:style|script|pre|code)>", " ", html_text, flags=re.DOTALL | re.IGNORECASE
-    )
-    leftovers = LEFTOVER_BRACES_RE.findall(visible_for_braces)
-    if leftovers:
-        errors.append(
-            f"Rendered HTML contains unresolved marker(s) {', '.join(sorted(set(leftovers))[:4])}; "
-            f"fix the key or figure id and re-render."
-        )
-
-    # V4: Unconverted LaTeX warning (strip <style>, <script>, <pre>, <code> before scanning)
-    visible = re.sub(r"<(?:style|script|pre|code)\b[^>]*>.*?</(?:style|script|pre|code)>", " ", html_text, flags=re.DOTALL | re.IGNORECASE)
-    latex_hits = UNCONVERTED_LATEX_RE.findall(visible)
-    if latex_hits:
-        sample = ", ".join(f"${h}$" for h in latex_hits[:4])
-        warnings.append(f"Unconverted LaTeX expression(s) detected in HTML: {sample}.")
-
-    return errors, warnings
-
-
-def validate_html(html_path: Path) -> list[str]:
-    """Verify that a rendered HTML deliverable exists, preserves all 7 sections, and respects language purity."""
-    errors, _ = validate_html_full(html_path)
-    return errors
-
-
-SOURCE_HASH_RE = re.compile(r"<!--\s*heurisma-sources:\s*sha256:([0-9a-f]{12})\s*-->")
-
-
-def _load_render_module():
-    """Import render_report.py by explicit path so it also works under ``python3 -I`` (no script dir on sys.path)."""
-    import importlib.util
-
-    path = Path(__file__).resolve().parent / "render_report.py"
-    spec = importlib.util.spec_from_file_location("_heurisma_render_report", path)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"cannot load {path}")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-def check_html_freshness(html_path: Path, report_path: Path, charts_path: Path | None = None) -> list[str]:
-    """Warn when the rendered HTML predates a change to the report, charts.json, numbers.json or appendix/ (W3)."""
-    if not html_path.is_file():
-        return []
-    try:
-        compute_source_hash = _load_render_module().compute_source_hash
-    except Exception as exc:  # never skip the freshness check silently
-        return [f"freshness check skipped: could not load render_report.py ({exc})."]
-    html_text = html_path.read_text(encoding="utf-8", errors="replace")
-    m = SOURCE_HASH_RE.search(html_text)
-    if not m:
-        return [
-            f"HTML '{html_path.name}' has no source hash (rendered before v0.5.0); "
-            f"re-render with render_report.py so staleness can be detected."
-        ]
-    report_dir = report_path.parent
-    appendix_dir = report_dir / "appendix"
-    charts = _find_charts_json(report_dir, appendix_dir, charts_path)
-    current = compute_source_hash(report_path, charts, None, appendix_dir if appendix_dir.is_dir() else None)
-    if current != m.group(1):
-        return [
-            f"HTML '{html_path.name}' is stale (out of date): sources hash {current} != embedded {m.group(1)}; "
-            f"re-run render_report.py."
-        ]
-    return []
-
-
 REPRODUCED_FILES = ("appendix/output.txt", "appendix/numbers.json", "charts.json")
 _ANALYSIS_CMD_RE = re.compile(r"^\s*(?:\$\s*)?(python3?\s+.*analysis\.py.*?)\s*$")
 
@@ -1938,77 +1020,6 @@ def diff_runs(a_dir: Path, b_dir: Path) -> list[str]:
     if va != vb:
         lines += ["verdict changed:", f"  - {va}", f"  + {vb}"]
     return lines or ["no differences between the two runs (data files, numbers.json, verdict)."]
-
-
-# Stable machine-readable codes for --json (documented in references/validator-codes.md; keep the two in sync).
-# (message regex, code, file template: \1 = first group of the regex). The first matching rule wins.
-CODE_RULES: list[tuple[str, str, str]] = [
-    (r"^Report is empty", "STRUCT-EMPTY", "report.md"),
-    (r"^Missing required section", "STRUCT-SECTION", "report.md"),
-    (r"^Section out of order", "STRUCT-ORDER", "report.md"),
-    (r"lacks substantive content", "STRUCT-THIN", "report.md"),
-    (r"^Missing epistemic calibration tags", "STRUCT-TAGS", "report.md"),
-    (r"^Missing explicit null and alternative", "STRUCT-HYPOTHESES", "report.md"),
-    (r"^report\.md contains a home-directory path", "PRIV-HOME", "report.md"),
-    (r"^report\.html contains a home-directory path", "PRIV-HOME", "report.html"),
-    (r"^As-Of Date", "P1-ASOF", "report.md"),
-    (r"^Calibrated Verdict has \d+ (?:sentences|numbers)", "P1-VERDICT", "report.md"),
-    (r"^Calibrated Verdict number\(s\) not found|^Calibrated Verdict / Section 1 retypes", "P1-VERDICT-NUM", "report.md"),
-    (r"^Section 4 table contains untraced numeric", "P1-UNTRACED-NUM", "report.md"),
-    (r"^Chart '[^']+' (?:title|caption|source) contains untraced numeric", "P1-UNTRACED-NUM", "charts.json"),
-    (r"^numbers\.json coverage", "P1-NUM-COVERAGE", "report.md"),
-    (r"^Claim-Evidence Matrix row \d+ is \[Strong\] but has no", "P0-STRONG-CITE", "report.md"),
-    (r"^Claim-Evidence Matrix row \d+ (?:is \[Strong\] resting only|pairs \[Strong\])", "P0-STRONG", "report.md"),
-    (r"^Claim-Evidence Matrix row \d+ rests only on user-curated", "P2-SELECTION", "report.md"),
-    (r"^Claim-Evidence Matrix", "MATRIX", "report.md"),
-    (r"appendix/gates/([a-z_]+)\.md quotes a home-directory path|appendix/gates/([a-z_]+)\.md contains a literal", "GATE-PRIVACY", "appendix/gates/"),
-    (r"appendix/gates/([a-z_]+)\.md (?:is missing or empty|is under)", "GATE-MISSING", "appendix/gates/\\1.md"),
-    (r"appendix/gates/([a-z_]+)\.md is missing marker", "GATE-MARKERS", "appendix/gates/\\1.md"),
-    (r"appendix/gates/qa\.md has no 'QA: PASS'", "GATE-QA", "appendix/gates/qa.md"),
-    (r"appendix/gates/([a-z_]+)\.md (?:is missing header|reviewed an earlier version|quotes |is a self-review|records ANALYSIS-SHA256)", "GATE-BINDING", "appendix/gates/\\1.md"),
-    (r"^Level \d report requires charts\.json|^Invalid JSON in .*charts|is not strict JSON", "FIG-JSON", "charts.json"),
-    (r"^Chart '[^']*': (?:near-identical|fan chart)", "FIG-DESIGN", "charts.json"),
-    (r"^Chart '[^']*': ", "FIG-SCHEMA", "charts.json"),
-    (r"must place figures inline|^Unknown figure marker", "FIG-MARKER", "report.md"),
-    (r"is not placed inline via", "FIG-UNPLACED", "report.md"),
-    (r"^Unresolved marker '\{\{num:|^Invalid JSON in appendix/numbers\.json", "W2-NUM", "report.md"),
-    (r"^Level \d report requires (?:an 'appendix/'|at least one reproducible|'appendix/output|'appendix/sources)", "L2-APPENDIX", "appendix/"),
-    (r"must include in-text citations", "CITE-NONE", "report.md"),
-    (r"does not match any claim_id", "CITE-UNKNOWN", "report.md"),
-    (r"is never cited in the report text", "CITE-UNCITED", "appendix/sources.csv"),
-    (r"has no kind column|has no kind\.$|has kind '", "P1-KIND", "appendix/sources.csv"),
-    (r"in appendix/sources\.csv has tier '", "SRC-TIER", "appendix/sources.csv"),
-    (r"has kind=own-computation but tier", "SRC-OWN-TIER", "appendix/sources.csv"),
-    (r"is described as full text", "SRC-FULLTEXT", "appendix/sources.csv"),
-    (r"changed since it was registered|must include a SHA-256|registered in appendix/sources\.csv with sha256", "P0-SHA", "appendix/sources.csv"),
-    (r"download_log\.csv: .* changed since it was logged", "P0-SHA", "appendix/download_log.csv"),
-    (r"^Orphan data file", "P1-ORPHAN", "appendix/data/"),
-    (r"is declared Tier|has kind=press but", "P2-DOMAIN", "appendix/sources.csv"),
-    (r"data_attempts\.csv is missing canonical|^Unable to read appendix/data_attempts", "ATT-COLUMNS", "appendix/data_attempts.csv"),
-    (r"inherited|no attempted_utc column|cannot determine run start|no appendix/run\.json", "P1-RUN", "appendix/data_attempts.csv"),
-    (r"^0-byte file|^Python bytecode", "HYG-FILES", "appendix/"),
-    (r"^Level 3 report requires a Reviewer", "R2-TABLE", "report.md"),
-    (r"^Level 3 report marks Reviewer", "R2-DEFERRED", "report.md"),
-    (r"is stale|has no source hash|freshness check skipped", "HTML-STALE", "report.html"),
-    (r"^Rendered HTML file", "HTML-MISSING", "report.html"),
-    (r"^HTML deliverable missing", "HTML-SECTION", "report.html"),
-    (r"^Spanish HTML report", "HTML-LANG", "report.html"),
-    (r"^Rendered HTML contains unresolved", "HTML-MARKER", "report.html"),
-    (r"^Unconverted LaTeX", "HTML-LATEX", "report.html"),
-    (r"^reproduce:", "REPRO", "appendix/analysis.py"),
-    (r"user-curated|selection '|retrieved_utc|days before the As-Of|agent-fetched|^inbox/", "P2-SELECTION", "appendix/sources.csv"),
-    (r"preregistration\.json", "P2-PREREG", "appendix/preregistration.json"),
-]
-
-
-def classify_message(message: str) -> tuple[str, str]:
-    """(stable code, file) of a validator message; ``("GEN", "")`` when no rule matches."""
-    for pattern, code, file_tpl in CODE_RULES:
-        m = re.search(pattern, message)
-        if m:
-            groups = [g for g in m.groups() if g]
-            return code, (m.expand(file_tpl) if "\\1" in file_tpl and groups else file_tpl.replace("\\1", groups[0] if groups else ""))
-    return "GEN", ""
 
 
 def _json_items(messages: list[str], severity: str) -> list[dict[str, object]]:

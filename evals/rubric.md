@@ -1,6 +1,6 @@
 # Heurisma v0.7.0 — Preregistered Agent Evaluation Rubric
 
-**Status:** Preregistered before execution (pending `n >= 5` runs per scenario across 2 models: Claude Sonnet and Claude Haiku, 40 runs total; results will be recorded in `evals/results/v0.7.0-agent-evals.md` with model ID, skill version, date, and manual reading of each output).
+**Status:** Preregistered before execution (`n >= 5` runs per scenario across 2 models: Claude Sonnet and Claude Haiku, 40 runs total). Executed on 2026-11-23 against skill v0.9.0 with no change to any criterion: results, deviations and limits are in `evals/results/v0.7.0-agent-evals.md`.
 
 ## Design Principles
 

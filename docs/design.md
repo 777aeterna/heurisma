@@ -32,12 +32,22 @@ skills/heurisma/
 │       ├── reviewer.md                # Portable Reviewer #2 gate prompt
 │       └── qa.md                      # Portable QA gate prompt
 └── scripts/
+    ├── checks/                        # Rule families of validate_report.py, which re-exports them as its public API
+    │   ├── __init__.py                # Package marker
+    │   ├── common.py                  # Shared constants & parsers (tables, sections, dates, hashes, citations)
+    │   ├── structure.py               # Calibration-tag spelling diagnostics
+    │   ├── gates.py                   # Gate hash, header, quotes & reviewer analysis anchor
+    │   ├── numeric.py                 # Numeric closure (Section 4 tables, chart text) & verdict size
+    │   ├── provenance.py              # Tiers, selection, source catalogue, local data & inbox/
+    │   ├── prereg.py                  # Preregistration sealing, post-seal files & HARKing
+    │   ├── html.py                    # report.html sections, language, markers, privacy & freshness
+    │   └── codes.py                   # Stable --json codes (CODE_RULES, classify_message)
     ├── contracts.py                   # Single source of truth for version, tags, schemas, gates & section patterns
     ├── local_data.py                  # Inventory, preview, per-column CSV/XLSX/JSON reader, register, import, intake, prereg, run-start
     ├── fetch_lib.py                   # Retry/backoff HTTP fetcher with checksums, size caps, download_log & offline guard
     ├── svg_charts.py                  # Zero-dependency SVG chart engine & charts.json schema validator
     ├── render_report.py               # Working-paper HTML/SVG renderer with URL allowlist, {{num:}} & freshness hash
-    └── validate_report.py             # Epistemic & structural linter (--strict, --json, --reproduce, --diff, --gate-hash)
+    └── validate_report.py             # Epistemic & structural linter: orchestrator + CLI (--strict, --json, --reproduce, --diff, --gate-hash)
 ```
 
 Claude Code subagent mirrors (kept byte-synced with `skills/heurisma/references/agents/` by `tests/test_agents_sync.py`):

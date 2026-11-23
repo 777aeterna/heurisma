@@ -529,6 +529,72 @@ def m34_bare_digit_tier_dodges_tier3_rules(ws: Path) -> None:
     _edit(ws, "report.md", _ROW2, _ROW2.replace(" (Tier 3 origin), exact tests in own computation [@C4]", "").replace("`[Preliminary]`", "`[Strong]`"))
 
 
+# ------------------------------------------------------------------------------------------ v0.9.0 mutations (M35+)
+def _write_prereg(ws: Path, hypotheses: dict[str, str], known_artifacts: dict[str, str] | None = None) -> None:
+    """Seal appendix/preregistration.json validly (digest included) before the run started its analysis."""
+    import hashlib
+
+    body: dict = {
+        "sealed_utc": "2026-11-20T08:00:00Z",
+        "hypotheses": hypotheses,
+        "plan": "Exact stratified permutation tests.",
+        "known_artifacts": known_artifacts or {},
+    }
+    body["sha256"] = hashlib.sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+    (ws / "appendix" / "preregistration.json").write_text(json.dumps(body, indent=1, ensure_ascii=False), encoding="utf-8")
+
+
+def m35_harking_with_rounded_results(ws: Path) -> None:
+    """H1 states two computed results rounded ("30%" and "9,6%"), which the exact-figure HARKing check never matches."""
+    nums = json.loads((ws / "appendix" / "numbers.json").read_text(encoding="utf-8"))
+    assert nums["attr_rel_drop_w"] == "30.1%" and nums["attr_hyb_w"] == "9.6%"
+    _write_prereg(
+        ws,
+        {
+            "H0": "No difference between hybrid and office sites.",
+            "H1": "Hybrid cuts attrition by about 30% and brings it down to 9,6% across the supplied sites.",
+        },
+    )
+
+
+def m36_unresolvable_primary_source_ids(ws: Path) -> None:
+    """A local table cites primary_source_id values that the catalogue cannot resolve (one has an inner space)."""
+    data = ws / "appendix" / "data"
+    data.joinpath("parameters.csv").write_text(
+        "parameter,value,primary_source_id\nreview_window_days,30,SRC _42\nquorum,5,S9\n", encoding="utf-8"
+    )
+    data.joinpath("sources_metadata.csv").write_text("source_id,tier,title\nS1,Tier 1,Statistical office table\n", encoding="utf-8")
+    _register_local_csv(ws, "appendix/data/parameters.csv", "C5", "Parameters table transcribed from a document", "Tier 3")
+    _register_local_csv(ws, "appendix/data/sources_metadata.csv", "C6", "Source metadata for the parameters table", "Tier 3")
+
+
+def m37_data_as_of_after_report_date(ws: Path) -> None:
+    """A source claims data as of a month after the report's As-Of Date."""
+
+    def fn(rows: list[dict[str, str]], cols: list[str]) -> tuple[list[dict[str, str]], list[str]]:
+        for r in rows:
+            if (r.get("claim_id") or "").strip() == "C2":
+                r["data_as_of"] = "2027-03"
+        return rows, cols
+
+    _rewrite_csv(ws, "appendix/sources.csv", fn)
+
+
+def m38_lowercase_tag_in_matrix_row(ws: Path) -> None:
+    """A matrix row writes its tag in lowercase (as copied from the rendered HTML): the tag is not canonical."""
+    _edit(ws, "report.md", _ROW2, _ROW2.replace("`[Preliminary]`", "`[preliminary]`"))
+
+
+def m39_unprocessed_file_left_in_inbox(ws: Path) -> None:
+    """A file sits in inbox/ that neither sources.csv (by hash) nor intake.md (accepted or rejected) accounts for."""
+    inbox = ws / "inbox" / "sources"
+    inbox.mkdir(parents=True)
+    (inbox / "stray.pdf").write_bytes(b"%PDF-1.4 a document nobody registered\n")
+    (ws / "appendix" / "intake.md").write_text(
+        "# Intake report\n\n## Channel: sources\n\n- rejected: other.png \u2014 not a table (png)\n", encoding="utf-8"
+    )
+
+
 MUTATIONS: dict[str, tuple[str, Mutation, bool]] = {
     # name: (description, function, re-render after applying)
     "M01": ("data value changed, HTML re-rendered", m01_data_value_changed, True),
@@ -565,6 +631,11 @@ MUTATIONS: dict[str, tuple[str, Mutation, bool]] = {
     "M32": ("fan chart whose first projected p10 is above the last observed value", m32_fan_p10_excludes_decline, True),
     "M33": ("analysis.py changed after reviewer.md with no post-review section in Section 5", m33_analysis_changed_after_reviewer, True),
     "M34": ("tier written as a bare digit ('3') so Tier 3 rules miss a [Strong] row", m34_bare_digit_tier_dodges_tier3_rules, True),
+    "M35": ("preregistration H1 states computed results rounded (30%, 9,6%)", m35_harking_with_rounded_results, True),
+    "M36": ("local table cites primary_source_id values the catalogue cannot resolve", m36_unresolvable_primary_source_ids, True),
+    "M37": ("a source's data_as_of is later than the report As-Of Date", m37_data_as_of_after_report_date, True),
+    "M38": ("a matrix row writes its tag in lowercase ('[preliminary]')", m38_lowercase_tag_in_matrix_row, True),
+    "M39": ("a file in inbox/ that neither sources.csv nor intake.md accounts for", m39_unprocessed_file_left_in_inbox, True),
 }
 
 # Mutations the validator does not yet catch -> the v0.8.0 phase that will. Remove an entry when its phase lands.
@@ -609,6 +680,11 @@ EXPECT: dict[str, str] = {
     "M32": r"(?i)\bp10\b",
     "M33": r"(?i)after the reviewer",
     "M34": r"has tier '3'",
+    "M35": r"(?i)rounded|HARKing",
+    "M36": r"(?i)source_id",
+    "M37": r"(?i)data_as_of",
+    "M38": r"writes '\[preliminary\]'.*exactly as '\[Preliminary\]'",
+    "M39": r"^inbox/sources/stray\.pdf is not registered",
 }
 # Mutations about the gates themselves keep the gates as the mutation left them; every other mutation re-stamps
 # REVIEWED-SHA256 afterwards, as an agent covering its tracks would.

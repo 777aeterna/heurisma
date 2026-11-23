@@ -1,0 +1,552 @@
+{
+ "inputs": {
+  "level1-brief@1": {
+   "errors": [],
+   "warnings": []
+  },
+  "level2-study@2": {
+   "errors": [],
+   "warnings": []
+  },
+  "level2-study@3": {
+   "errors": [
+    [
+     "P2-PREREG",
+     "appendix/preregistration.json",
+     "Level 3 report requires appendix/preregistration.json sealed before analysis (run `local_data.py prereg` in Stage 1)."
+    ],
+    [
+     "GATE-MISSING",
+     "appendix/gates/reviewer.md",
+     "appendix/gates/reviewer.md is missing or empty; save the reviewer gate output (or the manual checks that replaced it) there."
+    ],
+    [
+     "R2-TABLE",
+     "report.md",
+     "Level 3 report requires a Reviewer #2 Disposition table recording each critique and its action (Fixed / Refuted / Deferred)."
+    ]
+   ],
+   "warnings": []
+  },
+  "showcase-hybrid-work@2": {
+   "errors": [],
+   "warnings": []
+  },
+  "showcase-hybrid-work@3": {
+   "errors": [
+    [
+     "P2-PREREG",
+     "appendix/preregistration.json",
+     "Level 3 report requires appendix/preregistration.json sealed before analysis (run `local_data.py prereg` in Stage 1)."
+    ],
+    [
+     "GATE-MISSING",
+     "appendix/gates/reviewer.md",
+     "appendix/gates/reviewer.md is missing or empty; save the reviewer gate output (or the manual checks that replaced it) there."
+    ],
+    [
+     "R2-TABLE",
+     "report.md",
+     "Level 3 report requires a Reviewer #2 Disposition table recording each critique and its action (Fixed / Refuted / Deferred)."
+    ]
+   ],
+   "warnings": []
+  }
+ },
+ "mutations": {
+  "M01": [
+   [
+    "P0-SHA",
+    "appendix/sources.csv",
+    "'appendix/data/hybrid_rct_sites.csv' changed since it was registered in appendix/sources.csv: SHA-256 8046c12b2d7c != declared 9a7419cd6056."
+   ]
+  ],
+  "M02": [
+   [
+    "P0-SHA",
+    "appendix/sources.csv",
+    "'appendix/data/hybrid_rct_sites.csv' changed since it was registered in appendix/sources.csv: SHA-256 9a7419cd6056 != declared deadbeef0000."
+   ]
+  ],
+  "M03": [
+   [
+    "GATE-BINDING",
+    "appendix/gates/source_verifier.md",
+    "appendix/gates/source_verifier.md is missing header field(s): MODE:, REVIEWED-SHA256:, REVIEWED-UTC:, QUOTE: <file>:<line>: \"…\" (at least 2); the gate must say who wrote it, which version it reviewed (validate_report.py --gate-hash source_verifier) and quote what it read."
+   ],
+   [
+    "GATE-BINDING",
+    "appendix/gates/qa.md",
+    "appendix/gates/qa.md is missing header field(s): MODE:, REVIEWED-SHA256:, REVIEWED-UTC:, QUOTE: <file>:<line>: \"…\" (at least 2); the gate must say who wrote it, which version it reviewed (validate_report.py --gate-hash qa) and quote what it read."
+   ]
+  ],
+  "M04": [
+   [
+    "GATE-BINDING",
+    "appendix/gates/source_verifier.md",
+    "appendix/gates/source_verifier.md reviewed an earlier version: REVIEWED-SHA256 5be34406d96ad6dd != current d3b6202c32215b8e; re-run the gate on the current files."
+   ],
+   [
+    "GATE-BINDING",
+    "appendix/gates/qa.md",
+    "appendix/gates/qa.md reviewed an earlier version: REVIEWED-SHA256 dfecc0f1214a03f8 != current edef87afd0ef477f; re-run the gate on the current files."
+   ]
+  ],
+  "M05": [
+   [
+    "P0-STRONG",
+    "report.md",
+    "Claim-Evidence Matrix row 2 is [Strong] resting only on weak source(s) C1, C4 (Tier 3, press, own-computation or abstract-only in appendix/sources.csv); cite an independent Tier 1/2 source or lower the tag."
+   ]
+  ],
+  "M06": [
+   [
+    "P0-STRONG-CITE",
+    "report.md",
+    "Claim-Evidence Matrix row 2 is [Strong] but has no [@id] citation: a strong claim must cite the evidence that carries it."
+   ]
+  ],
+  "M07": [
+   [
+    "P1-VERDICT",
+    "report.md",
+    "Calibrated Verdict has 7 sentences (maximum 3); keep it abstract-style and move detail to Section 4."
+   ],
+   [
+    "P1-VERDICT",
+    "report.md",
+    "Calibrated Verdict has 15 numbers (maximum 5, counting {{num:key}} placeholders); move the rest to Section 4 tables."
+   ],
+   [
+    "GATE-BINDING",
+    "appendix/gates/qa.md",
+    "appendix/gates/qa.md quotes report.md:6 but that line does not contain \"- **Calibrated Verdict:** A six-month\"."
+   ]
+  ],
+  "M08": [
+   [
+    "P1-RUN",
+    "appendix/data_attempts.csv",
+    "Data attempt for 'Bloom Han & Liang (2024) full text' in appendix/data_attempts.csv is inherited from an earlier run (2026-11-20T00:00:01Z < run start 2026-11-20T12:00:00Z); re-run the rung in this session before relying on the limitation."
+   ],
+   [
+    "P1-RUN",
+    "appendix/data_attempts.csv",
+    "Data attempt for 'Individual-level engineer microdata' in appendix/data_attempts.csv is inherited from an earlier run (2026-11-20T00:00:01Z < run start 2026-11-20T12:00:00Z); re-run the rung in this session before relying on the limitation."
+   ],
+   [
+    "P1-RUN",
+    "appendix/data_attempts.csv",
+    "Data attempt for 'Site allocation protocol, baseline window, mentoring_hrs_wk definition' in appendix/data_attempts.csv is inherited from an earlier run (2026-11-20T00:00:01Z < run start 2026-11-20T12:00:00Z); re-run the rung in this session before relying on the limitation."
+   ]
+  ],
+  "M09": [
+   [
+    "P1-ORPHAN",
+    "appendix/data/",
+    "Orphan data file 'appendix/data/sites.csv' is not logged in appendix/download_log.csv or appendix/sources.csv."
+   ]
+  ],
+  "M10": [
+   [
+    "P1-KIND",
+    "appendix/sources.csv",
+    "appendix/sources.csv has no kind column: add kind (data | literature | press | own-computation) to every row."
+   ],
+   [
+    "P0-SHA",
+    "appendix/sources.csv",
+    "Local source row 4 ('appendix/analysis.py') in appendix/sources.csv must include a SHA-256 hash (in source_title or sha256 column)."
+   ]
+  ],
+  "M11": [
+   [
+    "P0-STRONG",
+    "report.md",
+    "Claim-Evidence Matrix row 2 is [Strong] resting only on weak source(s) C4 (Tier 3, press, own-computation or abstract-only in appendix/sources.csv); cite an independent Tier 1/2 source or lower the tag."
+   ]
+  ],
+  "M12": [
+   [
+    "FIG-JSON",
+    "charts.json",
+    "charts.json is not strict JSON: it contains NaN/Infinity (write with allow_nan=False and drop or fix the non-finite values)."
+   ],
+   [
+    "FIG-SCHEMA",
+    "charts.json",
+    "Chart 'mentoring_scatter': non-finite value nan at series[0].points[0]; drop the point or fix the computation (strict JSON has no NaN)."
+   ]
+  ],
+  "M13": [
+   [
+    "FIG-SCHEMA",
+    "charts.json",
+    "Chart 'bad_fan': quantile p10 exceeds p50 at 2026-11 (300 > 100); quantiles must be ordered."
+   ],
+   [
+    "FIG-SCHEMA",
+    "charts.json",
+    "Chart 'bad_fan': quantile p50 exceeds p90 at 2026-11 (100 > 10); quantiles must be ordered."
+   ]
+  ],
+  "M14": [
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C1' is user-curated but has no retrieved_utc: write when it was retrieved from its origin (ISO UTC) or 'unknown'."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is user-curated but has no retrieved_utc: write when it was retrieved from its origin (ISO UTC) or 'unknown'."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C3' is user-curated but has no retrieved_utc: write when it was retrieved from its origin (ISO UTC) or 'unknown'."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C4' is user-curated but has no retrieved_utc: write when it was retrieved from its origin (ISO UTC) or 'unknown'."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C4' is a local user-curated file ('appendix/analysis.py') and cannot be Tier 2 without a verified external origin URL (it stays Tier 3; cite the online primary source separately)."
+   ],
+   [
+    "P2-SELECTION",
+    "report.md",
+    "Claim-Evidence Matrix row 1 rests only on user-curated source(s) C2; label it 'Selection bias: user-curated corpus' in the row or in Section 7."
+   ],
+   [
+    "P2-SELECTION",
+    "report.md",
+    "Claim-Evidence Matrix row 4 rests only on user-curated source(s) C3; label it 'Selection bias: user-curated corpus' in the row or in Section 7."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "no agent-fetched source outside the user's corpus (must be Tier 1 or Tier 2 data/literature): at Level 2+ search for counter-evidence yourself and register what you find with selection=agent-fetched; a corpus the user chose is never sufficient."
+   ]
+  ],
+  "M15": [
+   [
+    "GATE-MISSING",
+    "appendix/gates/qa.md",
+    "appendix/gates/qa.md is missing or empty; save the qa gate output (or the manual checks that replaced it) there."
+   ]
+  ],
+  "M16": [
+   [
+    "HTML-STALE",
+    "report.html",
+    "HTML 'report.html' is stale (out of date): sources hash c18a17bb9622 != embedded a3d272550c48; re-run render_report.py."
+   ]
+  ],
+  "M17": [
+   [
+    "W2-NUM",
+    "report.md",
+    "Unresolved marker '{{num:no_existe}}': key 'no_existe' not found in appendix/numbers.json."
+   ]
+  ],
+  "M18": [
+   [
+    "CITE-UNKNOWN",
+    "report.md",
+    "In-text citation '[@C99]' does not match any claim_id in appendix/sources.csv."
+   ]
+  ],
+  "M19": [
+   [
+    "PRIV-HOME",
+    "report.md",
+    "report.md contains a home-directory path (e.g. /home/<user>/…); remove it so the report does not leak the author's machine."
+   ],
+   [
+    "PRIV-HOME",
+    "report.html",
+    "report.html contains a home-directory path (e.g. /home/<user>/…); it leaks the author's machine."
+   ]
+  ],
+  "M20": [
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C1' is a local user-curated file ('appendix/data/hybrid_rct_sites.csv') and cannot be Tier 1 without a verified external origin URL (it stays Tier 3; cite the online primary source separately)."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C2 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ]
+  ],
+  "M21": [
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is marked agent-fetched but retrieved_utc (2026-11-20T15:05:00Z) precedes run_started_utc (2026-11-20T15:07:48Z); fetched sources must be acquired during this run."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C2 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ],
+   [
+    "P1-RUN",
+    "appendix/data_attempts.csv",
+    "Data attempt for 'Bloom Han & Liang (2024) full text' in appendix/data_attempts.csv is inherited from an earlier run (2026-11-20 < run start 2026-11-20T15:07:48Z); re-run the rung in this session before relying on the limitation."
+   ],
+   [
+    "P1-RUN",
+    "appendix/data_attempts.csv",
+    "Data attempt for 'Individual-level engineer microdata' in appendix/data_attempts.csv is inherited from an earlier run (2026-11-20 < run start 2026-11-20T15:07:48Z); re-run the rung in this session before relying on the limitation."
+   ],
+   [
+    "P1-RUN",
+    "appendix/data_attempts.csv",
+    "Data attempt for 'Site allocation protocol, baseline window, mentoring_hrs_wk definition' in appendix/data_attempts.csv is inherited from an earlier run (2026-11-20 < run start 2026-11-20T15:07:48Z); re-run the rung in this session before relying on the limitation."
+   ]
+  ],
+  "M22": [
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C4' is a local user-curated file ('appendix/analysis.py') and cannot be Tier 2 without a verified external origin URL (it stays Tier 3; cite the online primary source separately)."
+   ],
+   [
+    "P2-SELECTION",
+    "report.md",
+    "Claim-Evidence Matrix row 1 rests only on user-curated source(s) C2; label it 'Selection bias: user-curated corpus' in the row or in Section 7."
+   ],
+   [
+    "P2-SELECTION",
+    "report.md",
+    "Claim-Evidence Matrix row 4 rests only on user-curated source(s) C3; label it 'Selection bias: user-curated corpus' in the row or in Section 7."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "no agent-fetched source outside the user's corpus (must be Tier 1 or Tier 2 data/literature): at Level 2+ search for counter-evidence yourself and register what you find with selection=agent-fetched; a corpus the user chose is never sufficient."
+   ],
+   [
+    "P1-RUN",
+    "appendix/data_attempts.csv",
+    "Data attempt for 'Bloom Han & Liang (2024) full text' in appendix/data_attempts.csv is inherited from an earlier run (2026-11-20 < run start 2026-11-20T09:00:00Z); re-run the rung in this session before relying on the limitation."
+   ],
+   [
+    "P1-RUN",
+    "appendix/data_attempts.csv",
+    "Data attempt for 'Individual-level engineer microdata' in appendix/data_attempts.csv is inherited from an earlier run (2026-11-20 < run start 2026-11-20T09:00:00Z); re-run the rung in this session before relying on the limitation."
+   ],
+   [
+    "P1-RUN",
+    "appendix/data_attempts.csv",
+    "Data attempt for 'Site allocation protocol, baseline window, mentoring_hrs_wk definition' in appendix/data_attempts.csv is inherited from an earlier run (2026-11-20 < run start 2026-11-20T09:00:00Z); re-run the rung in this session before relying on the limitation."
+   ]
+  ],
+  "M23": [
+   [
+    "FIG-SCHEMA",
+    "charts.json",
+    "Chart 'future_obs': line chart series point date '2026-12' is after the report As-Of Date '2026-11-20'."
+   ]
+  ],
+  "M24": [
+   [
+    "P2-PREREG",
+    "appendix/preregistration.json",
+    "H0 in Section 2 differs from appendix/preregistration.json (sealed 2026-11-20T08:00:00Z); keep the sealed wording or say in Section 3 what changed after sealing and why."
+   ],
+   [
+    "P2-PREREG",
+    "appendix/preregistration.json",
+    "H1 in Section 2 differs from appendix/preregistration.json (sealed 2026-11-20T08:00:00Z); keep the sealed wording or say in Section 3 what changed after sealing and why."
+   ],
+   [
+    "P2-PREREG",
+    "appendix/preregistration.json",
+    "appendix/preregistration.json hypothesis contains computed result figures from appendix/numbers.json, exact or rounded (0.0286, 4.01; possible HARKing); state directional or threshold predictions before running analysis.py."
+   ]
+  ],
+  "M25": [
+   [
+    "P1-UNTRACED-NUM",
+    "report.md",
+    "Section 4 table contains untraced numeric figure(s) not found in appendix/output.txt or appendix/numbers.json: 0.4180; compute them in appendix/analysis.py and reference via {{num:key}}."
+   ]
+  ],
+  "M26": [
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C1' is a local user-curated file ('appendix/data/hybrid_rct_sites.csv') and cannot be Tier 2 without a verified external origin URL (it stays Tier 3; cite the online primary source separately)."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C2 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ]
+  ],
+  "M27": [
+   [
+    "P0-STRONG",
+    "report.md",
+    "Claim-Evidence Matrix row 5 is [Strong] resting only on weak source(s) C5: local table(s) C5 inherit Tier 3 through primary_source_id in appendix/data/sources_metadata.csv; cite an independent Tier 1/2 source or lower the tag."
+   ],
+   [
+    "CITE-UNCITED",
+    "appendix/sources.csv",
+    "Source 'C6' in appendix/sources.csv is never cited in the report text."
+   ]
+  ],
+  "M28": [
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is marked agent-fetched (kind=literature) but appendix/data_attempts.csv has no `used` attempt stamped at or after run start that names C2 or its URL; log the retrieval with `local_data.py attempt`."
+   ],
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "Source 'C2' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
+   ]
+  ],
+  "M29": [
+   [
+    "CITE-UNCITED",
+    "appendix/sources.csv",
+    "Source 'C5' in appendix/sources.csv is never cited in the report text."
+   ],
+   [
+    "P2-PREREG",
+    "appendix/preregistration.json",
+    "appendix/data/parameters.csv was added after preregistration sealing (appendix/preregistration.json) without a download_log.csv or intake.md entry; document its provenance in Section 3, or run `local_data.py intake` before `prereg`."
+   ],
+   [
+    "P2-PREREG",
+    "appendix/preregistration.json",
+    "H0 in Section 2 differs from appendix/preregistration.json (sealed 2026-11-20T08:00:00Z); keep the sealed wording or say in Section 3 what changed after sealing and why."
+   ],
+   [
+    "P2-PREREG",
+    "appendix/preregistration.json",
+    "H1 in Section 2 differs from appendix/preregistration.json (sealed 2026-11-20T08:00:00Z); keep the sealed wording or say in Section 3 what changed after sealing and why."
+   ]
+  ],
+  "M30": [
+   [
+    "P1-UNTRACED-NUM",
+    "charts.json",
+    "Chart 'subgroup_output' caption contains untraced numeric figure(s) not found in appendix/output.txt or appendix/numbers.json: 93,6; build the caption from the analysis output instead of typing the figure."
+   ]
+  ],
+  "M31": [
+   [
+    "FIG-DESIGN",
+    "charts.json",
+    "Chart 'fan_v081': fan chart is described as calibrated but has no calibration block; add \"calibration\": {\"method\": ..., \"source_id\": ...} naming how the quantiles were calibrated, or drop the word (parametric scenario bands are not calibrated)."
+   ]
+  ],
+  "M32": [
+   [
+    "FIG-DESIGN",
+    "charts.json",
+    "Chart 'fan_v081': fan chart first projected p10 (103) is above the last observed value (100), so no quantile allows a decline or stagnation; widen the lower tail or state in the caption why a decline is excluded."
+   ]
+  ],
+  "M33": [
+   [
+    "GATE-BINDING",
+    "appendix/gates/reviewer.md",
+    "appendix/gates/reviewer.md records ANALYSIS-SHA256 4f418c8a5a19 but appendix/analysis.py is now 911c23b69c06: analysis.py changed after the reviewer saw it; list what changed in a 'Post-review changes' subsection of Section 5, or run Reviewer #2 again."
+   ]
+  ],
+  "M34": [
+   [
+    "SRC-TIER",
+    "appendix/sources.csv",
+    "Source 'C1' in appendix/sources.csv has tier '3'; write exactly Tier 1, Tier 2, Tier 3 (any other spelling bypasses the tier checks)."
+   ]
+  ],
+  "M35": [
+   [
+    "P2-PREREG",
+    "appendix/preregistration.json",
+    "appendix/data/hybrid_rct_sites.csv was added after preregistration sealing (appendix/preregistration.json) without a download_log.csv or intake.md entry; document its provenance in Section 3, or run `local_data.py intake` before `prereg`."
+   ],
+   [
+    "P2-PREREG",
+    "appendix/preregistration.json",
+    "H0 in Section 2 differs from appendix/preregistration.json (sealed 2026-11-20T08:00:00Z); keep the sealed wording or say in Section 3 what changed after sealing and why."
+   ],
+   [
+    "P2-PREREG",
+    "appendix/preregistration.json",
+    "H1 in Section 2 differs from appendix/preregistration.json (sealed 2026-11-20T08:00:00Z); keep the sealed wording or say in Section 3 what changed after sealing and why."
+   ],
+   [
+    "P2-PREREG",
+    "appendix/preregistration.json",
+    "appendix/preregistration.json hypothesis contains computed result figures from appendix/numbers.json, exact or rounded (30, 9.6; possible HARKing); state directional or threshold predictions before running analysis.py."
+   ]
+  ],
+  "M36": [
+   [
+    "CITE-UNCITED",
+    "appendix/sources.csv",
+    "Source 'C5' in appendix/sources.csv is never cited in the report text."
+   ],
+   [
+    "CITE-UNCITED",
+    "appendix/sources.csv",
+    "Source 'C6' in appendix/sources.csv is never cited in the report text."
+   ],
+   [
+    "SRC-META",
+    "appendix/data/sources_metadata.csv",
+    "Table appendix/data/parameters.csv cites primary_source_id value(s) 'S9', 'SRC _42' that appendix/data/sources_metadata.csv does not define; they count as Tier 3."
+   ]
+  ],
+  "M37": [
+   [
+    "P1-ASOF",
+    "appendix/sources.csv",
+    "Source 'C2' has data_as_of 2027-03 later than the As-Of Date 2026-11-20; data cannot postdate the report (for a forecast horizon, record the publication or vintage date and say the horizon in the title)."
+   ]
+  ],
+  "M38": [
+   [
+    "MATRIX",
+    "report.md",
+    "Claim-Evidence Matrix row 2 writes '[preliminary]'; write the tag exactly as '[Preliminary]' (tags are case-sensitive)."
+   ]
+  ],
+  "M39": [
+   [
+    "P2-SELECTION",
+    "appendix/sources.csv",
+    "inbox/sources/stray.pdf is not registered in appendix/sources.csv; run `local_data.py intake` or remove it."
+   ]
+  ]
+ },
+ "version": "0.9.0"
+}

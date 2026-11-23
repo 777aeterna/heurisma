@@ -4,6 +4,38 @@ All notable changes to **Heurisma** will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-11-23 (Rounded Results, Catalogue Integrity & a Modular Validator)
+
+Driven by an external code-executing audit of v0.8.1 (which confirmed 391 tests and 34/34 mutations and reproduced the closure of the three epistemic P0s) and by replaying two real Level 3 runs. The audit's recurring finding: *a rule is written against the literal form of the example that motivated it* (a HARKing check that catches `30.257` but not `4,5%`; a tier join that works but never checks its keys). Mutation detection goes from **34/34** to **39/39** (`M35`–`M39`).
+
+### Added
+- **HARKing with rounded results (`P2-PREREG`):** `H0`/`H1` are compared with the `numbers.json` values exactly **and rounded to 0, 1 and 2 decimals** (comma or point decimal, comma as thousands separator). Two distinct matches, at least one non-integer, are flagged; years, conventional thresholds (`0,01 0,05 0,1 1 5 95 99 100`), date values and bare integer counts are ignored, so a legitimate threshold or "16 sites" is not.
+- **Source catalogue checks (`SRC-META`):** `appendix/data/sources_metadata.csv` must have `source_id` keys without spaces, tiers exactly `Tier 1|2|3`, and a `data_as_of` not later than the As-Of Date (warning; error at Level 3). A `primary_source_id` that the catalogue does not define is warned instead of silently counting as Tier 3. Columns are read by name, so `tier_classification` works and a catalogue without date or id columns is not an error.
+- **`data_as_of` in `sources.csv` (`P1-ASOF`):** same rule, compared at the value's own granularity (`2026-11` is not after `2026-11-20`).
+- **Tag diagnostics:** `[fuerte]` is still not a tag (every `[Strong]` rule compares exact text), but the matrix row and the global check now say *"write the tag exactly as `[Fuerte]` (tags are case-sensitive)"* instead of "missing a canonical tag".
+- **`tests/snapshot_validator.py`:** freezes every validator message, with its code, for the Level 1 brief, both examples at Levels 2 and 3, and all mutations; it is the safety net that proved the refactor below changed nothing.
+- **Five mutations (`M35`–`M39`)** and three test modules (`tests/test_v090_*.py`). `M38` (a lowercase tag in a matrix row, which must be reported with the exact spelling to use) and `M39` (a file left in `inbox/` that neither `sources.csv` nor `intake.md` accounts for) pin the tag diagnostics and the `inbox/` rule, so detection is **39/39**.
+- **Preregistered agent evaluation, executed:** the 40 runs of `evals/rubric.md` (4 scenarios x 5 runs x Sonnet and Haiku) against v0.9.0: 39 of 40 runs pass both criteria, 78 of 80 checks. The single failure is one Haiku run on `E4` that computed `r = +0.97` instead of `+0.9993` and repeated the discarded draft's figures in its verdict. Results, deviations and limits (compliance rather than lift, text plans, one reviewer, small `n`) are in `evals/results/v0.7.0-agent-evals.md`.
+
+### Changed
+- **`validate_report.py` is split into `scripts/checks/`** (122 KB → 62 KB orchestrator plus eight modules). Behaviour is identical: the snapshot of the repository, the snapshot of two real runs (138 messages) and 12 CLI outputs (`--json` at Levels 2 and 3 with `-B` and `-I -B`, `--gate-hash`, `--version`, `--diff`) are byte-identical before and after. `validate_report` re-exports every moved name, so no test of behaviour changed.
+- **`assets/logo.png`** is stored as a 256-colour PNG (829 KB to 453 KB, PSNR 46 dB, visually identical, not referenced by the README). `assets/banner.jpeg` is unchanged: re-encoding saves only 5-11% for a visible quality loss.
+- **`inbox/` honours `intake.md`:** a file that `local_data.py intake` accepted or rejected (a screenshot next to a document) is no longer reported as unregistered; hidden files (`.DS_Store`, `.gitkeep`) are ignored.
+- `SKILL.md`, `references/data-protocol.md`, `references/validator-codes.md` and the source-verifier prompt (and its `agents/` mirror) follow the code: hypotheses state predictions and never results, exact or rounded; the catalogue format is specified.
+
+### Replay of two real runs
+Both folders were copied and validated with `validate_report.py report.md --level 3 --html report.html --strict --json` (the `--json` counts below are `errors/warnings`). Both HTML files were rendered by an earlier version of the renderer, so a `HTML-STALE` warning is present in every column (the v0.8.1 note of "6 errors and 5 warnings" was measured *before* the version bump).
+
+| Run | v0.8.1 | v0.9.0 | What the new version adds |
+| :- | :- | :- | :- |
+| **v0.7 run** (17 sources; its sealed `H1` states "31%–32%" and "4,5%") | 28 / 6 | 31 / 6 | `P2-PREREG` (rounded HARKing: `31, 32, 4.5, 44.662`) and two `SRC-META` (`SRC_19 data_as_of 2029-12`, `SRC_20 data_as_of 2030-12`) |
+| **v08 run** (16 sources; its sealed `H1` states no figures) | 6 / 6 | 8 / 6 | two `SRC-META` (the same two forecast horizons); no false HARKing positive |
+
+The external audit reports "7 errors and 2 warnings" for its own reconstruction of the v0.7 run from a reduced 6-row source register; that reconstruction is not reproducible from this repository, so it is not compared here.
+
+### Known Debt / Pending Verification
+- The agent evaluations measure compliance with the skill, not its lift (the preregistered rubric has no arm without the skill), on text plans rather than executed runs, scored by one reviewer; see `evals/results/v0.7.0-agent-evals.md`.
+
 ## [0.8.1] - 2026-11-21 (Provenance Gaps, Caption Closure & Calibrated Fans)
 
 Driven by a code-executing audit of v0.8.0 and by replaying a real Level 3 run through the new validator: a run that v0.8.0 passed with 0 errors and 0 warnings now reports 6 errors and 5 warnings, each a genuine provenance or traceability gap. Mutation detection goes from **25/25** to **34/34** (`M26`–`M34`).

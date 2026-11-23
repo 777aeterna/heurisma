@@ -118,7 +118,7 @@ def _scan_310_plus(path: Path) -> list[str]:
 
 class TestPythonFloor(unittest.TestCase):
     def test_scripts_compatible_with_python_39(self) -> None:
-        scripts = sorted(SCRIPTS_DIR.glob("*.py"))
+        scripts = sorted(p for p in SCRIPTS_DIR.rglob("*.py") if "__pycache__" not in p.parts)  # includes checks/
         self.assertGreaterEqual(len(scripts), 5)
         all_issues: list[str] = []
         for script in scripts:

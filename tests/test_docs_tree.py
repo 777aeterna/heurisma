@@ -54,7 +54,7 @@ class TestDocsTree(unittest.TestCase):
         paths = set(_extract_tree_paths(text))
         expected = {
             p.relative_to(REPO_ROOT).as_posix()
-            for p in list((SKILL_ROOT / "scripts").glob("*.py"))
+            for p in [q for q in (SKILL_ROOT / "scripts").rglob("*.py") if "__pycache__" not in q.parts]
             + list((SKILL_ROOT / "references").rglob("*.md"))
             + [SKILL_ROOT / "SKILL.md"]
         }

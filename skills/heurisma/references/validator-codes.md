@@ -3,7 +3,7 @@
 `python3 -B <skill-dir>/scripts/validate_report.py report.md --level 2 --html report.html --json` prints one JSON object:
 
 ```json
-{"version": "0.8.1", "passed": false, "strict": false,
+{"version": "0.9.0", "passed": false, "strict": false,
  "errors":   [{"severity": "error",   "code": "P0-SHA", "file": "appendix/sources.csv", "line": null, "message": "…"}],
  "warnings": [{"severity": "warning", "code": "P1-ORPHAN", "file": "appendix/data/", "line": null, "message": "…"}]}
 ```
@@ -16,9 +16,9 @@ Codes are stable: a fix script can act on `code` without parsing the English mes
 | `STRUCT-SECTION` | error | A required `## N.` section is missing. |
 | `STRUCT-ORDER` | error | Sections are out of order. |
 | `STRUCT-THIN` | error | A section has fewer words than its minimum. |
-| `STRUCT-TAGS` | error | No canonical calibration tag anywhere in the report. |
+| `STRUCT-TAGS` | error | No canonical calibration tag anywhere in the report; when only another capitalisation is present (`[fuerte]`), the message names the exact spelling to use (tags are case-sensitive). |
 | `STRUCT-HYPOTHESES` | error | Section 2 lacks explicit H₀ and H₁. |
-| `MATRIX` | error | The Claim-Evidence Matrix is missing, too small, too narrow, or a row has no tag. |
+| `MATRIX` | error | The Claim-Evidence Matrix is missing, too small, too narrow, or a row has no tag; a row that writes a tag in another capitalisation (`[fuerte]`) gets one message with the canonical spelling (`[Fuerte]`). |
 | `P0-STRONG` | error | A `[Strong]` row rests only on weak sources (Tier 3, press, own computation, abstract-only), looked up in `sources.csv`, or on local tables whose cells inherit Tier 3 through `primary_source_id` in `appendix/data/sources_metadata.csv`. |
 | `P0-STRONG-CITE` | error | A `[Strong]` row has no `[@id]` citation. |
 | `P0-SHA` | error | A local file's recomputed SHA-256 differs from the one registered, or none is registered, or the file is missing. |
@@ -28,11 +28,12 @@ Codes are stable: a fix script can act on `code` without parsing the English mes
 | `P1-VERDICT-NUM` | warning / error | Verdict numbers absent from `output.txt`, or figures retyped instead of `{{num:key}}`. |
 | `P1-UNTRACED-NUM` | warning / error | Statistical number in a Section 4 table cell, or in a chart `title`/`caption`/`source` in `charts.json`, is absent from both `output.txt` and `numbers.json` (numeric closure violation). A bare `1,00×` / `1.00x` ratio baseline is exempt. |
 | `P1-NUM-COVERAGE` | warning | Most Section 4 figures from `output.txt` are typed by hand. |
-| `P1-ASOF` | error | The As-Of Date is in the future or earlier than the run start. |
+| `P1-ASOF` | error / warning | The As-Of Date is in the future or earlier than the run start (error), or a `sources.csv` row's `data_as_of` is later than the As-Of Date (warning; error at Level 3). A month-only value (`2026-11`) is compared by month. |
 | `P1-RUN` | warning / error | A failed attempt is inherited from an earlier run, `attempted_utc` or `run.json` is missing, or the run start is unknown. |
 | `P2-SELECTION` | warning / error | Pre-intake provenance: a user-curated row without `retrieved_utc`, an unknown retrieval date above Tier 3, a local `user-curated` file declared Tier 1 or Tier 2, an `intake.md` `user-curated` hash relabelled `agent-fetched`, an `agent-fetched` row with `retrieved_utc < run_started_utc`, an `agent-fetched` `data` row lacking `download_log.csv`/`data_attempts.csv` proof, an `agent-fetched` `literature` row with no `used` attempt stamped after the run start that names its `claim_id` or URL, an `agent-fetched` Tier 1 `literature` row with no downloaded document and no `(web summary)` label (warning), no Tier 1/2 (`data`/`literature`) agent-fetched counter-evidence outside the user's corpus, a claim resting only on user-curated documents (capped at `[Moderate]`, labelled "Selection bias: user-curated corpus"), or an unregistered file in `inbox/`. |
-| `P2-PREREG` | warning / error | `appendix/preregistration.json` is missing at Level 3, was edited after sealing, was sealed post-hoc (`post_hoc=true` or `sealed_utc < run_started_utc`), contains exact computed figures from `numbers.json` in `H0`/`H1` (HARKing), or differs from Section 2 hypotheses; a file in `appendix/data/` that is absent from the sealed `known_artifacts`, `download_log.csv` and `intake.md` (added after sealing; warning). |
+| `P2-PREREG` | warning / error | `appendix/preregistration.json` is missing at Level 3, was edited after sealing, was sealed post-hoc (`post_hoc=true` or `sealed_utc < run_started_utc`), states two or more computed results from `numbers.json` in `H0`/`H1`, exactly or rounded to 0–2 decimals, at least one of them non-integer (HARKing; years, conventional thresholds and bare counts are ignored), or differs from Section 2 hypotheses; a file in `appendix/data/` that is absent from the sealed `known_artifacts`, `download_log.csv` and `intake.md` (added after sealing; warning). |
 | `P2-DOMAIN` | warning | A declared tier or kind contradicts the source's domain (e.g. Tier 1 on a newspaper). |
+| `SRC-META` | error / warning | `appendix/data/sources_metadata.csv` is malformed: a `source_id` that is empty or contains a space, a tier other than `Tier 1`/`Tier 2`/`Tier 3` (errors), a `data_as_of` later than the As-Of Date (warning; error at Level 3), or a local table whose `primary_source_id` values the catalogue does not define, which silently count as Tier 3 (warning). |
 | `SRC-TIER` | error | A `sources.csv` row's tier is not exactly `Tier 1`, `Tier 2` or `Tier 3` (a bare `3` or `T3` would slip past every tier rule). |
 | `SRC-OWN-TIER` | error | A row with `kind = own-computation` is declared Tier 1. |
 | `SRC-FULLTEXT` | warning | A source titled "full text" has a failed attempt logged for the same URL. |
