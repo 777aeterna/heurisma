@@ -20,6 +20,7 @@ import os
 import re
 import socket
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -92,14 +93,18 @@ class _GuardedRedirects(urllib.request.HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
+_LOG_LOCK = threading.Lock()
+
+
 def _log_download(path: Path, row: dict[str, object]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    new = not path.exists() or path.stat().st_size == 0
-    with path.open("a", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=list(DOWNLOAD_COLS))
-        if new:
-            writer.writeheader()
-        writer.writerow(row)
+    with _LOG_LOCK:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        new = not path.exists() or path.stat().st_size == 0
+        with path.open("a", newline="", encoding="utf-8") as fh:
+            writer = csv.DictWriter(fh, fieldnames=list(DOWNLOAD_COLS))
+            if new:
+                writer.writeheader()
+            writer.writerow(row)
 
 
 def fetch(
@@ -149,7 +154,8 @@ def fetch(
     shown = log_url or scrub_url(url)
 
     def fail(outcome: str, reason: str) -> None:
-        local_data.append_attempt(attempts_csv, target, source, f"GET {shown}", outcome, failure_reason=reason)
+        with _LOG_LOCK:
+            local_data.append_attempt(attempts_csv, target, source, f"GET {shown}", outcome, failure_reason=reason)
         if on_fail is not None:
             on_fail(outcome, reason)
 
