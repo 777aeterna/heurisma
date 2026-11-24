@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from checks.common import _parse_utc
-from contracts import NON_PEER_REVIEWED
+from contracts import NON_PEER_REVIEWED, WITHHELD_MANIFEST, read_withheld
 from providers import base
 
 _CREDENTIAL = re.compile(r"(?i)\b(api_key|apikey|mailto|email)=(?!REDACTED\b|YOUR_)([^\s&\"']{3,})")
@@ -43,6 +43,40 @@ def _file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _validate_withheld_manifest(appendix: Path) -> list[str]:
+    manifest = appendix / WITHHELD_MANIFEST
+    if not manifest.is_file():
+        return []
+    errors: list[str] = []
+    try:
+        with manifest.open(encoding="utf-8-sig", newline="") as fh:
+            reader = csv.DictReader(fh)
+            header = [c.strip() if c is not None else "" for c in (reader.fieldnames or [])]
+            reader.fieldnames = header
+            missing = [c for c in ("file", "sha256") if c not in header]
+            if missing:
+                return [
+                    f"appendix/{WITHHELD_MANIFEST}: missing required column(s) {', '.join(missing)} "
+                    f"(expected: file,sha256,reason)."
+                ]
+            for line_no, row in enumerate(reader, start=2):
+                name = (row.get("file") or "").strip()
+                sha = (row.get("sha256") or "").strip()
+                if not name or "/" in name or "\\" in name or name in (".", ".."):
+                    errors.append(
+                        f"appendix/{WITHHELD_MANIFEST}: line {line_no} must name a bare file under "
+                        f"appendix/data/papers/, not '{name}'."
+                    )
+                elif not re.fullmatch(r"[0-9a-fA-F]{64}", sha):
+                    errors.append(
+                        f"appendix/{WITHHELD_MANIFEST}: line {line_no} ('{name}') must record a full 64-character "
+                        f"hex SHA-256, not '{sha}'."
+                    )
+    except (OSError, csv.Error, UnicodeDecodeError) as exc:
+        return [f"appendix/{WITHHELD_MANIFEST}: unreadable manifest ({exc})."]
+    return errors
+
+
 def check_papers(
     report_dir: Path | None,
     sources_rows: list[dict[str, str]],
@@ -57,7 +91,13 @@ def check_papers(
     appendix = report_dir / "appendix"
     papers_csv = appendix / "papers.csv"
     if not papers_csv.is_file():
+        if (appendix / WITHHELD_MANIFEST).is_file():
+            return [
+                f"appendix/{WITHHELD_MANIFEST}: manifest exists without appendix/papers.csv; "
+                f"only full texts saved by the paper connector can be declared withheld."
+            ], []
         return errors, warnings
+    errors.extend(_validate_withheld_manifest(appendix))
     sink = errors if level == 3 else warnings
     records = {r.get("doi", ""): r for r in _read(papers_csv)}
 
@@ -105,6 +145,18 @@ def check_papers(
             )
 
     papers_dir = (appendix / "data" / "papers").resolve()
+    withheld = read_withheld(appendix)
+    logged = {r.get("file", ""): (r.get("sha256") or "").strip().lower() for r in _read(appendix / "download_log.csv")}
+    for rel_w, sha_w in withheld.items():
+        name = rel_w[len("data/papers/"):]
+        on_disk = appendix / rel_w
+        if logged.get(f"papers/{name}") != sha_w:
+            errors.append(
+                f"appendix/{WITHHELD_MANIFEST}: '{name}' is declared withheld with SHA-256 {sha_w[:12]}, but download_log.csv has no "
+                f"download of that file with that hash; only a full text the connector saved can be withheld from a copy."
+            )
+        elif on_disk.is_file() and _file_sha256(on_disk) != sha_w:
+            errors.append(f"appendix/{WITHHELD_MANIFEST}: '{name}' is present but its SHA-256 differs from the one declared withheld.")
     for rec in records.values():
         rel = (rec.get("fulltext_file") or "").strip()
         if not rel:
@@ -122,6 +174,9 @@ def check_papers(
             )
             continue
         if not target.is_file():
+            rel_appendix = rel[len("appendix/"):] if rel.startswith("appendix/") else rel
+            if withheld.get(rel_appendix) and withheld[rel_appendix] == (rec.get("fulltext_sha256") or "").strip().lower():
+                continue  # withheld from this copy with the hash it was saved with (checked against download_log.csv above)
             errors.append(f"appendix/papers.csv: the full text '{rel}' of {doi} is recorded but the file is missing.")
             continue
         recorded_sha = (rec.get("fulltext_sha256") or "").strip().lower()

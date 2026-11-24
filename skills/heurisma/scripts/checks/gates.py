@@ -9,6 +9,7 @@ from checks.common import (
     _extract_section_slice,
     _file_sha256,
 )
+from contracts import WITHHELD_MANIFEST, read_withheld
 
 
 # P0-2: a gate is bound to the files it reviewed (hash), quotes them verbatim, and says who wrote it (MODE)
@@ -36,7 +37,8 @@ def _gate_files(report_dir: Path, gate: str) -> list[tuple[str, Path]]:
         for fp in sorted(appendix.rglob("*"), key=lambda p: p.relative_to(appendix).parts):
             rel = fp.relative_to(appendix)
             if fp.is_file() and rel.parts[0] != "gates" and "__pycache__" not in fp.parts and fp.suffix != ".pyc":
-                files.append(("appendix/" + rel.as_posix(), fp))
+                if rel.as_posix() != WITHHELD_MANIFEST:  # a distribution artifact, not something the gate reviewed
+                    files.append(("appendix/" + rel.as_posix(), fp))
     return files
 
 
@@ -48,9 +50,16 @@ def gate_hash(report_dir: str | Path, gate: str) -> str:
     """
     import hashlib
 
+    report_dir = Path(report_dir)
+    entries = [(rel, _file_sha256(fp) if fp.is_file() else "-") for rel, fp in _gate_files(report_dir, gate)]
+    if gate not in GATE_HASH_FILES and (report_dir / "appendix" / "papers.csv").is_file():  # qa covers the whole appendix: a withheld full text counts with its recorded hash
+        withheld = read_withheld(report_dir / "appendix")
+        present = {rel for rel, _ in entries}
+        entries += [("appendix/" + rel, sha) for rel, sha in withheld.items() if "appendix/" + rel not in present]
+        head, tail = entries[:2], entries[2:]
+        entries = head + sorted(tail, key=lambda e: Path(e[0][len("appendix/"):]).parts)
     h = hashlib.sha256()
-    for rel, fp in _gate_files(Path(report_dir), gate):
-        digest = _file_sha256(fp) if fp.is_file() else "-"
+    for rel, digest in entries:
         h.update(f"{rel}\t{digest}\n".encode("utf-8"))
     return h.hexdigest()
 
@@ -83,6 +92,15 @@ def _check_analysis_anchor(
         f"appendix/gates/reviewer.md records ANALYSIS-SHA256 {declared.group(1)[:12]} but appendix/analysis.py is now "
         f"{current}: analysis.py changed after the reviewer saw it; list what changed in a 'Post-review changes' "
         f"subsection of Section 5, or run Reviewer #2 again."
+    )
+
+
+def _closed_disposition(clean_text: str, section_positions: dict[str, int]) -> bool:
+    """Section 5 holds a Reviewer #2 Disposition Table with at least one action (the review loop was closed)."""
+    sec5 = _extract_section_slice(clean_text, section_positions, "Counter-Evidence & Alternative Explanations")
+    return bool(
+        re.search(r"(?:Reviewer\s*#?2|Revisor\s*#?2|Disposition|Disposici[oó]n)", sec5, re.IGNORECASE)
+        and re.search(r"\|\s*[`*]{0,2}(?:Fixed|Refuted|Deferred|Corregida|Refutada|Diferida)[`*]{0,2}\b", sec5, re.IGNORECASE)
     )
 
 
@@ -119,28 +137,25 @@ def _check_gate_binding(
                 f"{current[:16]}; re-run the gate on the current files."
             )
             if gate == "reviewer":  # fixes made after Reviewer #2 legitimately change what it read
-                sec5 = _extract_section_slice(clean_text, section_positions, "Counter-Evidence & Alternative Explanations")
-                has_closed_disp = bool(
-                    re.search(r"(?:Reviewer\s*#?2|Revisor\s*#?2|Disposition|Disposici[oó]n)", sec5, re.IGNORECASE)
-                    and re.search(
-                        r"\|\s*[`*]{0,2}(?:Fixed|Refuted|Deferred|Corregida|Refutada|Diferida)[`*]{0,2}\b",
-                        sec5,
-                        re.IGNORECASE,
-                    )
-                )
-                if not has_closed_disp:
+                if not _closed_disposition(clean_text, section_positions):
                     warnings.append(
                         msg + " (Expected after Reviewer #2 fixes: every critique must be closed in the Disposition Table.)"
                     )
             else:
                 gate_sink.append(msg)
     root = report_dir.resolve()
+    # Reviewer #2 quotes the draft; once its critiques are closed, the author has corrected those very lines (same reason the
+    # pre-fix hash is accepted). Quotes of the appendix still have to match.
+    reviewed_draft_fixed = gate == "reviewer" and _closed_disposition(clean_text, section_positions)
     for rel, line_no, quoted in quotes:
-        target = (report_dir / rel).resolve()
+        rel_posix = rel.replace("\\", "/")
+        target = (report_dir / rel_posix).resolve()
         try:
             target.relative_to(root)
         except ValueError:
             gate_sink.append(f"appendix/gates/{gate}.md quotes '{rel}', which is outside the report folder.")
+            continue
+        if reviewed_draft_fixed and target == root / "report.md":
             continue
         lines = target.read_text(encoding="utf-8", errors="replace").splitlines() if target.is_file() else []
         idx = int(line_no) - 1

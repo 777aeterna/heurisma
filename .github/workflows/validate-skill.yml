@@ -87,6 +87,11 @@ jobs:
             python -B skills/heurisma/scripts/validate_report.py examples/$d/report.md \
               --level 2 --html examples/$d/report.html --strict --reproduce
           done
+          # Level 3 showcase: three subagent gates, ten papers through the connector, full texts withheld by manifest.
+          # --reproduce reruns a ~90 s Monte Carlo, so it is checked locally before a release, not on every job.
+          python -B skills/heurisma/scripts/validate_report.py examples/level3-emergence-in-physics/report.md \
+            --level 3 --html examples/level3-emergence-in-physics/report.html --strict
+          HEURISMA_OFFLINE=1 python -B skills/heurisma/scripts/papers.py replay --appendix examples/level3-emergence-in-physics/appendix
 
       - name: Offline rehearsal of the local-data rung and privacy check
         run: |

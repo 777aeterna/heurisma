@@ -243,7 +243,7 @@
    [
     "HTML-STALE",
     "report.html",
-    "HTML 'report.html' is stale (out of date): sources hash 071e88f455eb != embedded 1491e5f88c79; re-run render_report.py."
+    "HTML 'report.html' is stale (out of date): sources hash c44bc4d25c1c != embedded 02bd25b086ec; re-run render_report.py."
    ]
   ],
   "M17": [
@@ -863,5 +863,5 @@
    ]
   ]
  },
- "version": "0.10.1"
+ "version": "0.10.2"
 }

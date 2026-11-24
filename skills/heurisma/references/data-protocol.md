@@ -187,6 +187,9 @@ python3 -B <skill-dir>/scripts/papers.py replay
 
 *(Semantic Scholar is excluded from v1 due to unauthenticated shared-pool rate-limit blocks and overlap with OpenAlex; direct PubMed is unnecessary because Europe PMC indexes MEDLINE/PubMed.)*
 
+#### Redistributing a Run Without Its Full Texts (`appendix/data/papers/EXCLUDED.csv`)
+Publisher PDFs saved by `cite --fulltext` may not be redistributable. To share a run without them, delete the files and list each one in `appendix/data/papers/EXCLUDED.csv` (`file,sha256,reason`; `file` is the name under `appendix/data/papers/`, `sha256` the one `download_log.csv` logged). A listed file counts as present with that hash in the gate and HTML fingerprints, so gates reviewed on the full copy stay valid; the HTML tells the reader which files were withheld; and the validator errors on any row that no logged download backs. Never use it to skip a download: only a file the connector actually saved can be withheld.
+
 #### Honest Limits & Opt-In Validator Rules
 - **No open search API for SSRN, NBER, or RePEc:** OpenAlex indexes a portion of their working papers (typically as `work_type=report`, capped at `Tier 2`). When a working paper is only reachable on the web, log the retrieval with `local_data.py attempt` (and label `(web summary)` if only a search summary was read).
 - **Statistical agencies and regulators are not paper databases:** Central banks, grid operators, and ministries (e.g., BCRA, CAMMESA, ENRE, INDEC, FRED) publish primary data series and regulatory tables, not scholarly papers — fetch them via `appendix/fetch_data.py`, not `papers.py`.

@@ -101,7 +101,7 @@ def _log_download(path: Path, row: dict[str, object]) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         new = not path.exists() or path.stat().st_size == 0
         with path.open("a", newline="", encoding="utf-8") as fh:
-            writer = csv.DictWriter(fh, fieldnames=list(DOWNLOAD_COLS))
+            writer = csv.DictWriter(fh, fieldnames=list(DOWNLOAD_COLS), lineterminator="\n")
             if new:
                 writer.writeheader()
             writer.writerow(row)

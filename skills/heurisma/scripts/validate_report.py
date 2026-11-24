@@ -28,6 +28,7 @@ from contracts import (  # noqa: E402
     VALID_TIERS as VALID_TIERS,
     WEAK_KINDS as WEAK_KINDS,
     WEB_SUMMARY_LABELS as WEB_SUMMARY_LABELS,
+    WITHHELD_MANIFEST as WITHHELD_MANIFEST,
     __version__ as __version__,
 )
 
@@ -561,6 +562,14 @@ def validate_report_full(
                                         f"'{url}' changed since it was registered in appendix/sources.csv: "
                                         f"SHA-256 {actual[:12]} != declared {declared}."
                                     )
+            else:
+                _resolved_start, _run_src = _resolve_run_start(report_dir, run_since, markdown_text)
+                _run_start_dt = _resolved_start if (_resolved_start is not None and "run.json" in _run_src) else None
+                paper_err, paper_warn = check_papers(
+                    report_dir, sources_rows, set(_extract_citation_ids(clean_text)), level, _run_start_dt
+                )
+                errors.extend(paper_err)
+                warnings.extend(paper_warn)
 
             # P0-1: hashes logged by fetch_data.py are recomputed as well
             dl_csv = appendix_dir / "download_log.csv"
@@ -590,7 +599,7 @@ def validate_report_full(
                     if not fp.is_file() or "__pycache__" in fp.parts:
                         continue
                     rel = fp.relative_to(data_dir).as_posix()
-                    if rel in registered_paths:
+                    if rel in registered_paths or f"data/{rel}" == WITHHELD_MANIFEST:
                         continue
                     actual = _file_sha256(fp)
                     if any(actual.startswith(h) for h in registered_hashes):

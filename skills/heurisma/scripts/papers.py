@@ -92,7 +92,7 @@ _read = local_data._read_rows  # one CSV reader for the whole skill (BOM-toleran
 def _write_atomic(path: Path, columns: tuple[str, ...], rows: list[dict[str, str]]) -> None:
     """Write a CSV through a uniquely named temporary file and ``os.replace`` so a failure never leaves a half-written registry."""
     buf = io.StringIO(newline="")
-    writer = csv.DictWriter(buf, fieldnames=list(columns), extrasaction="ignore", restval="")
+    writer = csv.DictWriter(buf, fieldnames=list(columns), extrasaction="ignore", restval="", lineterminator="\n")
     writer.writeheader()
     writer.writerows(rows)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -284,8 +284,11 @@ def cite(ctx: Context, doi: str, *, tier: str, claim_id: str | None = None, full
     if tier == "Tier 1" and not rec["work_type"]:
         raise CiteError(f"{rec['doi']} has no known work type (an arXiv record that names a published DOI): run `papers.py lookup {rec['doi']}` to learn whether it is peer reviewed before calling it Tier 1")
     has_text = bool(rec["fulltext_file"])
-    if not rec["abstract_sha256"] and not has_text:
-        raise CiteError(f"{rec['doi']} has no abstract or saved full text in the databases, so it cannot be cited as a finding")
+    if not rec["abstract_sha256"] and not has_text and not fulltext:
+        raise CiteError(
+            f"{rec['doi']} has no abstract in the databases and no saved full text, so it cannot be cited as a finding; "
+            f"if it is open access, cite it with --fulltext"
+        )
     sources_csv = ctx.appendix / "sources.csv"
     existing = _read(sources_csv)
     url = source_url(rec)
@@ -305,6 +308,8 @@ def cite(ctx: Context, doi: str, *, tier: str, claim_id: str | None = None, full
     if fulltext and not has_text:
         saved = fulltext_for(ctx, rec)
         if saved is None:
+            if not rec["abstract_sha256"]:
+                raise CiteError(f"no open-access full text could be saved for {rec['doi']}, and it has no abstract, so it cannot be cited as a finding")
             raise CiteError(f"no open-access full text could be saved for {rec['doi']}; cite it without --fulltext (it is then marked abstract only)")
         rec = _find(ctx.appendix, doi) or rec
         has_text = True
@@ -322,7 +327,7 @@ def cite(ctx: Context, doi: str, *, tier: str, claim_id: str | None = None, full
         row = {
             "claim_id": cid, "source_title": " ".join([rec["title"], *labels]), "url": url, "tier": tier,
             "accessed_date": datetime.now(timezone.utc).strftime("%Y-%m-%d"), "data_as_of": rec["year"], "kind": "literature",
-            "sha256": "", "selection": "agent-fetched", "retrieved_utc": rec["retrieved_utc"],
+            "sha256": rec["fulltext_sha256"], "selection": "agent-fetched", "retrieved_utc": rec["retrieved_utc"],
         }
         local_data._append_row(sources_csv, SOURCE_COLS, row)
         local_data.append_attempt(
@@ -366,7 +371,8 @@ def fulltext(ctx: Context, rec: Record) -> Path | None:
     if rec.get("pmcid"):
         candidates.append(("europepmc", f"{ctx.base_url('europepmc', europepmc.DEFAULT_URL)}/{rec['pmcid']}/fullTextXML", "xml"))
     if rec.get("oa_url"):
-        candidates.append(("arxiv" if "arxiv" in rec.get("providers", "") and "arxiv.org" in rec["oa_url"] else "publisher", rec["oa_url"], "pdf"))
+        is_arxiv_oa = "arxiv.org" in rec["oa_url"].lower() or rec["oa_url"].startswith(ctx.base_url("arxiv", arxiv.DEFAULT_URL))
+        candidates.append(("arxiv" if is_arxiv_oa else "publisher", rec["oa_url"], "pdf"))
     if not ctx.mailto and base.normalize_doi(rec["doi"]) and not candidates:
         ctx.warn("unpaywall was skipped: set HEURISMA_MAILTO to a contact address you choose to let it look for an open-access copy")
 

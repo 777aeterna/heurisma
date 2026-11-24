@@ -15,6 +15,7 @@ from contracts import (
     WEAK_KINDS,
     WEB_SUMMARY_LABELS,
 )
+from providers import base  # noqa: E402  (the connector's URL <-> key mapping)
 from checks.common import (
     MAX_SNAPSHOT_AGE_DAYS,
     SHA_HEX_RE,
@@ -366,6 +367,24 @@ def _literature_proven(cid: str, url: str, attempts: list[dict[str, str]]) -> bo
     return False
 
 
+def _connector_fulltext_keys(report_dir: Path | None, saved_shas: set[str]) -> set[str]:
+    """Keys (DOI, ``arxiv:`` …) of works whose full text the paper connector saved: ``papers.csv`` records its SHA-256 and that
+    hash is in ``download_log.csv``. ``sources.csv`` names such a work by its DOI link, not by the URL the PDF came from."""
+    papers_csv = report_dir / "appendix" / "papers.csv" if report_dir is not None else None
+    if papers_csv is None or not papers_csv.is_file():
+        return set()
+    try:
+        with papers_csv.open(encoding="utf-8-sig", newline="") as fh:
+            rows = list(csv.DictReader(fh))
+    except (OSError, csv.Error, UnicodeDecodeError):
+        return set()
+    return {
+        r.get("doi", "")
+        for r in rows
+        if (sha := (r.get("fulltext_sha256") or "").strip().lower()[:12]) and len(sha) == 12 and sha in saved_shas and r.get("doi")
+    }
+
+
 def check_selection(
     sources_rows: list[dict[str, str]],
     sources_cols: list[str],
@@ -383,6 +402,7 @@ def check_selection(
     curated_hashes = _intake_user_curated_hashes(report_dir)
     dl_urls, dl_names, dl_shas = _download_proof(report_dir)
     saved_urls, saved_names, saved_shas = _download_proof(report_dir, include_attempts=False)
+    connector_saved = _connector_fulltext_keys(report_dir, saved_shas)
     attempts = _attempt_proof(report_dir, run_start)
     curated_docs = False
     fetched = False
@@ -458,6 +478,7 @@ def check_selection(
                     (url and any(url in u or u in url for u in saved_urls))
                     or (fname and fname in saved_names)
                     or (sha and sha[:12] in saved_shas)
+                    or (base.key_from_url(url) in connector_saved)
                 )
                 if re.search(r"\bTier\s*1\b", tier, re.IGNORECASE) and not saved and not honest:
                     warnings.append(

@@ -593,14 +593,14 @@ def _append_row(csv_path: Path, columns: tuple[str, ...], row: dict[str, str]) -
         if missing:
             header += missing
             with csv_path.open("w", newline="", encoding="utf-8") as fh:
-                writer = csv.DictWriter(fh, fieldnames=header, extrasaction="ignore", restval="")
+                writer = csv.DictWriter(fh, fieldnames=header, extrasaction="ignore", restval="", lineterminator="\n")
                 writer.writeheader()
                 writer.writerows(old_rows)
         fieldnames = header
     else:
         fieldnames = list(columns)
     with csv_path.open("a", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=fieldnames, extrasaction="ignore", restval="")
+        writer = csv.DictWriter(fh, fieldnames=fieldnames, extrasaction="ignore", restval="", lineterminator="\n")
         if is_new:
             writer.writeheader()
         elif not _ends_with_newline(csv_path):

@@ -2,3 +2,4 @@
 *.png binary
 *.zip binary
 *.xlsx binary
+examples/level3-emergence-in-physics/appendix/*.csv -text

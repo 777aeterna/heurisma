@@ -27,7 +27,7 @@ from urllib.parse import unquote
 _SCRIPTS_DIR = str(Path(__file__).resolve().parent)
 if _SCRIPTS_DIR not in sys.path:
     sys.path.insert(0, _SCRIPTS_DIR)
-from contracts import __version__  # noqa: E402
+from contracts import WITHHELD_MANIFEST, __version__, read_withheld  # noqa: E402
 import svg_charts  # noqa: E402
 
 TAG_MAP: dict[str, tuple[str, str]] = {
@@ -54,6 +54,8 @@ I18N: dict[str, dict[str, str]] = {
         "references": "References",
         "appendices": "Appendices &amp; Reproducible Artifacts",
         "external_files": "External Data &amp; Large Files (Linked, Not Embedded)",
+        "withheld_files": "Full Texts Withheld from This Copy",
+        "withheld_note": "These files were downloaded and hashed in the original run (see appendix/download_log.csv) but are not redistributed with this copy (publisher licensing; see appendix/data/papers/EXCLUDED.csv). Re-fetch them to re-check their hashes.",
         "external_artifact": "external artifact",
         "self_review": "self-review, not independent",
         "additional_figures": "Additional Figures",
@@ -76,6 +78,8 @@ I18N: dict[str, dict[str, str]] = {
         "references": "Referencias",
         "appendices": "Apéndices y artefactos reproducibles",
         "external_files": "Datos externos y archivos grandes (enlazados, no incrustados)",
+        "withheld_files": "Textos completos no incluidos en esta copia",
+        "withheld_note": "Estos archivos se descargaron y hashearon en la corrida original (ver appendix/download_log.csv), pero no se redistribuyen con esta copia (licencias editoriales; ver appendix/data/papers/EXCLUDED.csv). Vuelva a descargarlos para verificar sus hashes.",
         "external_artifact": "artefacto externo",
         "self_review": "auto-revisión, no independiente",
         "additional_figures": "Figuras adicionales",
@@ -694,12 +698,23 @@ def _render_appendices(appendix_dir: Path | None, i18n: dict[str, str]) -> str:
                 f'({size:,} bytes — {i18n["external_artifact"]})</li>'
             )
 
-    if not embedded and not linked:
+    withheld = (
+        [rel for rel in read_withheld(appendix_dir) if not (appendix_dir / rel).is_file()]
+        if (appendix_dir / "papers.csv").is_file()
+        else []
+    )
+    if not embedded and not linked and not withheld:
         return ""
     parts = [f'<section class="appendices"><h2>{i18n["appendices"]}</h2>']
     parts.extend(embedded)
     if linked:
         parts.append(f'<h3>{i18n["external_files"]}</h3><ul>' + "".join(linked) + "</ul>")
+    if withheld:
+        parts.append(
+            f'<h3>{i18n["withheld_files"]}</h3><p>{i18n["withheld_note"]}</p><ul>'
+            + "".join(f"<li><code>appendix/{html.escape(rel)}</code></li>" for rel in sorted(withheld))
+            + "</ul>"
+        )
     parts.append("</section>")
     return "\n".join(parts)
 
@@ -733,10 +748,18 @@ def compute_source_hash(
         if not in_appendix:
             entries.append(("numbers.json", _file_sha(numbers)))
     if appendix_dir is not None and appendix_dir.is_dir():
-        for fp in sorted(appendix_dir.rglob("*"), key=lambda p: p.relative_to(appendix_dir).parts):
-            if not fp.is_file() or "__pycache__" in fp.parts or fp.suffix == ".pyc":
+        appendix_entries: list[tuple[tuple[str, ...], str, str]] = []
+        for fp in appendix_dir.rglob("*"):
+            rel = fp.relative_to(appendix_dir)
+            if not fp.is_file() or "__pycache__" in fp.parts or fp.suffix == ".pyc" or rel.as_posix() == WITHHELD_MANIFEST:
                 continue
-            entries.append((f"appendix/{fp.relative_to(appendix_dir).as_posix()}", _file_sha(fp)))
+            appendix_entries.append((rel.parts, f"appendix/{rel.as_posix()}", _file_sha(fp)))
+        present = {label for _, label, _ in appendix_entries}
+        if (appendix_dir / "papers.csv").is_file():
+            for rel_str, sha in read_withheld(appendix_dir).items():  # a withheld full text counts with its recorded hash
+                if f"appendix/{rel_str}" not in present:
+                    appendix_entries.append((Path(rel_str).parts, f"appendix/{rel_str}", sha))
+        entries.extend((label, sha) for _, label, sha in sorted(appendix_entries, key=lambda e: e[0]))
     digest = hashlib.sha256("".join(f"{label}\0{sha}\n" for label, sha in entries).encode("utf-8"))
     return digest.hexdigest()[:12]
 

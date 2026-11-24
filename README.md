@@ -10,7 +10,7 @@
   <a href="https://github.com/777aeterna/heurisma/actions/workflows/validate-skill.yml">
     <img src="https://github.com/777aeterna/heurisma/actions/workflows/validate-skill.yml/badge.svg" alt="CI Validation" />
   </a>
-  <img src="https://img.shields.io/badge/Version-v0.10.1-0072B2?style=flat-square" alt="Version v0.10.1" />
+  <img src="https://img.shields.io/badge/Version-v0.10.2-0072B2?style=flat-square" alt="Version v0.10.2" />
   <img src="https://img.shields.io/badge/Python-%E2%89%A53.9_stdlib_only-009E73?style=flat-square" alt="Python >= 3.9 stdlib only" />
   <img src="https://img.shields.io/badge/OS-Linux_%7C_macOS_%7C_Windows-334155?style=flat-square" alt="OS: Linux | macOS | Windows" />
   <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=flat-square" alt="License: MIT" />
@@ -54,7 +54,7 @@ A passing `--strict` check proves **structural traceability and computational re
 Pick the path that fits what you want to do:
 
 ### Path A — Install as an Agent Skill (Antigravity, Claude Code, Codex, Gemini CLI)
-Download `heurisma-skill-v0.10.1.zip` from the [latest release](https://github.com/777aeterna/heurisma/releases/latest) (contains `heurisma/` and `claude-agents/`), or clone and copy:
+Download `heurisma-skill-v0.10.2.zip` from the [latest release](https://github.com/777aeterna/heurisma/releases/latest) (contains `heurisma/` and `claude-agents/`), or clone and copy:
 
 ```bash
 git clone https://github.com/777aeterna/heurisma.git
@@ -85,7 +85,7 @@ Conventional **Deep Research** tools are primarily *retrieval and summarization 
 
 **Heurisma** (from Greek *heuriskein*, "to discover") pairs a **scientific-method protocol** with a deterministic **epistemic linter**:
 
-| Dimension | Conventional Deep Research | Heurisma (`v0.10.1`) |
+| Dimension | Conventional Deep Research | Heurisma (`v0.10.2`) |
 | :--- | :--- | :--- |
 | **Before Searching** | Launches queries immediately | **Pre-Search Gate:** classifies scientific branch(es), `As-Of Date`, evidence standards, depth level (`Level 0–3`), seals `appendix/run.json`, and offers one non-blocking pre-flight data intake (Stage 0 step 9, idempotent multi-channel `appendix/intake.md`) |
 | **Hypotheses & Forecasts** | Implicit narrative confirmation | Explicit **$H_0$ / $H_1$ falsifiable hypotheses** sealed in `appendix/preregistration.json` before `analysis.py` (anti-post-hoc & anti-HARKing checks) + multi-scenario forecasting (*identities ≠ forecasts*, honest *Parametric scenario bands* vs. calibrated fans) |
@@ -175,7 +175,7 @@ For academic literature, `scripts/papers.py` queries structured paper APIs befor
 ## Showcase Examples & CLI Tools
 
 Inspect validated outputs generated with Heurisma:
-- **Level 3 — Cold-Start Multi-Disciplinary Showcase (Emergence in Physics · 10 API-verified papers, preregistration, 2D Ising Wolff MC + 4 inline SVGs, 3 independent `MODE: subagent` gates; passed `--level 3 --strict --reproduce` with 0 errors/warnings locally; publisher PDFs excluded from git):** [`examples/level3-emergence-in-physics/PROMPT.md`](examples/level3-emergence-in-physics/PROMPT.md) → [`report.md`](examples/level3-emergence-in-physics/report.md) · [`report.html`](examples/level3-emergence-in-physics/report.html) · [`appendix/`](examples/level3-emergence-in-physics/appendix)
+- **Level 3 — Cold-Start Multi-Disciplinary Showcase (Emergence in Physics · 10 API-verified papers, preregistration, 2D Ising Wolff MC + 4 inline SVGs, 3 independent `MODE: subagent` gates; passes `--level 3 --strict --reproduce` with 0 errors/warnings in this repository; the ten publisher PDFs are withheld by an `EXCLUDED.csv` manifest that keeps their hashes, so the original subagent gates stay valid):** [`examples/level3-emergence-in-physics/PROMPT.md`](examples/level3-emergence-in-physics/PROMPT.md) → [`report.md`](examples/level3-emergence-in-physics/report.md) · [`report.html`](examples/level3-emergence-in-physics/report.html) · [`appendix/`](examples/level3-emergence-in-physics/appendix)
 - **Level 2 — Local-Data Showcase (unknown-origin local CSV capped at `[Preliminary]`, exact permutation tests, sources actually read, `MODE: self-review` manual gate records):** [`examples/showcase-hybrid-work/PROMPT.md`](examples/showcase-hybrid-work/PROMPT.md) → [`report.md`](examples/showcase-hybrid-work/report.md) · [`report.html`](examples/showcase-hybrid-work/report.html) · [`appendix/`](examples/showcase-hybrid-work/appendix)
 - **Level 1 — Rigorous Inquiry (Pressure-Tested Board Brief):** [`examples/level1-brief-example.md`](examples/level1-brief-example.md)
 - **Level 2 — Empirical Data Study (Working-Paper Format + Reproducible Appendix):** [`examples/level2-study/report.md`](examples/level2-study/report.md) + [`examples/level2-study/appendix/`](examples/level2-study/appendix)
@@ -201,7 +201,7 @@ python3 -B skills/heurisma/scripts/validate_report.py examples/level2-study/repo
 
 ## Verification & Quality Assurance
 
-- **610/610 unit tests passing** (`python3 -B -m unittest discover -s tests`); **validator detection rate: `54/54` known violations** (`python3 -B tests/mutation_report.py --min-rate 1.0`, measuring real rule-specific detection even when gates are restamped after tampering).
+- **643/643 unit tests passing** (`python3 -B -m unittest discover -s tests`); **validator detection rate: `54/54` known violations** (`python3 -B tests/mutation_report.py --min-rate 1.0`, measuring real rule-specific detection even when gates are restamped after tampering).
 - **Three gates with artifact-bound contracts:** portable prompts in [`skills/heurisma/references/agents/`](skills/heurisma/references/agents) and Claude Code definitions in [`agents/`](agents) (`heurisma-reviewer`, `heurisma-source-verifier`, `heurisma-qa`). Independence requires subagents — when a runtime has no subagent tool, the inline fallback is recorded as `MODE: self-review`, flagged by the validator, and labelled as self-review in Section 3 and the rendered HTML.
 - **Cold-start subagent tests of the skill text:** behavioral rules are added only after a baseline failure is observed. For example, own code registered as Tier 1 fell from 3/3 to 0/3, and reusing an inherited limitation fell from the audited failure to 0/3; conversely, user-curated corpus selection bias did not fail in 6 cold-start trials (0/6), so it is enforced deterministically in `validate_report.py` without bloating `SKILL.md`. A preregistered multi-model rubric lives in [`evals/rubric.md`](evals/rubric.md); its first execution against v0.9.0 passed 78 of 80 checks (compliance on text plans, not lift; see [`evals/results/v0.7.0-agent-evals.md`](evals/results/v0.7.0-agent-evals.md)).
 - **Security & threat model:** see [`SECURITY.md`](SECURITY.md).

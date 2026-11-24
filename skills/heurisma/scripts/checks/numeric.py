@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import re
 from typing import Any
 
@@ -11,6 +12,22 @@ from checks.common import (
     _VERDICT_SENTENCE_RE,
     _extract_section_slice,
 )
+from checks.prereg import _canon_number, _plain_readings
+
+_HAY_NUMBER_RE = re.compile(r"[+\-\u2212]?\d+(?:[.,]\d+)*")
+
+
+def _signed_values(token: str) -> set[str]:
+    """Every value a number may mean, canonical (``1,024`` -> {1.024, 1024}; ``2.00`` -> 2; ``−0.50`` -> -0.5; ``−0.00`` -> 0)."""
+    token = token.replace("\u2212", "-").rstrip("%")
+    sign = "-" if token.startswith("-") else ""
+    digits = token.lstrip("+-")
+    return {("0" if c == "0" else sign + c) for r in _plain_readings(digits) for c in (_canon_number(r),)} if digits else set()
+
+
+@functools.lru_cache(maxsize=8)
+def _hay_values(hay_raw: str) -> frozenset[str]:
+    return frozenset(v for m in _HAY_NUMBER_RE.finditer(hay_raw) for v in _signed_values(m.group(0)))
 
 
 _TABLE_SKIP_RE = re.compile(
@@ -47,6 +64,8 @@ def _untraced_in(text: str, hay_raw: str, hay_norm: str, seen: set[str]) -> list
         if norm in seen:
             continue
         candidates = {tok, norm, bare, bare.replace(".", ",")}
+        if _signed_values(tok) & _hay_values(hay_raw):  # the same value, formatted differently (1,024 = 1024; 2.00 = 2.0000)
+            continue
         if any(
             re.search(rf"(?<![\d.,]){re.escape(c)}(?!\d)", hay_raw) or re.search(rf"(?<![\d.,]){re.escape(c)}(?!\d)", hay_norm)
             for c in candidates

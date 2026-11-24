@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-__version__ = "0.10.1"
+__version__ = "0.10.2"
 
 # Epistemic confidence tags (canonical English + localized Spanish)
 TAG_TO_CANONICAL: dict[str, str] = {
@@ -151,3 +151,40 @@ HTML_SECTION_PATTERNS: list[tuple[str, str]] = [
         r"<h2[^>]*>\s*7\.\s*(?:Limitations\s*(?:&amp;|&)\s*Open Questions|Limitaciones\s+y\s+preguntas\s+abiertas)\b",
     ),
 ]
+
+
+# Full texts withheld from a redistributed copy (publisher licensing): one row per file left out, with the SHA-256 it had.
+# A listed file counts as present with that hash in every fingerprint, so gates reviewed on the full copy stay valid.
+WITHHELD_MANIFEST = "data/papers/EXCLUDED.csv"  # relative to appendix/
+WITHHELD_COLS: tuple[str, ...] = ("file", "sha256", "reason")
+
+
+def read_withheld(appendix_dir: object) -> dict[str, str]:
+    """``{appendix-relative path: sha256}`` of the withheld full texts declared in ``appendix/data/papers/EXCLUDED.csv``."""
+    import csv
+    import re
+    from pathlib import Path
+
+    if appendix_dir is None or not str(appendix_dir).strip():
+        return {}
+    manifest = Path(str(appendix_dir)) / WITHHELD_MANIFEST
+    if not manifest.is_file():
+        return {}
+    out: dict[str, str] = {}
+    try:
+        with manifest.open(encoding="utf-8-sig", newline="") as fh:
+            reader = csv.DictReader(fh)
+            reader.fieldnames = [c.strip() if c is not None else "" for c in (reader.fieldnames or [])]
+            for row in reader:
+                name, sha = (row.get("file") or "").strip(), (row.get("sha256") or "").strip().lower()
+                if (
+                    name
+                    and re.fullmatch(r"[0-9a-f]{64}", sha)
+                    and "/" not in name
+                    and "\\" not in name
+                    and name not in (".", "..")
+                ):
+                    out[f"data/papers/{name}"] = sha
+    except (OSError, csv.Error, UnicodeDecodeError):
+        return {}
+    return out

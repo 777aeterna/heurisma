@@ -37,7 +37,7 @@ ANALYSIS-SHA256: <the line printed by --gate-header reviewer: the appendix/analy
 QUOTE: <file relative to {REPORT_DIR}>:<line number>: "<text copied verbatim from that line>"
 QUOTE: <a second line you actually read>
 ```
-Run `--gate-header reviewer` (or `--gate-hash reviewer`) **before** you start reading; it fingerprints `appendix/output.txt`, `charts.json`, `appendix/sources.csv` and `appendix/data_attempts.csv`, so a later change to those files marks this answer as stale (once Section 5 includes a closed Reviewer #2 Disposition Table, the validator accepts `reviewer.md` with its pre-fix hash). Quote at least two lines you actually checked, copied exactly (any part of the line), with their line numbers; a quote that is not on that line fails validation.
+Run `--gate-header reviewer` (or `--gate-hash reviewer`) **before** you start reading; it fingerprints `appendix/output.txt`, `charts.json`, `appendix/sources.csv` and `appendix/data_attempts.csv`, so a later change to those files marks this answer as stale (once Section 5 includes a closed Reviewer #2 Disposition Table, the validator accepts `reviewer.md` with its pre-fix hash). Quote at least two lines you actually checked, copied exactly (any part of the line), with their line numbers; a quote that is not on that line fails validation. Prefer quoting stable files (`appendix/output.txt`, `appendix/sources.csv`, `appendix/preregistration.json`): the author will correct the `report.md` lines you criticise, and the validator stops checking `report.md` quotes only once your critiques are closed in the Disposition Table.
 
 Then:
 A numbered list. Each item, on one line:

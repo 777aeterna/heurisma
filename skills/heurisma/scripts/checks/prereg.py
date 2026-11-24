@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from contracts import WITHHELD_MANIFEST
 from checks.common import (
     _extract_section_slice,
     _file_sha256,
@@ -34,6 +35,8 @@ def _files_added_after_prereg(report_dir: Path, rec: dict[str, Any]) -> list[str
         if not fp.is_file() or "__pycache__" in fp.parts or fp.suffix == ".pyc":
             continue
         rel = fp.relative_to(report_dir / "appendix").as_posix()
+        if rel == WITHHELD_MANIFEST:
+            continue  # written when a copy is prepared for redistribution, not research data
         digest = _file_sha256(fp)[:12]
         if rel in known or fp.name in saved_names or digest in saved_shas:
             continue
@@ -59,6 +62,26 @@ def _plain_readings(token: str) -> set[str]:
             out.add(token.replace(",", ""))
         return out
     return {token}
+
+
+_GREEK = {
+    "alpha": "α", "beta": "β", "gamma": "γ", "delta": "δ", "epsilon": "ε", "zeta": "ζ", "eta": "η", "theta": "θ",
+    "kappa": "κ", "lambda": "λ", "mu": "μ", "nu": "ν", "xi": "ξ", "pi": "π", "rho": "ρ", "sigma": "σ", "tau": "τ",
+    "phi": "φ", "chi": "χ", "psi": "ψ", "omega": "ω",
+}
+_GREEK_RE = re.compile(r"(?<![A-Za-z])(" + "|".join(sorted(_GREEK, key=len, reverse=True)) + r")(?![A-Za-z])", re.IGNORECASE)
+_SYMBOLS = (("<->", "↔"), ("->", "→"), ("<-", "←"), ("<=", "≤"), (">=", "≥"), ("!=", "≠"), ("+/-", "±"), ("\u2212", "-"))
+
+
+def _norm_hypothesis(text: str) -> str:
+    """A hypothesis' wording with notation normalised, so an ASCII preregistration (``N->inf``, ``chi_max``, ``<=``) and
+    the Unicode of Section 2 (``N→∞``, ``χ_max``, ``≤``) compare equal; words that merely contain a Greek name stay as they are."""
+    out = text
+    for ascii_form, symbol in _SYMBOLS:
+        out = out.replace(ascii_form, symbol)
+    out = re.sub(r"(?<![A-Za-z])(?:infinity|inf)(?![A-Za-z])", "∞", out, flags=re.IGNORECASE)
+    out = _GREEK_RE.sub(lambda m: _GREEK[m.group(1).lower()], out)  # before _norm_text, which drops the "_" of chi_max
+    return re.sub(r"\s*([→←↔≤≥≠±])\s*", r" \1 ", _norm_text(out)).strip()
 
 
 def _canon_number(text: str) -> str:
@@ -150,9 +173,9 @@ def check_preregistration(
             f"download_log.csv or intake.md entry; document its provenance in Section 3, or run `local_data.py intake` "
             f"before `prereg`."
         )
-    sec2 = _norm_text(_extract_section_slice(clean_text, section_positions, "Framing & Hypotheses"))
+    sec2 = _norm_hypothesis(_extract_section_slice(clean_text, section_positions, "Framing & Hypotheses"))
     for key, text in (body["hypotheses"] or {}).items():
-        if _norm_text(str(text)) not in sec2:
+        if _norm_hypothesis(str(text)) not in sec2:
             warnings.append(
                 f"{key} in Section 2 differs from appendix/preregistration.json (sealed {body['sealed_utc']}); keep the "
                 f"sealed wording or say in Section 3 what changed after sealing and why."
