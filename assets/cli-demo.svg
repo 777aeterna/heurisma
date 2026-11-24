@@ -67,7 +67,7 @@
   </g>
   <g class="s6">
     <text x="32" y="314" class="mono ok">✓ Heurisma report validation PASSED (Level 3 · 0 errors, 0 warnings)</text>
-    <text x="32" y="336" class="mono dim">  3 subagent gates · 10 verified papers · 2D Ising analysis.py reproduced byte-for-byte</text>
+    <text x="32" y="336" class="mono dim">  3 subagent gates · 13 verified papers · 1D/2D Ising analysis.py reproduced byte-for-byte</text>
     <text x="32" y="358" class="mono"><tspan class="ok">✓ 54/54 adversarial mutations caught</tspan> <tspan class="dim">· 610/610 tests · Ubuntu / macOS / Windows</tspan> <tspan class="prompt cursor">▌</tspan></text>
   </g>
 </svg>
