@@ -1,0 +1,195 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/XZj3+uGW43PdfJ51unarB9wSBqM</id>
+  <title>arXiv Query: search_query=all:Ising AND all:triangular AND all:lattice AND all:critical AND all:temperature&amp;id_list=&amp;start=0&amp;max_results=8</title>
+  <updated>2026-11-24T01:21:00Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=all:Ising+AND+(all:triangular+AND+(all:lattice+AND+(all:critical+AND+all:temperature)))&amp;start=0&amp;max_results=8&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>8</opensearch:itemsPerPage>
+  <opensearch:totalResults>100</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/0806.3020v1</id>
+    <title>The high temperature Ising model on the triangular lattice is a critical percolation model</title>
+    <updated>2008-06-18T14:39:27Z</updated>
+    <link href="https://arxiv.org/abs/0806.3020v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/0806.3020v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>  The Ising model at inverse temperature $β$ and zero external field can be obtained via the Fortuin-Kasteleyn (FK) random-cluster model with $q=2$ and density of open edges $p=1-e^{-β}$ by assigning spin +1 or -1 to each vertex in such a way that (1) all the vertices in the same FK cluster get the same spin and (2) +1 and -1 have equal probability. We generalize the above procedure by assigning spin +1 with probability $r$ and -1 with probability $1-r$, with $r \in [0,1]$, while keeping condition (1). For fixed $β$, this generates a dependent (spin) percolation model with parameter $r$. We show that, on the triangular lattice and for $β&lt;β_c$, this model has a percolation phase transition at $r=1/2$, corresponding to the Ising model. This sheds some light on the conjecture that the high temperature Ising model on the triangular lattice is in the percolation universality class and that its scaling limit can be described in terms of SLE$_6$. We also prove uniqueness of the infinite +1 cluster for $r&gt;1/2$, sharpness of the percolation phase transition (by showing exponential decay of the cluster size distribution for $r&lt;1/2$), and continuity of the percolation function for all $r \in [0,1]$.</summary>
+    <category term="math.PR" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="math-ph" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2008-06-18T14:39:27Z</published>
+    <arxiv:comment>22 pages, 2 figures</arxiv:comment>
+    <arxiv:primary_category term="math.PR"/>
+    <author>
+      <name>Andras Balint</name>
+    </author>
+    <author>
+      <name>Federico Camia</name>
+    </author>
+    <author>
+      <name>Ronald Meester</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/1805.05725v1</id>
+    <title>Logarithm corrections in the critical behavior of the Ising model on a triangular lattice modulated with the Fibonacci sequence</title>
+    <updated>2018-05-15T12:20:45Z</updated>
+    <link href="https://arxiv.org/abs/1805.05725v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/1805.05725v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We investigated the critical behavior of the Ising model in a triangular lattice with ferro and anti-ferromagnetic interactions modulated by the Fibonacci sequence, by using finite-size numerical simulations. Specifically, we used a replica exchange Monte Carlo method, known as Parallel Tempering, to calculate the thermodynamic quantities of the system. We have obtained the staggered magnetization $q$, the associated magnetic susceptibility ($χ$) and the specific heat $c$, to characterize the universality class of the system. At the low-temperature limit, we have obtained a continuous phase transition with a critical temperature around $T_{c} \approx 1.4116$ for a particular modulation of the lattice according to the Fibonacci letter sequence. In addition, we have used finite-size scaling relations with logarithmic corrections to estimate the critical exponents $β$, $γ$ and $ν$, and the correction exponents $\hatβ$, $\hatγ$, $\hatα$ and $\hatλ$. Our results show that the system obeys the Ising model universality class and that the critical behavior has logarithmic corrections.</summary>
+    <category term="cond-mat.dis-nn" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2018-05-15T12:20:45Z</published>
+    <arxiv:comment>17 pages, 9 figures</arxiv:comment>
+    <arxiv:primary_category term="cond-mat.dis-nn"/>
+    <author>
+      <name>T. F. A. Alves</name>
+    </author>
+    <author>
+      <name>G. A. Alves</name>
+    </author>
+    <author>
+      <name>M. S. Vasconcelos</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/1807.08042v2</id>
+    <title>Ising versus Potts criticality in a low-temperature magnetothermodynamics of a frustrated spin-1/2 Heisenberg triangular bilayer</title>
+    <updated>2018-09-24T13:06:45Z</updated>
+    <link href="https://arxiv.org/abs/1807.08042v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/1807.08042v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Low-temperature magnetization curves and thermodynamics of a frustrated spin-1/2 Heisenberg triangular bilayer with the antiferromagnetic intradimer interaction and either ferromagnetic or antiferromagnetic interdimer interaction are investigated in a highly frustrated parameter region, where localized many-magnon eigenstates provide the most dominant contribution to magnetothermodynamics. Low-energy states of the highly frustrated spin-1/2 Heisenberg triangular bilayer can be accordingly found from a mapping correspondence with an effective triangular-lattice spin-1/2 Ising model in a field. A description based on the effective Ising model implies that the frustrated Heisenberg triangular bilayer with the ferromagnetic interdimer coupling displays in a zero-temperature magnetization curve discontinuous magnetization jump, which is reduced upon increasing of temperature until a continuous field-driven phase transition from the Ising universality class is reached at a certain critical temperature. The frustrated Heisenberg triangular bilayer with the antiferromagnetic interdimer coupling contrarily exhibits multistep magnetization curve with intermediate plateaus at one-third and two-thirds of the saturation magnetization, whereas discontinuous magnetization jumps observable at zero temperature change to continuous field-driven phase transitions from the universality class of three-state Potts model at sufficiently low temperatures. Exact results and Monte Carlo simulations of the effective Ising model are confronted with full exact diagonalization data for the Heisenberg triangular bilayer in order to corroborate these findings.</summary>
+    <category term="cond-mat.stat-mech" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cond-mat.str-el" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2018-07-20T21:48:25Z</published>
+    <arxiv:comment>15 pages, 12 figures, 1 table, presented at HFM 2018 and ICM 2018 conferences</arxiv:comment>
+    <arxiv:primary_category term="cond-mat.stat-mech"/>
+    <arxiv:journal_ref>Phys. Rev. B 98, 174426 (2018)</arxiv:journal_ref>
+    <author>
+      <name>Jozef Strecka</name>
+    </author>
+    <author>
+      <name>Katarina Karlova</name>
+    </author>
+    <author>
+      <name>Vasyl Baliha</name>
+    </author>
+    <author>
+      <name>Oleg Derzhko</name>
+    </author>
+    <arxiv:doi>10.1103/PhysRevB.98.174426</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1103/PhysRevB.98.174426" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/1212.5488v1</id>
+    <title>Critical properties of a spin-1 triangular lattice Ising antiferromagnet</title>
+    <updated>2012-12-21T15:32:21Z</updated>
+    <link href="https://arxiv.org/abs/1212.5488v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/1212.5488v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We employ Monte Carlo simulations in order to investigate critical behavior of a geometrically frustrated spin-1 Ising antiferromagnet on a triangular lattice in the presence of a single-ion anisotropy. It has been previously found that long-range order can exist in the isotropic system with a spin larger than some critical value estimated as 11/2. We show that the presence of the single-ion anisotropy can lead to a partial long-range order in the low-temperature region even below this critical value, namely for the spin 1, within a certain range of the anisotropy strength. At higher temperatures we identify another phase of the Berezinsky-Kosterlitz-Thouless type and using a finite-size scaling analysis evaluate the correlation decay exponent. We also study densities of various local spin patterns in the respective phases.</summary>
+    <category term="cond-mat.stat-mech" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2012-12-21T15:32:21Z</published>
+    <arxiv:comment>8 pages, 3 figures</arxiv:comment>
+    <arxiv:primary_category term="cond-mat.stat-mech"/>
+    <arxiv:journal_ref>Journal of the Korean Physical Society 62 (10) 1495 (2013)</arxiv:journal_ref>
+    <author>
+      <name>Milan Žukovič</name>
+    </author>
+    <author>
+      <name>Andrej Bobák</name>
+    </author>
+    <arxiv:doi>10.3938/jkps.62.1495</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.3938/jkps.62.1495" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/hep-lat/9411023v2</id>
+    <title>Complex-Temperature Singularities in the $d=2$ Ising Model. II. Triangular Lattice</title>
+    <updated>1994-11-22T16:13:30Z</updated>
+    <link href="https://arxiv.org/abs/hep-lat/9411023v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/hep-lat/9411023v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>  We investigate complex-temperature singularities in the Ising model on the triangular lattice. Extending an earlier analysis of the low-temperature series expansions for the (zero-field) susceptibility $\barχ$ by Guttmann \cite{g75} to include the use of differential approximants, we obtain further evidence in support of his conclusion that the exponent describing the divergence in $χ$ at $u=u_e=-1/3$ (where $u = e^{-4K}$) is $γ_e'=5/4$ and refine his estimate of the critical amplitude. We discuss the remarkable nature of this singularity, at which the spontaneous magnetisation diverges (with exponent $β_e=-1/8$) and show that it lies at the endpoint of a singular line segment constituting part of the natural boundaries of the free energy in the complex $u$ plane. Using exact results, we find that the specific heat has a divergent singularity at $u=-1/3$ with exponent $α_e'=1$, so that the relation $α_e'+2β_e+γ_e'=2$ is satisfied. We also study the singularity at $u=u_s=-1$, where $M$ vanishes (with $β_s=3/8$) and $C$ diverges logarithmically (with $α_s' = α_s = 0$).</summary>
+    <category term="hep-lat" scheme="http://arxiv.org/schemas/atom"/>
+    <published>1994-11-14T02:51:38Z</published>
+    <arxiv:comment>latex file, 25 pages of text plus figures appended to end of file. (Further references have been included to important earlier works in this area by A. J. Guttmann. )</arxiv:comment>
+    <arxiv:primary_category term="hep-lat"/>
+    <arxiv:journal_ref>J.Phys. A29 (1996) 803-823</arxiv:journal_ref>
+    <author>
+      <name>V. Matveev</name>
+    </author>
+    <author>
+      <name>R. Shrock</name>
+    </author>
+    <arxiv:doi>10.1088/0305-4470/29/4/009</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1088/0305-4470/29/4/009" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/cond-mat/9504037v1</id>
+    <title>On the Critical Temperature of Non-Periodic Ising Models on Hexagonal Lattices</title>
+    <updated>1995-04-11T12:59:21Z</updated>
+    <link href="https://arxiv.org/abs/cond-mat/9504037v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/cond-mat/9504037v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>  The critical temperature of layered Ising models on triangular and honeycomb lattices are calculated in simple, explicit form for arbitrary distribution of the couplings.</summary>
+    <category term="cond-mat" scheme="http://arxiv.org/schemas/atom"/>
+    <published>1995-04-11T12:59:21Z</published>
+    <arxiv:comment>to appear in Z. Phys. B., 8 pages plain TEX, 1 figure available upon request</arxiv:comment>
+    <arxiv:primary_category term="cond-mat"/>
+    <author>
+      <name>Ferenc Igloi</name>
+      <arxiv:affiliation>Research Institute for Solid State Physics, H-1525 Budapest, Hungary</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Peter Lajko</name>
+      <arxiv:affiliation>Research Institute for Solid State Physics, H-1525 Budapest, Hungary</arxiv:affiliation>
+    </author>
+    <arxiv:doi>10.1007/BF02769943</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1007/BF02769943" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/1707.03206v2</id>
+    <title>Spin-liquid behaviour and the interplay between Pokrovsky-Talapov and Ising criticality in the distorted, triangular-lattice, dipolar Ising antiferromagnet</title>
+    <updated>2018-06-28T09:34:56Z</updated>
+    <link href="https://arxiv.org/abs/1707.03206v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/1707.03206v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We study the triangular-lattice Ising model with dipolar interactions, inspired by its realisation in artificial arrays of nanomagnets. We show that a classical spin-liquid forms at intermediate temperatures, and that its behaviour can be tuned by temperature and/or a small lattice distortion between a string Luttinger liquid and a domain-wall-network state. At low temperature there is a transition into a magnetically ordered phase, which can be first-order or continous with a crossover in the critical behaviour between Pokrovsky-Talapov and 2D-Ising universality. When the Pokrovsky-Talapov criticality dominates, the transition is essentially of the Kasteleyn type.</summary>
+    <category term="cond-mat.str-el" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cond-mat.mes-hall" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cond-mat.stat-mech" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2017-07-11T10:02:58Z</published>
+    <arxiv:primary_category term="cond-mat.str-el"/>
+    <arxiv:journal_ref>SciPost Phys. 5, 030 (2018)</arxiv:journal_ref>
+    <author>
+      <name>Andrew Smerald</name>
+    </author>
+    <author>
+      <name>Frederic Mila</name>
+    </author>
+    <arxiv:doi>10.21468/SciPostPhys.5.3.030</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.21468/SciPostPhys.5.3.030" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/0802.2719v2</id>
+    <title>XXZ and Ising Spins on the Triangular Kagome Lattice</title>
+    <updated>2008-05-16T21:17:55Z</updated>
+    <link href="https://arxiv.org/abs/0802.2719v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/0802.2719v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>  The recently fabricated two-dimensional magnetic materials Cu9X2(cpa)6.xH2O (cpa=2-carboxypentonic acid; X=F,Cl,Br) have copper sites which form a triangular kagome lattice (TKL), formed by introducing small triangles (``a-trimers'') inside of each kagome triangle (``b-trimer''). We show that in the limit where spins residing on b-trimers have Ising character, quantum fluctuations of XXZ spins residing on the a-trimers can be exactly accounted for in the absence of applied field. This is accomplished through a mapping to the kagome Ising model, for which exact analytic solutions exist. We derive the complete finite temperature phase diagram for this XXZ-Ising model, including the residual zero temperature entropies of the seven ground state phases. Whereas the disordered (spin liquid) ground state of the pure Ising TKL model has macroscopic residual entropy ln72=4.2767... per unit cell, the introduction of transverse(quantum) couplings between neighboring $a$-spins reduces this entropy to 2.5258... per unit cell. In the presence of applied magnetic field, we map the TKL XXZ-Ising model to the kagome Ising model with three-spin interactions, and derive the ground state phase diagram. A small (or even infinitesimal) field leads to a new phase that corresponds to a non-intersecting loop gas on the kagome lattice, with entropy 1.4053... per unit cell and a mean magnetization for the b-spins of 0.12(1) per site. In addition, we find that for moderate applied field, there is a critical spin liquid phase which maps to close-packed dimers on the honeycomb lattice, which survives even when the a-spins are in the Heisenberg limit.</summary>
+    <category term="cond-mat.stat-mech" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cond-mat.str-el" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2008-02-20T20:46:29Z</published>
+    <arxiv:comment>12 pages, 12 figures</arxiv:comment>
+    <arxiv:primary_category term="cond-mat.stat-mech"/>
+    <arxiv:journal_ref>Phys. Rev. B 78, 024428 (2008)</arxiv:journal_ref>
+    <author>
+      <name>Dao-Xin Yao</name>
+    </author>
+    <author>
+      <name>Yen Lee Loh</name>
+    </author>
+    <author>
+      <name>Erica W. Carlson</name>
+    </author>
+    <author>
+      <name>Michael Ma</name>
+    </author>
+    <arxiv:doi>10.1103/PhysRevB.78.024428</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1103/PhysRevB.78.024428" title="doi"/>
+  </entry>
+</feed>

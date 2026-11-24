@@ -1,0 +1,51 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/lbVIx1urjj0YM6IHjHOOTltT9jw</id>
+  <title>arXiv Query: search_query=all:critical AND all:Binder AND all:cumulant AND all:isotropic AND all:Ising AND all:square AND all:triangular&amp;id_list=&amp;start=0&amp;max_results=5</title>
+  <updated>2026-11-24T01:21:16Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=all:critical+AND+(all:Binder+AND+(all:cumulant+AND+(all:isotropic+AND+(all:Ising+AND+(all:square+AND+all:triangular)))))&amp;start=0&amp;max_results=5&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>5</opensearch:itemsPerPage>
+  <opensearch:totalResults>2</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/cond-mat/0701515v1</id>
+    <title>Critical Binder cumulant for isotropic Ising models on square and triangular lattices</title>
+    <updated>2007-01-22T12:38:13Z</updated>
+    <link href="https://arxiv.org/abs/cond-mat/0701515v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/cond-mat/0701515v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>  Using Monte Carlo techniques, the critical Binder cumulant U* of isotropic nearest-neighbour Ising models on square and triangular lattices is studied. For rectangular shapes, employing periodic boundary conditions, U* is found to show the same dependence on the aspect ratio for both lattice types. Similarly, applying free boundary conditions for systems with square as well as circular shapes for both lattices, the simulational findings are also consistent with the suggestion that, for isotropic Ising models with short-range interactions, U* depends on the shape and the boundary condition, but not on the lattice structure.</summary>
+    <category term="cond-mat.stat-mech" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2007-01-22T12:38:13Z</published>
+    <arxiv:comment>7 pages, 4 figures, submitted to J. Stat. Mech</arxiv:comment>
+    <arxiv:primary_category term="cond-mat.stat-mech"/>
+    <arxiv:journal_ref>J. Stat. Mech. P04008 (2007)</arxiv:journal_ref>
+    <author>
+      <name>W. Selke</name>
+    </author>
+    <arxiv:doi>10.1088/1742-5468/2007/04/P04008</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1088/1742-5468/2007/04/P04008" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/0708.0395v2</id>
+    <title>Determination of the Critical Exponents for the Isotropic-Nematic Phase Transition in a System of Long Rods on Two-dimensional Lattices: Universality of the Transition</title>
+    <updated>2008-04-21T19:25:54Z</updated>
+    <link href="https://arxiv.org/abs/0708.0395v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/0708.0395v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>  Monte Carlo simulations and finite-size scaling analysis have been carried out to study the critical behavior and universality for the isotropic-nematic phase transition in a system of long straight rigid rods of length $k$ ($k$-mers) on two-dimensional lattices. The nematic phase, characterized by a big domain of parallel $k$-mers, is separated from the isotropic state by a continuous transition occurring at a finite density. The determination of the critical exponents, along with the behavior of Binder cumulants, indicate that the transition belongs to the 2D Ising universality class for square lattices and the three-state Potts universality class for triangular lattices.</summary>
+    <category term="cond-mat.stat-mech" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2007-08-02T18:36:32Z</published>
+    <arxiv:comment>7 pages, 8 figures, uses epl2.cls, to appear in Europhysics Letters</arxiv:comment>
+    <arxiv:primary_category term="cond-mat.stat-mech"/>
+    <author>
+      <name>D. A. Matoz-Fernandez</name>
+    </author>
+    <author>
+      <name>D. H. Linares</name>
+    </author>
+    <author>
+      <name>A. J. Ramirez-Pastor</name>
+    </author>
+    <arxiv:doi>10.1209/0295-5075/82/50007</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1209/0295-5075/82/50007" title="doi"/>
+  </entry>
+</feed>

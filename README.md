@@ -31,7 +31,7 @@
 </p>
 
 <p align="center">
-  <em>Cold-start <strong>Level 3</strong> run in <a href="examples/level3-emergence-in-physics/PROMPT.md"><code>examples/level3-emergence-in-physics/</code></a>: <a href="examples/level3-emergence-in-physics/report.md"><code>report.md</code></a> · <a href="examples/level3-emergence-in-physics/report.html"><code>report.html</code></a> (0 JS, 4 inline SVGs, 3 subagent gates) · <a href="examples/level3-emergence-in-physics/appendix"><code>appendix/</code></a></em>
+  <em>Cold-start <strong>Level 3</strong> run in <a href="examples/level3-emergence-in-physics/PROMPT.md"><code>examples/level3-emergence-in-physics/</code></a>: <a href="examples/level3-emergence-in-physics/report.md"><code>report.md</code></a> · <a href="examples/level3-emergence-in-physics/report.html"><code>report.html</code></a> (0 JS, 7 inline SVGs, 3 subagent gates) · <a href="examples/level3-emergence-in-physics/appendix"><code>appendix/</code></a></em>
 </p>
 
 ---
@@ -175,7 +175,7 @@ For academic literature, `scripts/papers.py` queries structured paper APIs befor
 ## Showcase Examples & CLI Tools
 
 Inspect validated outputs generated with Heurisma:
-- **Level 3 — Cold-Start Multi-Disciplinary Showcase (Emergence in Physics · 10 API-verified papers, preregistration, 2D Ising Wolff MC + 4 inline SVGs, 3 independent `MODE: subagent` gates; passes `--level 3 --strict --reproduce` with 0 errors/warnings in this repository; the ten publisher PDFs are withheld by an `EXCLUDED.csv` manifest that keeps their hashes, so the original subagent gates stay valid):** [`examples/level3-emergence-in-physics/PROMPT.md`](examples/level3-emergence-in-physics/PROMPT.md) → [`report.md`](examples/level3-emergence-in-physics/report.md) · [`report.html`](examples/level3-emergence-in-physics/report.html) · [`appendix/`](examples/level3-emergence-in-physics/appendix)
+- **Level 3 — Cold-Start Multi-Disciplinary Showcase (Emergence in Physics · `v0.10.2` run: 13 API-verified papers, preregistration, 1D/2D Ising Wolff MC + 3×3 block-spin RG + 7 inline SVGs, 2 rounds of Reviewer #2 + Source Verifier + QA `MODE: subagent` gates; passes `--level 3 --strict --reproduce` with 0 errors/warnings in this repository; the seven downloaded PDFs are withheld by an `EXCLUDED.csv` manifest that keeps their hashes, so the original subagent gates stay valid):** [`examples/level3-emergence-in-physics/PROMPT.md`](examples/level3-emergence-in-physics/PROMPT.md) → [`report.md`](examples/level3-emergence-in-physics/report.md) · [`report.html`](examples/level3-emergence-in-physics/report.html) · [`appendix/`](examples/level3-emergence-in-physics/appendix)
 - **Level 2 — Local-Data Showcase (unknown-origin local CSV capped at `[Preliminary]`, exact permutation tests, sources actually read, `MODE: self-review` manual gate records):** [`examples/showcase-hybrid-work/PROMPT.md`](examples/showcase-hybrid-work/PROMPT.md) → [`report.md`](examples/showcase-hybrid-work/report.md) · [`report.html`](examples/showcase-hybrid-work/report.html) · [`appendix/`](examples/showcase-hybrid-work/appendix)
 - **Level 1 — Rigorous Inquiry (Pressure-Tested Board Brief):** [`examples/level1-brief-example.md`](examples/level1-brief-example.md)
 - **Level 2 — Empirical Data Study (Working-Paper Format + Reproducible Appendix):** [`examples/level2-study/report.md`](examples/level2-study/report.md) + [`examples/level2-study/appendix/`](examples/level2-study/appendix)
