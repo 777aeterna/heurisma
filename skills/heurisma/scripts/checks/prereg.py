@@ -70,7 +70,7 @@ _GREEK = {
     "phi": "φ", "chi": "χ", "psi": "ψ", "omega": "ω",
 }
 _GREEK_RE = re.compile(r"(?<![A-Za-z])(" + "|".join(sorted(_GREEK, key=len, reverse=True)) + r")(?![A-Za-z])", re.IGNORECASE)
-_SYMBOLS = (("<->", "↔"), ("->", "→"), ("<-", "←"), ("<=", "≤"), (">=", "≥"), ("!=", "≠"), ("+/-", "±"), ("\u2212", "-"))
+_SYMBOLS = (("<->", "↔"), ("->", "→"), ("<-", "←"), ("<=", "≤"), (">=", "≥"), ("!=", "≠"), ("+/-", "±"), ("−", "-"))
 
 
 def _norm_hypothesis(text: str) -> str:
@@ -92,7 +92,7 @@ def _rounded_forms(value: Any) -> set[str]:
     """Every way an author may quote a computed value: exact, and rounded to 0, 1 and 2 decimals (sign and unit
     dropped, ``.`` as the decimal mark). A bare integer (a count such as 16 sites) has no forms: it is not a result."""
     forms: set[str] = set()
-    for token in _NUM_TOKEN_RE.findall(str(value).replace("\u2212", "-")):
+    for token in _NUM_TOKEN_RE.findall(str(value).replace("−", "-")):
         if token.isdigit():
             continue
         for reading in _plain_readings(token):
@@ -116,7 +116,7 @@ def _hypothesis_number_hits(hyp_text: str, numbers_data: dict[str, Any]) -> list
         if not _DATE_VALUE_RE.fullmatch(str(value).strip()):
             forms |= _rounded_forms(value)
     hits: set[str] = set()
-    for token in _NUM_TOKEN_RE.findall(hyp_text.replace("\u2212", "-")):
+    for token in _NUM_TOKEN_RE.findall(hyp_text.replace("−", "-")):
         if re.fullmatch(r"(?:19|20)\d\d", token):
             continue
         for reading in _plain_readings(token):

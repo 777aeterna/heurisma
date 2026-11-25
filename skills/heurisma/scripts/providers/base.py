@@ -122,15 +122,36 @@ def key_from_url(url: Any) -> str | None:
 
 
 _SECRET_ENV = ("HEURISMA_OPENALEX_KEY", "HEURISMA_MAILTO")
+HEURISMA_ENV_KEYS = (
+    "HEURISMA_OPENALEX_KEY",
+    "HEURISMA_MAILTO",
+    "HEURISMA_OFFLINE",
+    "HEURISMA_BACKOFF",
+    "HEURISMA_OPENALEX_URL",
+    "HEURISMA_CROSSREF_URL",
+    "HEURISMA_EUROPEPMC_URL",
+    "HEURISMA_ARXIV_URL",
+    "HEURISMA_UNPAYWALL_URL",
+)
 _QUERY_SECRET = fetch_lib.QUERY_SECRET
+
+
+def heurisma_env() -> dict[str, str]:
+    """Read only the explicit allowlist of HEURISMA_* configuration variables from the environment."""
+    out: dict[str, str] = {}
+    for key in HEURISMA_ENV_KEYS:
+        val = os.environ.get(key)
+        if val is not None:
+            out[key] = val
+    return out
 
 
 def redact(text: str, env: Mapping[str, str] | None = None) -> str:
     """Remove credentials from a string that is about to be logged: query parameters and the env values themselves."""
-    env = os.environ if env is None else env
+    active_env = heurisma_env() if env is None else env
     out = _QUERY_SECRET.sub(lambda m: f"{m.group(1)}=REDACTED", text)
     for name in _SECRET_ENV:
-        value = (env.get(name) or "").strip()
+        value = (active_env.get(name) or "").strip()
         if len(value) >= 4:
             out = out.replace(value, "REDACTED")
     return out
@@ -148,13 +169,13 @@ def as_list(value: Any) -> list[Any]:
     return [value] if isinstance(value, (str, dict)) and value else []
 
 
-_CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f-\x9f\u2028\u2029]+")
-
-
 def clean_text(value: Any, limit: int = 500) -> str:
-    """Text that came from an API, made safe to write to a CSV and to print: control characters collapse to a space, the
-    length is capped, and a leading ``=``, ``+``, ``-`` or ``@`` is neutralised with an apostrophe (spreadsheet formula injection)."""
-    text = re.sub(r"\s+", " ", _CONTROL_CHARS.sub(" ", value if isinstance(value, str) else "")).strip()[:limit]
+    """Text that came from an API, made safe to write to a CSV and to print: non-printable control and bidi-override
+    characters collapse to a space, the length is capped, and a leading ``=``, ``+``, ``-`` or ``@`` is neutralised
+    with an apostrophe (spreadsheet formula injection)."""
+    raw = value if isinstance(value, str) else ""
+    printable = "".join(ch if ch.isprintable() else " " for ch in raw)
+    text = re.sub(r"\s+", " ", printable).strip()[:limit]
     return "'" + text if text[:1] in ("=", "+", "-", "@") else text
 
 
@@ -246,15 +267,19 @@ class Context:
     """Everything one connector call needs: where the appendix is, the environment, and injectable time for tests."""
 
     appendix: Path
-    env: Mapping[str, str] = field(default_factory=lambda: os.environ)
+    env: Mapping[str, str] = field(default_factory=heurisma_env)
     sleep: Callable[[float], None] = time.sleep
     clock: Callable[[], float] = time.monotonic
-    backoff: float = field(default_factory=lambda: backoff_seconds(os.environ))
+    backoff: float = -1.0
     min_interval: dict[str, float] = field(default_factory=lambda: dict(DEFAULT_MIN_INTERVAL))
     backoff_scale: dict[str, float] = field(default_factory=lambda: dict(DEFAULT_BACKOFF_SCALE))
     warnings: list[str] = field(default_factory=list)
     last_raw: str = ""
     _last_call: dict[str, float] = field(default_factory=dict, repr=False)
+
+    def __post_init__(self) -> None:
+        if self.backoff < 0.0:
+            self.backoff = backoff_seconds(self.env)
 
     def base_url(self, provider: str, default: str) -> str:
         return (self.env.get(f"HEURISMA_{provider.upper()}_URL") or default).rstrip("/")

@@ -503,7 +503,7 @@ def check_selection(
     return errors, warnings
 
 
-_INTAKE_FILE_RE = re.compile(r"^- (?:accepted|rejected): (.+?)(?:\s+->\s|\s+\u2014\s|$)", re.MULTILINE)
+_INTAKE_FILE_RE = re.compile(r"^- (?:accepted|rejected): (.+?)(?:\s+->\s|\s+—\s|$)", re.MULTILINE)
 
 
 def _intake_listed_paths(report_dir: Path) -> list[str]:

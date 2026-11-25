@@ -151,25 +151,25 @@ FILE_URI_RE = re.compile(r"file://[^\s,\"'<>)]+")
 LOCAL_TITLE_SUFFIX_RE = re.compile(r"\s*\((?:local file|archivo local)[^)]*\)", re.IGNORECASE)
 SHA_IN_TEXT_RE = re.compile(r"sha256\s+([0-9a-fA-F]{6,64})", re.IGNORECASE)
 _SUP_PAREN_RE = re.compile(r"(?<=[A-Za-z0-9)\]])\^\(([^()\s]{1,16})\)")
-_SUP_NUM_RE = re.compile(r"(?<=[A-Za-z0-9)\]])\^([-\u2212+]?\d+(?:\.\d+)?)(?![\w^])")
-_SCI_RE = re.compile(r"(?<![\w.])(\d+(?:\.\d+)?)[eE]([+\-\u2212]?\d+)(?!\w|\.\d)")
+_SUP_NUM_RE = re.compile(r"(?<=[A-Za-z0-9)\]])\^([-−+]?\d+(?:\.\d+)?)(?![\w^])")
+_SCI_RE = re.compile(r"(?<![\w.])(\d+(?:\.\d+)?)[eE]([+\-−]?\d+)(?!\w|\.\d)")
 _NEG_NUMBER_RE = re.compile(r"(?<![\w.])-(?=\d)")
 
 
 def _typographic_minus(value: str) -> str:
     """Turn a leading ASCII hyphen-minus before a digit into U+2212 (never touches ranges like 2026-12)."""
-    return _NEG_NUMBER_RE.sub("\u2212", value)
+    return _NEG_NUMBER_RE.sub("−", value)
 
 
 def _apply_scientific_notation(text: str) -> str:
     """Render x^2, N^(-1/2) and 3e-08 with <sup>; deliberately narrow so paths, ids and hashes stay intact."""
-    out = _SUP_PAREN_RE.sub(lambda m: f"<sup>{m.group(1).replace('-', chr(0x2212))}</sup>", text)
-    out = _SUP_NUM_RE.sub(lambda m: f"<sup>{m.group(1).replace('-', chr(0x2212)).lstrip('+')}</sup>", out)
+    out = _SUP_PAREN_RE.sub(lambda m: f"<sup>{m.group(1).replace('-', '−')}</sup>", text)
+    out = _SUP_NUM_RE.sub(lambda m: f"<sup>{m.group(1).replace('-', '−').lstrip('+')}</sup>", out)
 
     def _sci(m: re.Match[str]) -> str:
-        exp = int(m.group(2).replace("\u2212", "-"))
-        sign = "\u2212" if exp < 0 else ""
-        return f"{m.group(1)}\u00d710<sup>{sign}{abs(exp)}</sup>"
+        exp = int(m.group(2).replace("−", "-"))
+        sign = "−" if exp < 0 else ""
+        return f"{m.group(1)}×10<sup>{sign}{abs(exp)}</sup>"
 
     return _SCI_RE.sub(_sci, out)
 
@@ -253,9 +253,13 @@ _SAFE_SCHEMES = {"http", "https", "mailto"}
 _FENCED_SEGMENT_RE = re.compile(r"(^```.*?^```[ \t]*$)", re.MULTILINE | re.DOTALL)
 
 
+def _strip_url_controls(escaped_url: str) -> str:
+    return "".join(ch for ch in html.unescape(escaped_url) if ch.isprintable() and not ch.isspace())
+
+
 def _is_safe_url(escaped_url: str) -> bool:
     """Allow http(s), mailto, #fragments and relative paths; reject javascript:, data:, vbscript:, protocol-relative."""
-    u = re.sub(r"[\x00-\x20]", "", html.unescape(escaped_url))
+    u = _strip_url_controls(escaped_url)
     if not u or u.startswith("//"):
         return False
     m = re.match(r"([A-Za-z][A-Za-z0-9+.\-]*):", u)
@@ -264,7 +268,7 @@ def _is_safe_url(escaped_url: str) -> bool:
 
 def _is_local_url(escaped_url: str) -> bool:
     """A relative path or fragment: the only kind of address an ``<img>`` may load, so opening the HTML never contacts a server."""
-    u = re.sub(r"[\x00-\x20]", "", html.unescape(escaped_url))
+    u = _strip_url_controls(escaped_url)
     if not _is_safe_url(escaped_url) or re.match(r"[A-Za-z][A-Za-z0-9+.\-]*:", u) is not None:
         return False
     path = re.split(r"[?#]", u, maxsplit=1)[0].replace("\\", "/")
@@ -313,7 +317,7 @@ def _format_inline(text: str, tracker: _CitationTracker | None = None) -> str:
     def _stash_code(m: re.Match[str]) -> str:
         idx = len(code_spans)
         code_spans.append(f"<code>{m.group(1)}</code>")
-        return f"\x00CODE{idx}\x00"
+        return f"&&HEURISMA_CODE_{idx};;"
 
     escaped = re.sub(r"`([^`]+)`", _stash_code, escaped)
 
@@ -325,12 +329,12 @@ def _format_inline(text: str, tracker: _CitationTracker | None = None) -> str:
 
     def _stash_url(m: re.Match[str]) -> str:
         url_spans.append(m.group(0))
-        return f"\x00URL{len(url_spans) - 1}\x00"
+        return f"&&HEURISMA_URL_{len(url_spans) - 1};;"
 
     escaped = re.sub(r"\]\((?:[^()\s]|\([^()]*\))*\)|https?://[^\s<>)\"]+", _stash_url, escaped)
     escaped = _apply_scientific_notation(escaped)
     for idx, url_text in enumerate(url_spans):
-        escaped = escaped.replace(f"\x00URL{idx}\x00", url_text)
+        escaped = escaped.replace(f"&&HEURISMA_URL_{idx};;", url_text)
 
     # Convert in-text citations [@C1] / [@C1; @C2]
     if tracker is not None:
@@ -354,7 +358,7 @@ def _format_inline(text: str, tracker: _CitationTracker | None = None) -> str:
     )
 
     for idx, code_html in enumerate(code_spans):
-        escaped = escaped.replace(f"\x00CODE{idx}\x00", code_html)
+        escaped = escaped.replace(f"&&HEURISMA_CODE_{idx};;", code_html)
 
     return escaped
 

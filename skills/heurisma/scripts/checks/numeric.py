@@ -14,12 +14,12 @@ from checks.common import (
 )
 from checks.prereg import _canon_number, _plain_readings
 
-_HAY_NUMBER_RE = re.compile(r"[+\-\u2212]?\d+(?:[.,]\d+)*")
+_HAY_NUMBER_RE = re.compile(r"[+\-−]?\d+(?:[.,]\d+)*")
 
 
 def _signed_values(token: str) -> set[str]:
     """Every value a number may mean, canonical (``1,024`` -> {1.024, 1024}; ``2.00`` -> 2; ``−0.50`` -> -0.5; ``−0.00`` -> 0)."""
-    token = token.replace("\u2212", "-").rstrip("%")
+    token = token.replace("−", "-").rstrip("%")
     sign = "-" if token.startswith("-") else ""
     digits = token.lstrip("+-")
     return {("0" if c == "0" else sign + c) for r in _plain_readings(digits) for c in (_canon_number(r),)} if digits else set()
@@ -36,7 +36,7 @@ _TABLE_SKIP_RE = re.compile(
     r"|\b\d{4}-\d{2}(?:-\d{2})?\b",
     re.IGNORECASE,
 )
-_TABLE_STAT_RE = re.compile(r"(?<![\w.])(?:[+\-\u2212]\d+(?:[.,]\d+)?%?|\d+[.,]\d+%?|\d+%)")
+_TABLE_STAT_RE = re.compile(r"(?<![\w.])(?:[+\-−]\d+(?:[.,]\d+)?%?|\d+[.,]\d+%?|\d+%)")
 
 
 def _closure_haystack(output_text: str, numbers_data: dict[str, Any] | None) -> tuple[str, str]:
@@ -45,7 +45,7 @@ def _closure_haystack(output_text: str, numbers_data: dict[str, Any] | None) -> 
     if numbers_data:
         hay_parts.extend(str(v) for v in numbers_data.values())
     hay_raw = "\n".join(hay_parts)
-    return hay_raw, hay_raw.replace("\u2212", "-").replace(",", ".")
+    return hay_raw, hay_raw.replace("−", "-").replace(",", ".")
 
 
 def _untraced_in(text: str, hay_raw: str, hay_norm: str, seen: set[str]) -> list[str]:
@@ -55,11 +55,11 @@ def _untraced_in(text: str, hay_raw: str, hay_norm: str, seen: set[str]) -> list
     cleaned = _TABLE_SKIP_RE.sub(" ", text)
     for m in _TABLE_STAT_RE.finditer(cleaned):
         tok = m.group(0)
-        norm = tok.replace("\u2212", "-").replace(",", ".")
+        norm = tok.replace("−", "-").replace(",", ".")
         bare = norm.lstrip("+-").rstrip("%")
         if re.fullmatch(r"(?:19|20)\d\d", bare):
             continue
-        if cleaned[m.end():m.end() + 1] in ("\u00d7", "x", "X") and re.fullmatch(r"\+?1(?:\.0+)?", norm):
+        if cleaned[m.end():m.end() + 1] in ("×", "x", "X") and re.fullmatch(r"\+?1(?:\.0+)?", norm):
             continue
         if norm in seen:
             continue

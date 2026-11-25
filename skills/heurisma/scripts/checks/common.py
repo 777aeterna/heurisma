@@ -138,7 +138,7 @@ MAX_SNAPSHOT_AGE_DAYS = 365
 VERDICT_MAX_SENTENCES = 3
 VERDICT_MAX_NUMBERS = 5
 _VERDICT_SENTENCE_RE = re.compile(r"(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÑ¿¡`*\[(])")
-_VERDICT_NUMBER_RE = re.compile(r"(?<![\w.@#{:-])[+\-\u2212]?\d+(?:[.,]\d+)*%?(?![\w}]|-[A-Za-z])")
+_VERDICT_NUMBER_RE = re.compile(r"(?<![\w.@#{:-])[+\-−]?\d+(?:[.,]\d+)*%?(?![\w}]|-[A-Za-z])")
 _WEAK_TITLE_RE = re.compile(
     r"abstract[\s-]only|abstract\s+read|full\s+text\s+not\s+(?:read|retrieved)|solo\s+(?:el\s+)?resumen"
     r"|texto\s+no\s+recuperado|not\s+retrieved|no\s+recuperado",

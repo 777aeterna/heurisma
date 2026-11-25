@@ -948,6 +948,61 @@ def _readme_analysis_command(report_dir: Path) -> str:
     return ""
 
 
+def _reproduce_worker(
+    work_str: str,
+    script_rel: str,
+    script_args: list[str],
+    out_file: str,
+    err_file: str,
+    scripts_dir: str,
+) -> None:
+    """Execute a verified appendix/analysis.py inside a child Python process (compatible with fork, spawn, and -I)."""
+    import importlib.util
+    import io
+    import os
+
+    os.chdir(work_str)
+    sys.dont_write_bytecode = True
+    script_path = Path(work_str) / script_rel
+    sys.path[:] = [str(script_path.parent), scripts_dir, *[p for p in sys.path if p]]
+    sys.argv[:] = [script_rel, *script_args]
+    out_buf = io.BytesIO()
+    err_buf = io.BytesIO()
+    sys.stdout = io.TextIOWrapper(out_buf, encoding="utf-8", write_through=True)
+    sys.stderr = io.TextIOWrapper(err_buf, encoding="utf-8", write_through=True)
+    code = 0
+    try:
+        spec = importlib.util.spec_from_file_location("__main__", str(script_path))
+        if spec is None or spec.loader is None:
+            sys.stderr.write(f"cannot load {script_rel}\n")
+            code = 1
+        else:
+            mod = importlib.util.module_from_spec(spec)
+            mod.__spec__ = None  # allows nested multiprocessing.Pool under spawn to resolve __main__.__file__
+            sys.modules["__main__"] = mod
+            spec.loader.exec_module(mod)
+    except SystemExit as exc:
+        if exc.code is None or exc.code == 0:
+            code = 0
+        elif isinstance(exc.code, int):
+            code = exc.code
+        else:
+            sys.stderr.write(f"{exc.code}\n")
+            code = 1
+    except BaseException as exc:  # noqa: BLE001
+        sys.stderr.write(f"{type(exc).__name__}: {exc}\n")
+        code = 1
+    finally:
+        try:
+            sys.stdout.flush()
+            sys.stderr.flush()
+        except OSError:
+            pass
+        Path(out_file).write_bytes(out_buf.getvalue())
+        Path(err_file).write_bytes(err_buf.getvalue())
+    raise SystemExit(code)
+
+
 def reproduce(report_dir: Path, command: str | None = None, timeout: int = 300) -> list[str]:
     """Re-run appendix/analysis.py in a temporary copy and compare output.txt, numbers.json and charts.json.
 
@@ -956,10 +1011,9 @@ def reproduce(report_dir: Path, command: str | None = None, timeout: int = 300) 
     NOTE: this executes the report's own analysis.py; use it on reports you trust.
     """
     import hashlib
-    import os
+    import multiprocessing
     import shlex
     import shutil
-    import subprocess
     import tempfile
 
     cmd = command or _readme_analysis_command(report_dir)
@@ -976,30 +1030,81 @@ def reproduce(report_dir: Path, command: str | None = None, timeout: int = 300) 
         tokens = tokens[:i]
     if not tokens or tokens[0] not in ("python", "python3"):
         return ["reproduce: unsupported command; use 'python3 -B appendix/analysis.py [args] [> appendix/output.txt]'."]
-    argv = [sys.executable, "-B"] + [t for t in tokens[1:] if t != "-B"]
-    if not any(t.endswith("analysis.py") for t in argv):
+
+    idx = 1
+    while idx < len(tokens) and tokens[idx] == "-B":
+        idx += 1
+    if idx >= len(tokens) or tokens[idx].startswith("-"):
+        return ["reproduce: unsupported command; use 'python3 -B appendix/analysis.py [args] [> appendix/output.txt]'."]
+    script_rel = tokens[idx].replace("\\", "/")
+    script_args = tokens[idx + 1:]
+    if not script_rel.endswith("analysis.py"):
         return ["reproduce: the command does not run an analysis.py script."]
+
+    report_root = report_dir.resolve()
+    orig_script = report_dir / script_rel
+    if orig_script.is_symlink():
+        try:
+            orig_script.resolve().relative_to(report_root)
+        except ValueError:
+            return [f"reproduce: {script_rel} is a symlink escaping the report directory."]
+
     errors: list[str] = []
     with tempfile.TemporaryDirectory() as tmp:
-        work = Path(tmp) / "run"
-        shutil.copytree(report_dir, work, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+        tmp_path = Path(tmp)
+        work = tmp_path / "run"
+        shutil.copytree(report_dir, work, symlinks=True, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+        work_root = work.resolve()
+        appendix_root = (work / "appendix").resolve()
+        script_path = work / script_rel
+        try:
+            resolved_script = script_path.resolve()
+            resolved_script.relative_to(appendix_root)
+        except ValueError:
+            return [f"reproduce: script path '{script_rel}' must stay inside appendix/."]
+        if not resolved_script.is_file() or resolved_script.name != "analysis.py":
+            return [f"reproduce: script '{script_rel}' not found inside appendix/."]
+
+        redirect_target: Path | None = None
+        if redirect is not None:
+            candidate = work / redirect
+            if candidate.is_symlink():
+                return [f"reproduce: redirect path '{redirect}' cannot be a symlink."]
+            try:
+                candidate.resolve().relative_to(work_root)
+            except ValueError:
+                return [f"reproduce: redirect path '{redirect}' escapes the temporary workspace."]
+            redirect_target = candidate
+
         for rel in REPRODUCED_FILES:
             (work / rel).unlink(missing_ok=True)
-        env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1", PYTHONUTF8="1", PYTHONPATH=os.pathsep.join(
-            [str(Path(__file__).resolve().parent), os.environ.get("PYTHONPATH", "")]))
-        try:
-            res = subprocess.run(
-                argv, cwd=work, capture_output=True, text=True, encoding="utf-8", timeout=timeout, env=env
-            )
-        except subprocess.TimeoutExpired:
+
+        out_file = tmp_path / "repro_stdout.bin"
+        err_file = tmp_path / "repro_stderr.bin"
+        scripts_dir = str(Path(__file__).resolve().parent)
+        proc = multiprocessing.Process(
+            target=_reproduce_worker,
+            args=(str(work), script_rel, script_args, str(out_file), str(err_file), scripts_dir),
+        )
+        proc.start()
+        proc.join(timeout)
+        if proc.is_alive():
+            proc.terminate()
+            proc.join(5)
+            if proc.is_alive() and hasattr(proc, "kill"):
+                proc.kill()
+                proc.join(5)
             return [f"reproduce: appendix/analysis.py failed (timed out after {timeout}s)."]
-        if res.returncode != 0:
-            tail = (res.stderr or res.stdout).strip().splitlines()[-1:] or [""]
-            return [f"reproduce: appendix/analysis.py failed (exit {res.returncode}): {tail[0][:200]}"]
-        if redirect:
-            target = work / redirect
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(res.stdout.replace("\r\n", "\n").encode("utf-8"))
+
+        stdout_bytes = out_file.read_bytes() if out_file.is_file() else b""
+        stderr_bytes = err_file.read_bytes() if err_file.is_file() else b""
+        if proc.exitcode != 0:
+            err_text = (stderr_bytes or stdout_bytes).decode("utf-8", errors="replace").strip()
+            tail = err_text.splitlines()[-1:] or [""]
+            return [f"reproduce: appendix/analysis.py failed (exit {proc.exitcode}): {tail[0][:200]}"]
+        if redirect_target is not None:
+            redirect_target.parent.mkdir(parents=True, exist_ok=True)
+            redirect_target.write_bytes(stdout_bytes.replace(b"\r\n", b"\n"))
         for rel in REPRODUCED_FILES:
             original = report_dir / rel
             if not original.is_file():

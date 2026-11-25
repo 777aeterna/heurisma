@@ -112,9 +112,12 @@ def nice_ticks(min_v: float, max_v: float, max_ticks: int = 5) -> list[float]:
     return ticks or [min_v, max_v]
 
 
+_ES_NUM_TRANS = str.maketrans({",": ".", ".": ","})
+
+
 def _apply_locale(num_str: str, lang: str) -> str:
     if (lang or "en").lower().startswith("es"):
-        return num_str.replace(",", "\x00").replace(".", ",").replace("\x00", ".")
+        return num_str.translate(_ES_NUM_TRANS)
     return num_str
 
 
@@ -822,7 +825,7 @@ def _bar_color(n_series: int, s_idx: int, v: float) -> str:
 def _axis_warning(width: int, pad_r: int, y: float, text: str) -> str:
     return (
         f'<text class="axis-warning" x="{width - pad_r}" y="{y:.1f}" text-anchor="end" font-size="10" '
-        f'fill="#b45309">\u26a0 {html.escape(text)}</text>'
+        f'fill="#b45309">⚠ {html.escape(text)}</text>'
     )
 
 
