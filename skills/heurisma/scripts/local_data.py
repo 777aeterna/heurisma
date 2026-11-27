@@ -67,13 +67,18 @@ NS: dict[str, str] = {
 
 
 # ---------------------------------------------------------------- inventory
-def sha12(path: Path) -> str:
-    """Return the first 12 hex characters of the SHA-256 digest of a file."""
+def sha256_file(path: Path) -> str:
+    """Return the full 64-hex SHA-256 digest of a file."""
     h = hashlib.sha256()
     with path.open("rb") as fh:
         for chunk in iter(lambda: fh.read(1 << 20), b""):
             h.update(chunk)
-    return h.hexdigest()[:12]
+    return h.hexdigest()
+
+
+def sha12(path: Path) -> str:
+    """Return the first 12 hex characters of the SHA-256 digest of a file."""
+    return sha256_file(path)[:12]
 
 
 def candidate_roots(extra: list[str] | None = None) -> list[Path]:
@@ -708,7 +713,7 @@ def register_local(
       keeps a user-curated row at Tier 3).
     """
     p = Path(path).resolve()
-    sha = sha12(p)
+    sha = sha256_file(p)
     url = _relative_or_uri(p, Path(relative_to)) if relative_to is not None else p.as_uri()
     if kind not in VALID_KINDS:
         raise ValueError(f"kind must be one of {', '.join(VALID_KINDS)}; got {kind!r}")
@@ -757,13 +762,13 @@ def import_local(
     dest_dir = Path(into)
     dest_dir.mkdir(parents=True, exist_ok=True)
     dest = (dest_dir / src.name).resolve()
-    if dest.exists() and dest != src and sha12(dest) != sha12(src):
+    if dest.exists() and dest != src and sha256_file(dest) != sha256_file(src):
         raise ValueError(f"{dest} already exists with different content; rename the source file or remove the old copy")
     if not dest.exists():
         shutil.copy2(src, dest)
     sp = Path(sources_csv)
     report_root = sp.resolve().parent.parent
-    sha = sha12(dest)
+    sha = sha256_file(dest)
     rel_url = _relative_or_uri(dest, report_root)
     already = _find_registered(sp, rel_url, sha) is not None
     row = register_local(
@@ -848,7 +853,7 @@ def intake(
             dest_dir = appendix / "corpus"
             dest_dir.mkdir(parents=True, exist_ok=True)
             dest = dest_dir / f.name
-            if dest.exists() and sha12(dest) != sha12(f):
+            if dest.exists() and sha256_file(dest) != sha256_file(f):
                 rejected.append((rel, f"{dest} already exists with different content"))
                 continue
             if not dest.exists():
@@ -982,6 +987,8 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--title", required=True, help="Human-readable source title.")
     c.add_argument("--claim", default="", help="Optional claim_id (default: next free L<n>).")
     c.add_argument("--as-of", default="", help="Optional data_as_of date.")
+    c.add_argument("--selection", choices=VALID_SELECTIONS, default="user-curated", help="Provenance selection channel.")
+    c.add_argument("--retrieved-utc", default="unknown", help="ISO-8601 UTC retrieval timestamp (or 'unknown').")
     c.add_argument("--lang", choices=("en", "es"), default="en", help="Language of the registered title suffix.")
 
     d = sub.add_parser("import", help="Copy a file into appendix/data/, register the copy and log the rung in one step.")
@@ -992,6 +999,8 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("--title", required=True, help="Human-readable source title.")
     d.add_argument("--claim", default="", help="Optional claim_id (default: next free L<n>).")
     d.add_argument("--as-of", default="", help="Optional data_as_of date.")
+    d.add_argument("--selection", choices=VALID_SELECTIONS, default="user-curated", help="Provenance selection channel.")
+    d.add_argument("--retrieved-utc", default="unknown", help="ISO-8601 UTC retrieval timestamp (or 'unknown').")
     d.add_argument("--lang", choices=("en", "es"), default="en", help="Language of the registered title suffix.")
 
     e = sub.add_parser("attempt", help="Log one cascade rung in data_attempts.csv with a tool-stamped attempted_utc.")
@@ -1041,6 +1050,7 @@ def main(argv: list[str] | None = None) -> int:
                 register_local(
                     args.path, args.sources, args.tier, args.title, args.claim, args.as_of,
                     lang=args.lang, relative_to=report_root,
+                    selection=args.selection, retrieved_utc=args.retrieved_utc,
                 )
             )
         elif args.cmd == "intake":
@@ -1067,6 +1077,7 @@ def main(argv: list[str] | None = None) -> int:
                 import_local(
                     args.path, args.into, args.sources, args.tier, args.title,
                     lang=args.lang, claim_id=args.claim, data_as_of=args.as_of,
+                    selection=args.selection, retrieved_utc=args.retrieved_utc,
                 )
             )
     except (ValueError, OSError) as exc:

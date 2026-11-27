@@ -1,7 +1,8 @@
 """Europe PMC (https://europepmc.org/RestfulWebService): biomedicine and the life sciences, open-access full text.
 
 No key. Full text exists only for works flagged ``OPEN_ACCESS:Y``; ``abstractText`` and the publication type may be
-missing from a record, so an empty abstract is a normal outcome and is recorded as such.
+missing from a record, so an empty abstract is a normal outcome and is recorded as such. A DOI is looked up through
+OpenAlex/Crossref, not here: Europe PMC's search matches free text only, so there is no DOI ``lookup`` endpoint.
 """
 
 from __future__ import annotations
@@ -74,8 +75,3 @@ def parse(body: bytes) -> list[Record]:
         return [normalize(r) for r in results if isinstance(r, dict)]
     except (TypeError, AttributeError, KeyError, IndexError, ValueError) as exc:
         raise base.ProviderUnavailable(f"europepmc: a work in the response is malformed ({type(exc).__name__}: {exc})") from exc
-
-
-def lookup(ctx: Context, doi: str) -> Record | None:
-    found = [r for r in search(ctx, f'DOI:"{doi}"', limit=1) if r["doi"] == doi]
-    return found[0] if found else None

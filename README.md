@@ -10,7 +10,7 @@
   <a href="https://github.com/777aeterna/heurisma/actions/workflows/validate-skill.yml">
     <img src="https://github.com/777aeterna/heurisma/actions/workflows/validate-skill.yml/badge.svg" alt="CI Validation" />
   </a>
-  <img src="https://img.shields.io/badge/Version-v0.10.2-0072B2?style=flat-square" alt="Version v0.10.2" />
+  <img src="https://img.shields.io/badge/Version-v0.11.1-0072B2?style=flat-square" alt="Version v0.11.1" />
   <img src="https://img.shields.io/badge/Python-%E2%89%A53.9_stdlib_only-009E73?style=flat-square" alt="Python >= 3.9 stdlib only" />
   <img src="https://img.shields.io/badge/OS-Linux_%7C_macOS_%7C_Windows-334155?style=flat-square" alt="OS: Linux | macOS | Windows" />
   <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=flat-square" alt="License: MIT" />
@@ -27,11 +27,11 @@
 </p>
 
 <p align="center">
-  <img src="assets/paper-preview.svg" alt="Heurisma Level 3 working-paper HTML preview from examples/level3-emergence-in-physics/report.html" width="96%" />
+  <img src="assets/paper-preview.svg" alt="Heurisma v0.11.1 Level 3 working-paper HTML preview from examples/level3-exoplanet-scaling/report.html" width="96%" />
 </p>
 
 <p align="center">
-  <em>Cold-start <strong>Level 3</strong> run in <a href="examples/level3-emergence-in-physics/PROMPT.md"><code>examples/level3-emergence-in-physics/</code></a>: <a href="examples/level3-emergence-in-physics/report.md"><code>report.md</code></a> · <a href="examples/level3-emergence-in-physics/report.html"><code>report.html</code></a> (0 JS, 7 inline SVGs, 3 subagent gates) · <a href="examples/level3-emergence-in-physics/appendix"><code>appendix/</code></a></em>
+  <em>Cold-start <strong>Level 3</strong> run in <a href="examples/level3-exoplanet-scaling/PROMPT.md"><code>examples/level3-exoplanet-scaling/</code></a> (<code>v0.11.1</code>): <a href="examples/level3-exoplanet-scaling/report.md"><code>report.md</code></a> · <a href="examples/level3-exoplanet-scaling/report.html"><code>report.html</code></a> (0 JS, 3 inline SVGs, 1,244 NASA exoplanets, Buckingham Π + invariant, Lean 4 <code>kernel-verified</code>, 3 subagent gates) · <a href="examples/level3-exoplanet-scaling/appendix"><code>appendix/</code></a></em>
 </p>
 
 ---
@@ -42,7 +42,7 @@ A passing `--strict` check proves **structural traceability and computational re
 
 | Checked deterministically by code (`validate_report.py`) | Still requires human & domain judgment |
 | :--- | :--- |
-| **Data integrity:** recomputed SHA-256 over every local file, `download_log.csv` entry, and cached paper API response (`replay`). | Whether an upstream institutional dataset or paper itself contains measurement error. |
+| **Data integrity:** recomputed 64-hex SHA-256 over every local file, `download_log.csv` entry, sealed conjecture/formal-proof artifact, and cached paper API response (`replay`), with IP-pinned anti-SSRF downloads. | Whether an upstream institutional dataset or paper itself contains measurement error. |
 | **Numeric closure:** Section 4 table cells, chart titles/captions, and verdict figures trace to `output.txt` / `numbers.json`, and `--reproduce` re-runs `analysis.py` byte-for-byte. | Whether the statistical estimator suffers from endogeneity, omitted variables, or misspecification. |
 | **Provenance & preregistration:** `[Strong]` lookups in `sources.csv`, objective paper ceilings (retracted refused; preprints ≤ Tier 2), sealed `H0`/`H1` checked for exact or rounded HARKing, and `data_as_of ≤ As-Of Date`. | Whether a cited study was interpreted accurately or whether relevant counter-literature was omitted. |
 | **Artifact-bound gates:** `source_verifier`, `reviewer`, and `qa` headers bound via `REVIEWED-SHA256`, `ANALYSIS-SHA256`, literal `QUOTE:` lines, and 1-to-1 Disposition Table counts (`GATE-DISP`). | Whether the research question is well-posed or the final decision is right for your stakes. |
@@ -54,7 +54,7 @@ A passing `--strict` check proves **structural traceability and computational re
 Pick the path that fits what you want to do:
 
 ### Path A — Install as an Agent Skill (Antigravity, Claude Code, Codex, Gemini CLI)
-Download `heurisma-skill-v0.10.2.zip` from the [latest release](https://github.com/777aeterna/heurisma/releases/latest) (contains `heurisma/` and `claude-agents/`), or clone and copy:
+Download `heurisma-skill-v0.11.1.zip` from the [latest release](https://github.com/777aeterna/heurisma/releases/latest) (contains `heurisma/` and `claude-agents/`), or clone and copy:
 
 ```bash
 git clone https://github.com/777aeterna/heurisma.git
@@ -85,15 +85,15 @@ Conventional **Deep Research** tools are primarily *retrieval and summarization 
 
 **Heurisma** (from Greek *heuriskein*, "to discover") pairs a **scientific-method protocol** with a deterministic **epistemic linter**:
 
-| Dimension | Conventional Deep Research | Heurisma (`v0.10.2`) |
+| Dimension | Conventional Deep Research | Heurisma (`v0.11.1`) |
 | :--- | :--- | :--- |
 | **Before Searching** | Launches queries immediately | **Pre-Search Gate:** classifies scientific branch(es), `As-Of Date`, evidence standards, depth level (`Level 0–3`), seals `appendix/run.json`, and offers one non-blocking pre-flight data intake (Stage 0 step 9, idempotent multi-channel `appendix/intake.md`) |
-| **Hypotheses & Forecasts** | Implicit narrative confirmation | Explicit **$H_0$ / $H_1$ falsifiable hypotheses** sealed in `appendix/preregistration.json` before `analysis.py` (anti-post-hoc & anti-HARKing checks) + multi-scenario forecasting (*identities ≠ forecasts*, honest *Parametric scenario bands* vs. calibrated fans) |
+| **Hypotheses & Forecasts** | Implicit narrative confirmation | Explicit **$H_0$ / $H_1$ falsifiable hypotheses** sealed in `appendix/preregistration.json` before `analysis.py` (anti-post-hoc & anti-HARKing checks), multi-scenario forecasting (*identities ≠ forecasts*), plus **opt-in Buckingham $\Pi$ dimensional analysis & symbolic theory discovery** (`conjecture.py` → `appendix/conjectures.json`) |
 | **Data & Provenance** | Eyeballs tables or declares lazy "data limitations" | **Provenance verified by recomputed SHA-256 over every local file** and `download_log.csv` entry; `fetch_lib.py` + `analysis.py` + `sources.csv` (`kind`, `sha256`, `selection`, `retrieved_utc`) + tool-stamped **Data-Attempts Log**; 4-rung cascade (online primary → alternatives → user's local files → limitation), `user-curated` local files kept at Tier 3 (`agent-fetched` requires `retrieved_utc >= run_started_utc` + download or logged-retrieval proof), and Tier inherited by mixed-source tables through `primary_source_id` |
 | **Numbers in the Text** | Retyped by hand, drift from the analysis | `{{num:key}}` placeholders filled from `appendix/numbers.json` + **numeric closure (`P1-UNTRACED-NUM`)** verifying Section 4 table statistics against `output.txt` / `numbers.json` |
-| **Confirmation Bias** | Summarizes consensus narrative | Mandatory **Counter-Evidence** (`Tier 1/2` `agent-fetched` outside user-curated corpora) + **three gates** (source-verifier, Reviewer #2, QA) with `--gate-header` artifact binding (`REVIEWED-SHA256`, `REVIEWED-UTC`, literal `QUOTE:` lines, and closed-loop Reviewer #2 Disposition Table support); independence requires subagents — the inline fallback is self-review and is labelled as such |
-| **Deliverables & Figures** | Wall of text or bloated code dumps | Clean `report.md` + lightweight, print-ready **working-paper `report.html`** (zero JS, URL scheme allowlist) with **inline SVG charts** and temporal/fan-anchor schema validation; **byte-for-byte reproducible rendering; `--reproduce` re-runs the analysis and diffs artifacts** |
-| **Verification** | Unchecked prose | Zero-dependency (**Python ≥ 3.9, standard library only**) bilingual (EN/ES) **epistemic linter** (`--strict`, `--json`, `--reproduce`, `--diff`, `--gate-hash`, `--gate-header`) + opt-in paper-connector provenance checks (`P3-PAPER`, `PRIV-CRED`, offline `replay`); **54/54** known violations caught in `tests/mutation_report.py` |
+| **Confirmation Bias** | Summarizes consensus narrative | Mandatory **Counter-Evidence** (`Tier 1/2` `agent-fetched` outside user-curated corpora) + **three gates** (source-verifier, Reviewer #2 with blind back-translation of `Challenge.lean`, QA) with `--gate-header` artifact binding (`REVIEWED-SHA256`, `ANALYSIS-SHA256`, `FORMAL-SHA256`, `REVIEWED-UTC`, literal `QUOTE:` lines, and closed-loop Disposition Table support); independence requires subagents — the inline fallback is self-review and is labelled as such |
+| **Deliverables & Figures** | Wall of text or bloated code dumps | Auditable template source `report.md` (with `{{num:key}}` and `{{fig:id}}` placeholders for deterministic verification) rendered into a lightweight, print-ready **working-paper `report.html`** (zero JS, URL scheme allowlist) with **inline SVG charts** and temporal/fan-anchor schema validation; **byte-for-byte reproducible rendering; `--reproduce` re-runs the analysis and diffs artifacts** |
+| **Verification** | Unchecked prose | Zero-dependency (**Python ≥ 3.9, standard library only**) bilingual (EN/ES) **epistemic linter** (`--strict`, `--json`, `--reproduce`, `--reproduce-lean`, `--diff`, `--gate-hash`, `--gate-header`) + opt-in paper-connector (`P3-PAPER`, `PRIV-CRED`, offline `replay`), symbolic conjecture (`P4-CONJECTURE`), and Lean 4 / Lake formal-proof (`P4-LEAN`) checks; **64/64** known violations caught in `tests/mutation_report.py` |
 
 **Bring your own data (optional, recommended for Level 2+).** Before searching, Heurisma tells you exactly which series/period/granularity would change the answer and invites you to drop them into `datos/` (or documents into `inbox/sources/`). Ingestion is hash-registered and offline-rehearsable (`local_data.py intake`). A corpus you curated yourself is never treated as sufficient: independent counter-evidence is still fetched, and claims resting only on it are capped and labelled for selection bias.
 
@@ -101,48 +101,37 @@ Conventional **Deep Research** tools are primarily *retrieval and summarization 
 
 ---
 
-## Cognitive Architecture (7 Stages, Levels 0–3)
+## Architecture & 7-Stage Epistemic Pipeline (`v0.11.1`)
 
-```mermaid
-flowchart TD
-    U["User Research Prompt"] --> S0["Stage 0: Triage, Local Inventory, run.json & Step-9 Pre-Intake"]
-    S0 --> L0{"Level 0 Light Mode?"}
-    L0 -- Yes --> FAST["Compact 3-Part Calibrated Response"]
-    L0 -- No --> S1["Stage 1: Research Question, H0/H1 & preregistration.json"]
-    S1 --> S2["Stage 2: 4-Rung Data Acquisition & Counter-Evidence"]
-    S2 --> D{"Level 2+ Quantitative?"}
-    D -- Yes --> S3["Stage 3: fetch_lib.py & analysis.py → output.txt, numbers.json, charts.json"]
-    D -- No --> S4["Stage 4: Adversarial Falsification & Closed Reviewer #2"]
-    S3 --> S4
-    S4 --> S5["Stage 5: Single-Language Working-Paper Writing (EN/ES)"]
-    S5 --> S6["Stage 6: render_report.py → report.html + validate_report.py --strict --reproduce"]
-    S2 -. "source-verifier gate" .-> G["appendix/gates/ (hash + quotes + MODE)"]
-    S4 -. "Reviewer #2 gate (Level 3)" .-> G
-    S6 -. "QA gate" .-> G
-```
+<p align="center">
+  <img src="assets/architecture.svg" alt="Heurisma v0.11.1 architecture diagram: Host Agent, stdlib-only scripts (local_data, fetch_lib, papers, conjecture, formal_math, render_report, svg_charts, validate_report, checks, contracts), Gate Subagents, sealed appendix/, and standalone report.html" width="100%" />
+</p>
 
-See [`docs/design.md`](docs/design.md) for the full architecture and artifact layout, and [`SECURITY.md`](SECURITY.md) for the threat model and safety limits.
+Every inquiry runs adaptively across **Levels 0–3** (Level 0 light check → Level 1 rigorous brief → Level 2 empirical study → Level 3 multi-disciplinary paper with independent subagent gates). See [`docs/design.md`](docs/design.md) for the full 7-stage protocol and artifact layout, and [`SECURITY.md`](SECURITY.md) for the threat model and safety limits.
 
 <details>
-<summary><strong>Modular Structure (<code>skills/heurisma/</code> — 18 modules &amp; references)</strong></summary>
+<summary><strong>Modular Structure (<code>skills/heurisma/</code> — 21 modules &amp; references)</strong></summary>
 
 - **[`SKILL.md`](skills/heurisma/SKILL.md):** Lean, runtime-agnostic core enforcing the 4 Iron Laws, adaptive depth (`Level 0–3`), Stage 0 step 9 pre-intake, abstract-style verdict limits (≤3 sentences, ≤5 numbers), single-language discipline, and Stage 6 deliverables.
-- **[`references/disciplines.md`](skills/heurisma/references/disciplines.md):** Taxonomy of 6 scientific branches + Interdisciplinary Bridge Protocol.
+- **[`references/disciplines.md`](skills/heurisma/references/disciplines.md):** Taxonomy of 6 scientific branches + Interdisciplinary Bridge Protocol (including the deductive-to-empirical formal-proof bridge).
 - **[`references/data-protocol.md`](skills/heurisma/references/data-protocol.md):** 4-rung acquisition cascade, `fetch_lib.py` template, `sources.csv` (`kind`, `sha256`, `selection`, `retrieved_utc`), `data_attempts.csv`, `local_data.py intake`/`import`, and statistical cautions (`n < 30`, effect sizes, multiple comparisons).
 - **[`references/forecasting.md`](skills/heurisma/references/forecasting.md):** Multi-scenario triggers, base rates, historical error calibration, lagging-series nowcasting, and the *identity-vs-forecast* rule.
-- **[`references/agents/`](skills/heurisma/references/agents):** Portable prompts for the three gates — **Reviewer #2**, **source-verifier**, and **QA** — each with an artifact-bound header contract (`MODE`, `REVIEWED-SHA256`, `REVIEWED-UTC`, literal `QUOTE:` lines); Claude Code mirrors live in [`agents/`](agents).
+- **[`references/formal-and-discovery.md`](skills/heurisma/references/formal-and-discovery.md):** Opt-in guide for Buckingham $\Pi$ dimensional analysis, uncontaminated symbolic conjecture discovery (`conjecture.py`), Lean 4 / Lake formal verification (`formal_math.py`, `anthropics/formal-math` layout), and the Statement-Fidelity Law.
+- **[`references/agents/`](skills/heurisma/references/agents):** Portable prompts for the three gates — **Reviewer #2** (with blind back-translation of `Challenge.lean`), **source-verifier**, and **QA** — each with an artifact-bound header contract (`MODE`, `REVIEWED-SHA256`, `REVIEWED-UTC`, literal `QUOTE:` lines); Claude Code mirrors live in [`agents/`](agents).
 - **[`references/adversarial-review.md`](skills/heurisma/references/adversarial-review.md):** Self-falsification checklist, **Reviewer #2** workflow, mandatory Disposition Table (EN/ES), and primary verification rule.
 - **[`references/scientific-writing.md`](skills/heurisma/references/scientific-writing.md):** Epistemic calibration scale, 100% English and 100% Spanish contracts, and `charts.json` v2 specification.
 - **[`references/example-report.md`](skills/heurisma/references/example-report.md):** Compact gold-standard working-paper reference example.
 - **[`references/validator-codes.md`](skills/heurisma/references/validator-codes.md):** Stable machine-readable diagnostic codes emitted by `validate_report.py --json`.
 - **[`scripts/contracts.py`](skills/heurisma/scripts/contracts.py):** Single source of truth for version, epistemic tags, provenance schemas, gate definitions, and section patterns.
+- **[`scripts/conjecture.py`](skills/heurisma/scripts/conjecture.py):** Opt-in stdlib-only exact rational Buckingham $\Pi$ dimensional analyzer (`units`) and uncontaminated train/K-fold-CV/holdout symbolic conjecture engine (`discover` → `appendix/conjectures.json`).
+- **[`scripts/formal_math.py`](skills/heurisma/scripts/formal_math.py):** Opt-in stdlib-only Lean 4 / Lake formal-verification adapter (`init`, `check`, `fetch-ref`) following the `anthropics/formal-math` `Challenge.lean`/`Solution.lean` layout, with kernel definitional-equality witness, optional `comparator`/`landrun`, and graceful degradation without `lake`.
 - **[`scripts/local_data.py`](skills/heurisma/scripts/local_data.py):** Zero-dependency (Python ≥ 3.9 stdlib only) local data engine (`inventory`, `preview`, `read_table`, per-column CSV decimal inference that rejects mixed columns, hardened stdlib XLSX reader with XXE/zip-bomb/size caps, `register`, `import`, `intake`, `prereg`, `run-start`, `attempt`, and `HEURISMA_OFFLINE=1`).
 - **[`scripts/fetch_lib.py`](skills/heurisma/scripts/fetch_lib.py):** Zero-dependency HTTP download helper with exponential backoff, configurable User-Agent (`HEURISMA_UA`), optional `headers`/`log_url` redaction, size caps, SHA-256 verification, `download_log.csv` + `data_attempts.csv` logging, and `HEURISMA_OFFLINE=1` support.
 - **[`scripts/papers.py`](skills/heurisma/scripts/papers.py) & [`scripts/providers/`](skills/heurisma/scripts/providers/):** Zero-dependency paper-database connector (`search`, `lookup`, `cite [--fulltext]`, `verify`, `import`, `replay`) with provider adapters (`base`, `openalex`, `crossref`, `europepmc`, `arxiv`, `unpaywall`), raw response caching under `appendix/data/papers/raw/`, credential redaction, and objective citation ceilings.
 - **[`scripts/svg_charts.py`](skills/heurisma/scripts/svg_charts.py):** Zero-dependency publication SVG engine + strict `validate_charts_schema()` validator (Heckbert ticks, Okabe-Ito palette, `bands`, staggered `annotations`, `fan`, grouped/horizontal `bar`, `log`, `y.baseline`, `diff`, `x.last_label`).
 - **[`scripts/render_report.py`](skills/heurisma/scripts/render_report.py):** Zero-dependency working-paper HTML renderer (serif typography, 720px column, booktabs tables, linked `[@C1]` citations, full `en`/`es` localization, URL scheme allowlist, balanced-parenthesis URLs, `\|` table escapes, `<img>`, code-fence-safe `{{num:key}}`, `self-review` labeling, and versioned source-freshness hash).
-- **[`scripts/checks/`](skills/heurisma/scripts/checks/):** The rule families of the validator, one module per concern (`common`, `structure`, `gates`, `numeric`, `provenance`, `prereg`, `papers`, `html`, `codes`); `validate_report.py` re-exports them as its public API.
-- **[`scripts/validate_report.py`](skills/heurisma/scripts/validate_report.py):** Zero-dependency bilingual (EN/ES) **epistemic linter** checking recomputed SHA-256 digests, `[Strong]` source lookups in `sources.csv`, verdict length/number caps, artifact-bound gates (`--gate-hash`), `charts.json` schema, selection-bias & preregistration rules, opt-in paper-connector integrity (`P3-PAPER`, `PRIV-CRED`, offline `replay`), domain-tier heuristics, home-path leaks, `--strict`, `--json`, `--reproduce`, `--diff`, and `--version`.
+- **[`scripts/checks/`](skills/heurisma/scripts/checks/):** The rule families of the validator, one module per concern (`common`, `structure`, `gates`, `numeric`, `provenance`, `prereg`, `papers`, `conjecture`, `formal`, `html`, `codes`); `validate_report.py` re-exports them as its public API.
+- **[`scripts/validate_report.py`](skills/heurisma/scripts/validate_report.py):** Zero-dependency bilingual (EN/ES) **epistemic linter** checking recomputed SHA-256 digests, `[Strong]` source lookups in `sources.csv`, verdict length/number caps, artifact-bound gates (`--gate-hash`), `charts.json` schema, selection-bias & preregistration rules, opt-in paper-connector (`P3-PAPER`, `PRIV-CRED`, offline `replay`), symbolic conjecture (`P4-CONJECTURE`), and Lean 4 formal-proof (`P4-LEAN`) integrity, domain-tier heuristics, home-path leaks, `--strict`, `--json`, `--reproduce`, `--reproduce-lean`, `--diff`, and `--version`.
 
 </details>
 
@@ -175,6 +164,7 @@ For academic literature, `scripts/papers.py` queries structured paper APIs befor
 ## Showcase Examples & CLI Tools
 
 Inspect validated outputs generated with Heurisma:
+- **Level 3 — Full `v0.11.1` Multi-Disciplinary Showcase (Exoplanet Keplerian Scaling & Mass–Radius Degeneracy: 1,244 NASA TAP exoplanets, 6 API-verified papers incl. `10.48550/arXiv.2310.16733`, exact Buckingham $\Pi$ + holdout symbolic discovery + conservation invariant, Lean 4 `kernel-verified` proof on `v4.16.0` with `mode=kernel-defeq`, `0` `sorry`, `axioms=['propext']`, `Tier 1` `[Strong]`, 3 inline SVGs, 3 `MODE: subagent` gates all `PASS`; passes `--level 3 --strict --reproduce`, `--reproduce-lean`, and `papers.py replay` with 0 errors/warnings; 5 PDFs withheld via `EXCLUDED.csv`):** [`examples/level3-exoplanet-scaling/PROMPT.md`](examples/level3-exoplanet-scaling/PROMPT.md) → [`report.md`](examples/level3-exoplanet-scaling/report.md) · [`report.html`](examples/level3-exoplanet-scaling/report.html) · [`appendix/`](examples/level3-exoplanet-scaling/appendix)
 - **Level 3 — Cold-Start Multi-Disciplinary Showcase (Emergence in Physics · `v0.10.2` run: 13 API-verified papers, preregistration, 1D/2D Ising Wolff MC + 3×3 block-spin RG + 7 inline SVGs, 2 rounds of Reviewer #2 + Source Verifier + QA `MODE: subagent` gates; passes `--level 3 --strict --reproduce` with 0 errors/warnings in this repository; the seven downloaded PDFs are withheld by an `EXCLUDED.csv` manifest that keeps their hashes, so the original subagent gates stay valid):** [`examples/level3-emergence-in-physics/PROMPT.md`](examples/level3-emergence-in-physics/PROMPT.md) → [`report.md`](examples/level3-emergence-in-physics/report.md) · [`report.html`](examples/level3-emergence-in-physics/report.html) · [`appendix/`](examples/level3-emergence-in-physics/appendix)
 - **Level 2 — Local-Data Showcase (unknown-origin local CSV capped at `[Preliminary]`, exact permutation tests, sources actually read, `MODE: self-review` manual gate records):** [`examples/showcase-hybrid-work/PROMPT.md`](examples/showcase-hybrid-work/PROMPT.md) → [`report.md`](examples/showcase-hybrid-work/report.md) · [`report.html`](examples/showcase-hybrid-work/report.html) · [`appendix/`](examples/showcase-hybrid-work/appendix)
 - **Level 1 — Rigorous Inquiry (Pressure-Tested Board Brief):** [`examples/level1-brief-example.md`](examples/level1-brief-example.md)
@@ -201,7 +191,7 @@ python3 -B skills/heurisma/scripts/validate_report.py examples/level2-study/repo
 
 ## Verification & Quality Assurance
 
-- **643/643 unit tests passing** (`python3 -B -m unittest discover -s tests`); **validator detection rate: `54/54` known violations** (`python3 -B tests/mutation_report.py --min-rate 1.0`, measuring real rule-specific detection even when gates are restamped after tampering).
+- **779/779 unit tests passing** (`python3 -B -m unittest discover -s tests`); **validator detection rate: `64/64` known violations** (`python3 -B tests/mutation_report.py --min-rate 1.0`, measuring real rule-specific detection even when gates are restamped after tampering).
 - **Three gates with artifact-bound contracts:** portable prompts in [`skills/heurisma/references/agents/`](skills/heurisma/references/agents) and Claude Code definitions in [`agents/`](agents) (`heurisma-reviewer`, `heurisma-source-verifier`, `heurisma-qa`). Independence requires subagents — when a runtime has no subagent tool, the inline fallback is recorded as `MODE: self-review`, flagged by the validator, and labelled as self-review in Section 3 and the rendered HTML.
 - **Cold-start subagent tests of the skill text:** behavioral rules are added only after a baseline failure is observed. For example, own code registered as Tier 1 fell from 3/3 to 0/3, and reusing an inherited limitation fell from the audited failure to 0/3; conversely, user-curated corpus selection bias did not fail in 6 cold-start trials (0/6), so it is enforced deterministically in `validate_report.py` without bloating `SKILL.md`. A preregistered multi-model rubric lives in [`evals/rubric.md`](evals/rubric.md); its first execution against v0.9.0 passed 78 of 80 checks (compliance on text plans, not lift; see [`evals/results/v0.7.0-agent-evals.md`](evals/results/v0.7.0-agent-evals.md)).
 - **Security & threat model:** see [`SECURITY.md`](SECURITY.md).

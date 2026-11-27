@@ -54,7 +54,12 @@ class TestSourceVerifierFailBlocks(unittest.TestCase):
             report = ws / "report.md"  # the golden report already names its accepted problems: drop that citation first
             report.write_text(report.read_text(encoding="utf-8").replace("appendix/gates/source_verifier.md", "the source-verification gate"), encoding="utf-8")
             if cite:
-                M._edit(ws, "report.md", "## 7. Limitations", "## 7. Limitations\n\nOne accepted source-verifier problem is justified in appendix/gates/source_verifier.md.\n")
+                M._edit(
+                    ws,
+                    "report.md",
+                    "## 7. Limitations & Open Questions",
+                    "## 7. Limitations & Open Questions\n\nOne accepted source-verifier problem (C1) is justified in appendix/gates/source_verifier.md.\n",
+                )
             return messages(ws, level)
         finally:
             tmp.cleanup()

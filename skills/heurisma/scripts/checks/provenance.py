@@ -115,13 +115,16 @@ _AS_OF_PART_RE = re.compile(r"^\s*(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?(?!\d)")
 def _data_as_of_after(value: str, as_of: str) -> bool:
     """True when a ``data_as_of`` value (YYYY, YYYY-MM or YYYY-MM-DD) is later than the report As-Of Date.
 
-    The comparison keeps the value's own granularity: ``2026-11`` is not after ``2026-11-20``. Text that is not a
-    date is never reported."""
+    The comparison keeps the common granularity of both dates: ``2026-11-20`` is not after ``2026-11`` (the day
+    cannot be compared to a month), and ``2026-11`` is not after ``2026-11-20``. Text that is not a date is never
+    reported."""
     v, a = _AS_OF_PART_RE.match(value or ""), _AS_OF_PART_RE.match(as_of or "")
     if not v or not a:
         return False
-    parts = [x for x in v.groups() if x is not None]
-    return tuple(int(x) for x in parts) > tuple(int(x) for x in a.groups()[: len(parts)] if x is not None)
+    v_parts = [int(x) for x in v.groups() if x is not None]
+    a_parts = [int(x) for x in a.groups() if x is not None]
+    n = min(len(v_parts), len(a_parts))
+    return tuple(v_parts[:n]) > tuple(a_parts[:n])
 
 
 def _catalogue_column(header: list[str], *names: str, prefix: str = "") -> str | None:

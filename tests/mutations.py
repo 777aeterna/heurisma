@@ -80,7 +80,7 @@ def _rewrite_csv(ws: Path, rel: str, fn: Callable[[list[dict[str, str]], list[st
         rows = list(reader)
     rows, cols = fn(rows, cols)
     with p.open("w", encoding="utf-8", newline="") as fh:
-        writer = csv.DictWriter(fh, fieldnames=cols, extrasaction="ignore", restval="")
+        writer = csv.DictWriter(fh, fieldnames=cols, extrasaction="ignore", restval="", lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 
@@ -97,7 +97,12 @@ def m01_data_value_changed(ws: Path) -> None:
 
 
 def m02_fake_sha(ws: Path) -> None:
-    _edit(ws, "appendix/sources.csv", "9a7419cd6056", "deadbeef0000")
+    _edit(
+        ws,
+        "appendix/sources.csv",
+        "9a7419cd60560e66000022fb1d9f55afa4e207a447812d0bb4538b6e9f7f24b4",
+        "deadbeef0000" + "0" * 52,
+    )
 
 
 def m03_fabricated_gates(ws: Path) -> None:
@@ -371,7 +376,7 @@ def _register_local_csv(ws: Path, rel: str, claim_id: str, title: str, tier: str
     """Append a registered local data file (with its real sha256 prefix) to sources.csv."""
     import local_data
 
-    digest = local_data.sha12(ws / rel)
+    digest = local_data.sha256_file(ws / rel)
 
     def fn(rows: list[dict[str, str]], cols: list[str]) -> tuple[list[dict[str, str]], list[str]]:
         row = {
@@ -504,7 +509,7 @@ def m33_analysis_changed_after_reviewer(ws: Path) -> None:
     import hashlib
 
     app = ws / "appendix"
-    stale = hashlib.sha256(b"analysis.py as the reviewer saw it").hexdigest()[:12]
+    stale = hashlib.sha256(b"analysis.py as the reviewer saw it").hexdigest()
     app.joinpath("gates", "reviewer.md").write_text(
         "MODE: subagent\n"
         f"REVIEWED-SHA256: {validate_report.gate_hash(ws, 'reviewer')}\n"
@@ -816,6 +821,248 @@ def m54_second_gate_pass_appended(ws: Path) -> None:
     gate.write_text(text + "\n\n" + text, encoding="utf-8")
 
 
+# ---- v0.11.0: formal mathematics (Lean 4 / Lake) & symbolic conjecture discovery (M55–M60)
+from contracts import FORMAL_PROOF_COLS  # noqa: E402
+
+
+def _formal_workspace(
+    ws: Path,
+    *,
+    slug: str = "bound_proof",
+    challenge_src: str = "namespace Challenge\ntheorem main_claim (n : Nat) : n + 0 = n := by sorry\nend Challenge\n",
+    solution_src: str = "import Challenge\nnamespace Solution\ntheorem main_claim (n : Nat) : n + 0 = n := Nat.add_zero n\nend Solution\n",
+    status: str = "kernel-verified",
+    verification_mode: str = "kernel-defeq",
+    sorries: str = "0",
+    axioms: str = "propext;Classical.choice",
+    tier: str = "Tier 1",
+    write_registry: bool = True,
+    strong_claim: bool = True,
+) -> Path:
+    """Seed an opt-in Lean 4 formal-proof workspace and register source F1."""
+    import hashlib
+
+    proj = ws / "appendix" / "formal" / slug
+    proj.mkdir(parents=True, exist_ok=True)
+    (proj / "lean-toolchain").write_text("leanprover/lean4:v4.16.0\n", encoding="utf-8")
+    (proj / "lakefile.toml").write_text(f'name = "{slug}"\ndefaultTargets = ["Challenge", "Solution"]\n', encoding="utf-8")
+    ch_path = proj / "Challenge.lean"
+    sol_path = proj / "Solution.lean"
+    ch_path.write_text(challenge_src, encoding="utf-8")
+    sol_path.write_text(solution_src, encoding="utf-8")
+    ch_sha = hashlib.sha256(ch_path.read_bytes()).hexdigest()
+    sol_sha = hashlib.sha256(sol_path.read_bytes()).hexdigest()
+    eff_mode = "none" if status == "unverified_no_toolchain" else verification_mode
+    verify = {
+        "slug": slug,
+        "theorem_name": "main_claim",
+        "challenge_sha256": ch_sha,
+        "solution_sha256": sol_sha,
+        "toolchain": "leanprover/lean4:v4.16.0",
+        "lean_version": "Lean (version 4.16.0)",
+        "verification_mode": eff_mode,
+        "status": status,
+        "sorries": int(sorries),
+        "axioms": [a for a in axioms.split(";") if a],
+        "verified_utc": "2026-11-20T12:30:00Z",
+    }
+    (proj / "verify.json").write_text(json.dumps(verify, indent=1) + "\n", encoding="utf-8")
+    if write_registry:
+        reg_path = ws / "appendix" / "formal_proofs.csv"
+        with reg_path.open("w", encoding="utf-8", newline="") as fh:
+            w = csv.DictWriter(fh, fieldnames=FORMAL_PROOF_COLS, lineterminator="\n")
+            w.writeheader()
+            w.writerow(
+                {
+                    "proof_id": "F1",
+                    "slug": slug,
+                    "theorem_name": "main_claim",
+                    "challenge_file": f"appendix/formal/{slug}/Challenge.lean",
+                    "challenge_sha256": ch_sha,
+                    "solution_file": f"appendix/formal/{slug}/Solution.lean",
+                    "solution_sha256": sol_sha,
+                    "toolchain": "leanprover/lean4:v4.16.0",
+                    "lean_version": "4.16.0",
+                    "verification_mode": eff_mode,
+                    "status": status,
+                    "sorries": sorries,
+                    "axioms": axioms,
+                    "verified_utc": "2026-11-20T12:30:00Z",
+                }
+            )
+
+    rel_sol = f"appendix/formal/{slug}/Solution.lean"
+
+    def fn(rows: list[dict[str, str]], cols: list[str]) -> tuple[list[dict[str, str]], list[str]]:
+        if "sha256" not in cols:
+            cols = cols + ["sha256"]
+        rows.append(
+            {
+                "claim_id": "F1",
+                "source_title": f"Lean 4 formal proof {slug}/Solution.lean (sha256 {sol_sha})",
+                "url": rel_sol,
+                "tier": tier,
+                "accessed_date": "2026-11-20",
+                "data_as_of": "2026-11",
+                "kind": "formal-proof",
+                "sha256": sol_sha,
+            }
+        )
+        return rows, cols
+
+    _rewrite_csv(ws, "appendix/sources.csv", fn)
+    tag = "`[Strong]`" if strong_claim else "`[Preliminary]`"
+    _edit(
+        ws,
+        "report.md",
+        "| Lower mentoring hours explain the junior output gap",
+        f"| Formal deductive identity n + 0 = n holds under Peano axioms | Formal Sciences | Lean 4 proof [@F1], {tier}, 2026-11 | {tag} | Kernel refutation |\n"
+        "| Lower mentoring hours explain the junior output gap",
+    )
+    return proj
+
+
+def _conjecture_payload(*, train_count: int = 12, holdout_count: int = 4, beats_null: bool = True) -> dict[str, Any]:
+    import hashlib
+
+    body: dict[str, Any] = {
+        "sealed_utc": "2026-11-20T12:00:00Z",
+        "data_file": "appendix/data/hybrid_rct_sites.csv",
+        "data_sha256": "9a7419cd60560e66000022fb1d9f55afa4e207a447812d0bb4538b6e9f7f24b4",
+        "target": "attrition_12m",
+        "predictors": ["mentoring_hrs_wk"],
+        "train_count": train_count,
+        "holdout_count": holdout_count,
+        "holdout_mode": "tail",
+        "beats_null": beats_null,
+        "candidates": [
+            {
+                "id": "C_LAW_1",
+                "family": "power_law",
+                "expr": "attrition_12m = 0.25 * mentoring_hrs_wk^(-1/2)",
+                "complexity_k": 2,
+                "train_bic": -42.0,
+                "holdout_rmse": 0.012,
+                "holdout_r2": 0.94,
+            }
+        ],
+        "falsifier_prediction": "At mentoring_hrs_wk = 16.0, attrition_12m should equal 0.0625 +/- 0.02.",
+    }
+    digest = hashlib.sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+    body["sha256"] = digest
+    return body
+
+
+def m55_formal_proof_with_sorry_or_custom_axiom(ws: Path) -> None:
+    """A kind=formal-proof source declared Tier 1 has an active sorry / non-standard axiom in Solution.lean."""
+    _formal_workspace(
+        ws,
+        solution_src="import Challenge\ntheorem main_claim_proof (n : Nat) : n + 0 = n := by sorry\n",
+    )
+
+
+def m56_unverified_formal_proof_declared_tier1(ws: Path) -> None:
+    """A kind=formal-proof source declared Tier 1 has status=unverified_no_toolchain."""
+    _formal_workspace(ws, status="unverified_no_toolchain")
+
+
+def m57_vacuous_challenge_lean_statement(ws: Path) -> None:
+    """Challenge.lean proves a vacuous premise (h : False) while sustaining a [Strong] claim."""
+    _formal_workspace(
+        ws,
+        challenge_src="theorem main_claim (h : False) : 1 = 2 := False.elim h\n",
+        solution_src="import Challenge\n",
+    )
+
+
+def m58_conjectures_json_zero_holdout(ws: Path) -> None:
+    """appendix/conjectures.json was fitted on 100% of rows with holdout_count == 0."""
+    payload = _conjecture_payload(train_count=16, holdout_count=0)
+    (ws / "appendix" / "conjectures.json").write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
+
+
+def m59_strong_claim_on_unproved_conjecture(ws: Path) -> None:
+    """A Claim-Evidence Matrix row tags an unproved symbolic conjecture from conjectures.json as [Strong]."""
+    payload = _conjecture_payload(train_count=12, holdout_count=4)
+    (ws / "appendix" / "conjectures.json").write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
+    _edit(
+        ws,
+        "report.md",
+        "| Lower mentoring hours explain the junior output gap",
+        "| Conjectured scaling law C_LAW_1 from appendix/conjectures.json holds universally | Physics | Symbolic fit [@C4] on benchmark [@C2], 2026-10 | `[Strong]` | Out-of-domain test |\n"
+        "| Lower mentoring hours explain the junior output gap",
+    )
+
+
+def m60_formal_proof_missing_from_registry(ws: Path) -> None:
+    """A kind=formal-proof row claims Tier 1 without a matching entry in appendix/formal_proofs.csv."""
+    _formal_workspace(ws, write_registry=False)
+
+
+def m61_conjecture_strong_cites_discovery_source_as_replication(ws: Path) -> None:
+    """A [Strong] conjecture row cites the discovery dataset's own Tier 1 kind=data source (source_ids) as if it were independent replication."""
+    import hashlib
+
+    payload = _conjecture_payload(train_count=12, holdout_count=4)
+    payload["source_ids"] = ["C5"]
+    body = {k: v for k, v in payload.items() if k != "sha256"}
+    payload["sha256"] = hashlib.sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+    (ws / "appendix" / "conjectures.json").write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
+
+    def fn(rows: list[dict[str, str]], cols: list[str]) -> tuple[list[dict[str, str]], list[str]]:
+        rows.append(
+            {
+                "claim_id": "C5",
+                "source_title": "Primary discovery table (JPL SSD)",
+                "url": "https://ssd.jpl.nasa.gov/planets",
+                "tier": "Tier 1",
+                "accessed_date": "2026-11-20",
+                "data_as_of": "2026-11",
+                "kind": "data",
+            }
+        )
+        return rows, cols
+
+    _rewrite_csv(ws, "appendix/sources.csv", fn)
+    _edit(
+        ws,
+        "report.md",
+        "| Lower mentoring hours explain the junior output gap",
+        "| Conjectured law C_LAW_1 holds across planets | Physics | Symbolic fit [@C4; @C5], Tier 1, 2026-11 | `[Strong]` | Out-of-domain test |\n"
+        "| Lower mentoring hours explain the junior output gap",
+    )
+
+
+def m62_conjecture_strong_non_lexical_formula_row(ws: Path) -> None:
+    """A [Strong] row states the discovered formula from conjectures.json without using the word 'conjecture'."""
+    payload = _conjecture_payload(train_count=12, holdout_count=4)
+    (ws / "appendix" / "conjectures.json").write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
+    _edit(
+        ws,
+        "report.md",
+        "| Lower mentoring hours explain the junior output gap",
+        "| The empirical scaling relation attrition_12m = 0.25 * mentoring_hrs_wk^(-1/2) holds universally | Physics | Symbolic fit [@C4] on [@C2], 2026-10 | `[Strong]` | Out-of-domain test |\n"
+        "| Lower mentoring hours explain the junior output gap",
+    )
+
+
+def m63_source_verifier_fail_linked_outside_section7(ws: Path) -> None:
+    """source_verifier.md ends in FAIL and the report links the gate in Section 3 instead of justifying the problems in Section 7."""
+    rep_p = ws / "report.md"
+    text = rep_p.read_text(encoding="utf-8")
+    sec7_idx = text.index("## 7. Limitations")
+    before7 = text[:sec7_idx] + "\nProvenance audit stored in `appendix/gates/source_verifier.md`.\n\n"
+    after7 = text[sec7_idx:].replace("appendix/gates/source_verifier.md", "the verifier gate")
+    rep_p.write_text(before7 + after7, encoding="utf-8")
+
+
+def m64_blank_row_in_sources_csv(ws: Path) -> None:
+    """appendix/sources.csv contains an empty blank line between rows."""
+    s_path = ws / "appendix" / "sources.csv"
+    lines = s_path.read_text(encoding="utf-8").splitlines()
+    s_path.write_text("\n".join(lines[:2] + [""] + lines[2:]) + "\n", encoding="utf-8")
+
+
 MUTATIONS: dict[str, tuple[str, Mutation, bool]] = {
     # name: (description, function, re-render after applying)
     "M01": ("data value changed, HTML re-rendered", m01_data_value_changed, True),
@@ -872,6 +1119,16 @@ MUTATIONS: dict[str, tuple[str, Mutation, bool]] = {
     "M52": ("a preprint declared Tier 1 through a publisher URL that contains the DOI", m52_publisher_url_hides_the_doi, True),
     "M53": ("a source-verifier FAIL the report no longer names and justifies", m53_source_verifier_fail_not_named, True),
     "M54": ("a second source-verifier pass appended instead of replacing the file", m54_second_gate_pass_appended, True),
+    "M55": ("a Tier 1 formal-proof source whose Solution.lean contains an active sorry", m55_formal_proof_with_sorry_or_custom_axiom, True),
+    "M56": ("a Tier 1 formal-proof source with status=unverified_no_toolchain", m56_unverified_formal_proof_declared_tier1, True),
+    "M57": ("Challenge.lean with vacuous premise (h : False) sustaining a [Strong] claim", m57_vacuous_challenge_lean_statement, True),
+    "M58": ("appendix/conjectures.json fitted on 100% of rows with holdout_count == 0", m58_conjectures_json_zero_holdout, True),
+    "M59": ("a [Strong] matrix row resting on an unproved conjecture from conjectures.json", m59_strong_claim_on_unproved_conjecture, True),
+    "M60": ("a Tier 1 formal-proof row with no matching entry in appendix/formal_proofs.csv", m60_formal_proof_missing_from_registry, True),
+    "M61": ("a [Strong] conjecture row citing the discovery dataset's own Tier 1 data source as replication", m61_conjecture_strong_cites_discovery_source_as_replication, True),
+    "M62": ("a [Strong] matrix row stating the discovered formula without the word 'conjecture'", m62_conjecture_strong_non_lexical_formula_row, True),
+    "M63": ("a source-verifier FAIL linked in Section 3 instead of justified in Section 7", m63_source_verifier_fail_linked_outside_section7, True),
+    "M64": ("an empty blank line inside appendix/sources.csv", m64_blank_row_in_sources_csv, True),
 }
 
 # Mutations the validator does not yet catch -> the v0.8.0 phase that will. Remove an entry when its phase lands.
@@ -935,6 +1192,16 @@ EXPECT: dict[str, str] = {
     "M52": r"(?i)preprint.*Tier 1",
     "M53": r"SOURCE-VERIFIER: FAIL",
     "M54": r"REVIEWED-SHA256 lines",
+    "M55": r"(?i)\bsorry\b|forbidden|non-standard axiom",
+    "M56": r"(?i)unverified_no_toolchain|not kernel-verified",
+    "M57": r"(?i)vacuous|trivial.*Challenge\.lean",
+    "M58": r"(?i)conjectures\.json.*(?:holdout|sha256 mismatch)",
+    "M59": r"(?i)conjecture.*\[Strong\]|\[Strong\].*conjecture",
+    "M60": r"(?i)formal_proofs\.csv",
+    "M61": r"(?i)conjecture.*\[Strong\]|\[Strong\].*conjecture",
+    "M62": r"(?i)conjecture.*\[Strong\]|\[Strong\].*conjecture",
+    "M63": r"SOURCE-VERIFIER: FAIL.*Section 7",
+    "M64": r"sources\.csv contains a blank row",
 }
 # Mutations about the gates themselves keep the gates as the mutation left them; every other mutation re-stamps
 # REVIEWED-SHA256 afterwards, as an agent covering its tracks would.

@@ -23,7 +23,7 @@ LEFTOVER_BRACES_RE = re.compile(r"\{\{[^{}\n]{1,80}\}\}")
 CITE_GROUP_RE = re.compile(r"\[(@[A-Za-z0-9_.-]+(?:\s*[;,]\s*@[A-Za-z0-9_.-]+)*)\]")
 NUMERIC_CITE_RE = re.compile(r"\[[0-9]+\]")
 UNCONVERTED_LATEX_RE = re.compile(r"(?<!\\)\$(?!\s)(?!\d[\d.,]*(?:\s|$|[^\\_^=a-zA-Z]))([^$\n]+?)(?<!\s)\$")
-SHA_HEX_RE = re.compile(r"\b[0-9a-fA-F]{12,64}\b")
+SHA_HEX_RE = re.compile(r"\b[0-9a-fA-F]{64}\b")
 
 SPANISH_LEAKED_CHROME: tuple[tuple[str, str], ...] = (
     ("Figure N.", r"<strong>Figure\s+\d+\.</strong>"),
@@ -69,27 +69,44 @@ def _load_sources_rows(report_dir: Path | None) -> tuple[list[dict[str, str]], l
     if not sources_csv.is_file():
         return [], []
     try:
-        with sources_csv.open(encoding="utf-8", newline="") as fh:
+        with sources_csv.open(encoding="utf-8", errors="replace", newline="") as fh:
             reader = csv.DictReader(fh)
             fieldnames = list(reader.fieldnames or [])
             return list(reader), fieldnames
-    except OSError:
+    except (OSError, csv.Error, UnicodeDecodeError):
         return [], []
 
 
 def _declared_sha(row: dict[str, str]) -> str:
-    """The SHA-256 prefix a source row declares (sha256 column, else 'sha256 <hex>' in the title)."""
+    """The full SHA-256 (64 hex) a source row declares (sha256 column, else 'sha256 <hex>' in the title)."""
     col = SHA_HEX_RE.search((row.get("sha256") or "").strip())
     if col:
         return col.group(0).lower()
-    m = re.search(r"sha256\s*[:=]?\s*([0-9a-fA-F]{12,64})\b", row.get("source_title") or "", re.IGNORECASE)
+    m = re.search(r"sha256\s*[:=]?\s*([0-9a-fA-F]{64})\b", row.get("source_title") or "", re.IGNORECASE)
     return m.group(1).lower() if m else ""
 
 
 def _local_source_path(url: str, report_dir: Path) -> Path:
+    """The on-disk path a ``sources.csv`` URL names, always confined to ``report_dir``.
+
+    ``file://`` URLs and scheme-less paths are project-relative: a ``file:///absolute/path`` URL (or an
+    absolute scheme-less path) is resolved under ``report_dir``, never against the host root, and a ``..``
+    escape is refused by returning a non-existent path inside ``report_dir`` so callers report "not found"
+    instead of reading outside the report.
+    """
     raw = url[len("file://"):] if url.startswith("file://") else url
+    if url.startswith("file://"):
+        raw = raw.lstrip("/\\")  # file:// is project-relative: drop any leading absolute separator
     path = Path(unquote(raw))
-    return path if path.is_absolute() else report_dir / path
+    if path.is_absolute():
+        path = Path(*path.parts[1:])  # an absolute path is confined under report_dir, not the host root
+    root = report_dir.resolve()
+    resolved = (report_dir / path).resolve()
+    try:
+        resolved.relative_to(root)
+    except ValueError:
+        return root / "_refused_outside_report"
+    return resolved
 
 
 def _file_sha256(path: Path) -> str:
@@ -129,7 +146,7 @@ MIN_TYPED_SUMMARY = 3  # C5: verdict + Section 1 must not retype 3+ output figur
 SUMMARY_NUM_RE = re.compile(r"(?<![\w.@#{:-])(\d+[.,]\d+|\d{2,})(?![\w{])")
 SECTION_REF_RE = re.compile(r"(?:§\s*|\b(?:Secci[oó]n|Section|Sec\.)\s+)\d+(?:\.\d+)*", re.IGNORECASE)
 LIMITATION_FALLBACKS: tuple[str, ...] = ("limitation", "limitación", "limitacion", "none", "ninguno", "n/a")
-HOME_PATH_RE = re.compile(r"/home/[^/\s]+/|/Users/[^/\s]+|[A-Za-z]:\\Users\\", re.IGNORECASE)
+HOME_PATH_RE = re.compile(r"/home/[^/\s]+/?|/Users/[^/\s]+/?|[A-Za-z]:\\Users\\", re.IGNORECASE)
 GATE_MIN_CHARS = 400
 SELECTION_LABEL_RE = re.compile(
     r"Selection bias: user-curated corpus|Sesgo de selecci[oó]n: corpus elegido por el usuario", re.IGNORECASE

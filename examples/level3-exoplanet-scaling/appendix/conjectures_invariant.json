@@ -1,0 +1,65 @@
+{
+ "target": "__invariant__",
+ "predictors": [
+  "P_s",
+  "a_m",
+  "GM"
+ ],
+ "units": {
+  "P_s": "s",
+  "a_m": "m",
+  "GM": "m^3/s^2"
+ },
+ "source_ids": [
+  "C1",
+  "C8"
+ ],
+ "likelihood_scale": "invariant_relative_sd",
+ "n_candidates_evaluated": 1,
+ "sort_by": "P_s",
+ "holdout_mode": "tail",
+ "train_count": 933,
+ "holdout_count": 311,
+ "null_holdout_rmse": 3.58817520404528,
+ "beats_null": true,
+ "warnings": [],
+ "candidates": [
+  {
+   "family": "monomial_invariant",
+   "expr": "P_s * a_m^(-3/2) * GM^(1/2) = 6.27644",
+   "exponents": {
+    "P_s": "1",
+    "a_m": "-3/2",
+    "GM": "1/2"
+   },
+   "parameters": {
+    "constant": 6.276441479994019
+   },
+   "complexity_k": 2,
+   "train_bic": -5620.947073787092,
+   "val_rmse": 0.05555675970869257,
+   "holdout_rmse": 0.0739181724305164,
+   "holdout_r2": 0.9945361037845325,
+   "id": "C_INV_1"
+  }
+ ],
+ "pareto_frontier": [
+  {
+   "id": "C_INV_1",
+   "complexity_k": 2,
+   "val_rmse": 0.05555675970869257,
+   "holdout_rmse": 0.0739181724305164,
+   "expr": "P_s * a_m^(-3/2) * GM^(1/2) = 6.27644"
+  }
+ ],
+ "falsifier_point": {
+  "P_s": 473040000.0,
+  "a_m": 7104402880.0,
+  "GM": 1.30947365e+20
+ },
+ "falsifier_prediction": "Along an independent trajectory outside P_s in [1.937e+04, 3.154e+08] (falsifier point: P_s=4.73e+08, a_m=7.104e+09, GM=1.309e+20), invariant 'P_s * a_m^(-3/2) * GM^(1/2) = 6.27644' must hold within relative SD <= 0.2218.",
+ "data_file": "study/appendix/data/exoplanets_si.csv",
+ "data_sha256": "973221f2c5cca828418c01904a2a6c33d3b51c86e4b73e4ed216222371cdd6ac",
+ "sealed_utc": "2026-11-27T02:16:24Z",
+ "sha256": "3ec65692a2754f081d081fda1ebcee4ef920c50bf18fa27c222b26954d453fc8"
+}

@@ -400,7 +400,7 @@ class TestLocalData(unittest.TestCase):
             self.assertRegex(attempts[0]["attempted_utc"], r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
             self.assertEqual(
                 attempts[0]["fallback_used"],
-                f"local:appendix/data/mi%20serie.csv sha256:{local_data.sha12(copy)}",
+                f"local:appendix/data/mi%20serie.csv sha256:{local_data.sha256_file(copy)}",
             )
             # idempotent: importing again adds nothing
             local_data.import_local(

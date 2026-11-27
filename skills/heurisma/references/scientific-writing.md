@@ -191,6 +191,19 @@ Authoring rules:
       {"name": "FX Depreciation (%)", "values": [48.2, 112.5, 24.1]},
       {"name": "CPI Inflation (%)", "values": [51.0, 128.4, 31.8]}
     ]
+  },
+  {
+    "id": "flat_bars",
+    "type": "bar",
+    "title": "Single-Series Flat Bar Chart Example",
+    "caption": "Flat (ungrouped) bar charts omit 'groups' and put one {'label', 'value'} object per bar inside 'series'.",
+    "source": "Own calculations in appendix/analysis.py.",
+    "y": {"label": "Slope"},
+    "series": [
+      {"label": "Rocky", "value": 0.25},
+      {"label": "Sub-Neptune", "value": 0.43},
+      {"label": "Gas Giant", "value": -0.05}
+    ]
   }
 ]
 ```

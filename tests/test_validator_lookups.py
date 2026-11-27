@@ -127,7 +127,7 @@ class TestKindColumn(unittest.TestCase):
             with (root / "appendix" / "sources.csv").open(encoding="utf-8", newline="") as fh:
                 rows = list(csv.DictReader(fh))
             self.assertEqual(rows[0]["kind"], "data")
-            self.assertEqual(rows[0]["sha256"], local_data.sha12(f))
+            self.assertEqual(rows[0]["sha256"], local_data.sha256_file(f))
             self.assertEqual(row["kind"], "data")
 
 

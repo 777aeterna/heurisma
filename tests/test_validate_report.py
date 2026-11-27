@@ -302,23 +302,29 @@ One two three four five six
                 VALID_REPORT.replace("Pure PHA films mineralize", "Pure PHA films mineralize [@C1]"), _seed_charts(root)
             )
 
-            with_backtick_fixed = cited_valid + """
-### Reviewer #2 Disposition
+            with_backtick_fixed = cited_valid.replace(
+                "## 6. Claim-Evidence Matrix",
+                """### Reviewer #2 Disposition
 | Flaw # | Reviewer Critique | Action | Evidence / Artifact |
 | :- | :- | :- | :- |
 | 1 | Cold water kinetics missing | `Fixed` | Added Q10 sensitivity in appendix/analysis.py |
 | 2 | Kinetics without temperature control | `Fixed` | Q10 sensitivity rerun in appendix/analysis.py |
-"""
+
+## 6. Claim-Evidence Matrix""",
+            )
             _seed_gates(root)
             self.assertEqual(validate_report.validate_report(with_backtick_fixed, level=3, report_dir=root), [])
 
-            with_deferred_no_log = cited_valid + """
-### Reviewer #2 Disposition
+            with_deferred_no_log = cited_valid.replace(
+                "## 6. Claim-Evidence Matrix",
+                """### Reviewer #2 Disposition
 | Flaw # | Reviewer Critique | Action | Evidence / Artifact |
 | :- | :- | :- | :- |
 | 1 | Missing proprietary customs series | `Deferred` | Unavailable |
 | 2 | Kinetics without temperature control | `Fixed` | Q10 sensitivity rerun in appendix/analysis.py |
-"""
+
+## 6. Claim-Evidence Matrix""",
+            )
             errs_missing_log = validate_report.validate_report(with_deferred_no_log, level=3, report_dir=root)
             self.assertTrue(any("data_attempts" in e.lower() or "attempt" in e.lower() for e in errs_missing_log), msg=errs_missing_log)
 
@@ -493,7 +499,7 @@ One two three four five six
             # 2) file:// WITH sha256 -> passes sources check, but orphan dummy.json -> WARNING
             (appendix / "sources.csv").write_text(
                 "claim_id,source_title,url,tier,accessed_date,data_as_of,kind\n"
-                f"C1,Local Copy (sha256 {hashlib.sha256(local_csv.read_bytes()).hexdigest()[:12]}),{local_csv.resolve().as_uri()},Tier 2,2026-11-20,2026-11,data\n",
+                f"C1,Local Copy (sha256 {hashlib.sha256(local_csv.read_bytes()).hexdigest()}),{local_csv.resolve().as_uri()},Tier 2,2026-11-20,2026-11,data\n",
                 encoding="utf-8",
             )
             errs2, warns2 = validate_report.validate_report_full(report_with_cite, level=2, report_dir=root)
@@ -733,13 +739,16 @@ One two three four five six
     _ATT_HEAD = "target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used,attempted_utc\n"
 
     def _l3_text(self) -> str:
-        return self._cited("{{fig:fig_1}}") + """
-### Reviewer #2 Disposition
+        return self._cited("{{fig:fig_1}}").replace(
+            "## 6. Claim-Evidence Matrix",
+            """### Reviewer #2 Disposition
 | Flaw # | Reviewer Critique | Action | Evidence / Artifact |
 | :- | :- | :- | :- |
 | 1 | Band series missing | `Deferred` | Logged in appendix/data_attempts.csv |
 | 2 | Kinetics without temperature control | `Fixed` | Q10 sensitivity rerun in appendix/analysis.py |
-"""
+
+## 6. Claim-Evidence Matrix""",
+        )
 
     def test_inherited_failed_attempt_is_error_at_level3_warning_at_level2(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -911,7 +920,7 @@ One two three four five six
             self._write_gates(root, qa=_qa_text("FAIL", failed=(4,)))
             errs3, _ = validate_report.validate_report_full(self._l3_text(), level=3, report_dir=root)
             self.assertTrue(any("QA: PASS" in e for e in errs3), msg=errs3)
-            accepted = self._l3_text() + "\nAccepted QA FAIL (see appendix/gates/qa.md): drift is cosmetic.\n"
+            accepted = self._l3_text() + "\nAccepted QA FAIL check 4 (see appendix/gates/qa.md): drift is cosmetic.\n"
             errs3b, warns3b = validate_report.validate_report_full(accepted, level=3, report_dir=root)
             self.assertFalse(any("QA: PASS" in x for x in errs3b + warns3b), msg=errs3b + warns3b)
 

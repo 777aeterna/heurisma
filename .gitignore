@@ -1,5 +1,6 @@
 __pycache__/
 *.py[cod]
+.lake/
 .pytest_cache/
 .venv/
 .DS_Store

@@ -23,6 +23,7 @@ skills/heurisma/
 │   ├── disciplines.md                 # Scientific branches, evidence tiers & interdisciplinary bridge
 │   ├── data-protocol.md               # 4-rung acquisition cascade, local data, fetch_lib & statistical cautions
 │   ├── forecasting.md                 # Horizons, base rates, fan charts & scenario discipline
+│   ├── formal-and-discovery.md        # Opt-in Lean 4 / Lake formal verification & Buckingham Pi symbolic conjecture discovery
 │   ├── adversarial-review.md          # Self-falsification, Reviewer #2 disposition & degradation rules
 │   ├── scientific-writing.md          # Epistemic calibration, Claim-Evidence Matrix, charts.json & i18n
 │   ├── example-report.md              # Annotated reference report template
@@ -41,6 +42,8 @@ skills/heurisma/
     │   ├── provenance.py              # Tiers, selection, source catalogue, local data & inbox/
     │   ├── prereg.py                  # Preregistration sealing, post-seal files & HARKing
     │   ├── papers.py                  # Paper-connector rules (opt-in): DOI anywhere in a URL, preprint tier, retracted, title, confined & hashed full text, replay, credentials
+    │   ├── conjecture.py              # Symbolic conjecture rules (opt-in): conjectures.json hash, holdout split & [Strong] cap
+    │   ├── formal.py                  # Lean 4 formal-proof rules (opt-in): formal_proofs.csv, hashes, hazards, statement pairing & P-10 warning
     │   ├── html.py                    # report.html sections, language, markers, privacy & freshness
     │   └── codes.py                   # Stable --json codes (CODE_RULES, classify_message)
     ├── providers/                     # Paper-database sources used by papers.py, one module per provider
@@ -52,6 +55,8 @@ skills/heurisma/
     │   ├── arxiv.py                   # arXiv: preprint search
     │   └── unpaywall.py               # Unpaywall: open-access copy of a DOI (needs a contact address)
     ├── papers.py                      # Paper connector CLI: search, lookup, cite, verify, import, replay (papers.csv, search_log.csv; lock file; replay trusts only logged hashes)
+    ├── conjecture.py                  # Exact Buckingham Pi dimensional analysis & symbolic conjecture engine
+    ├── formal_math.py                 # Lean 4 / Lake formal-verification adapter (anthropics/formal-math layout)
     ├── contracts.py                   # Single source of truth for version, tags, schemas, gates & section patterns
     ├── local_data.py                  # Inventory, preview, per-column CSV/XLSX/JSON reader, register, import, intake, prereg, run-start
     ├── fetch_lib.py                   # Retry/backoff HTTP fetcher with checksums, size caps, download_log, offline guard, URL redaction & private-host/redirect guard
@@ -79,6 +84,9 @@ agents/
 └── appendix/
     ├── run.json                       # Tool-stamped run_started_utc (local_data.py run-start)
     ├── preregistration.json           # Sealed H0/H1 & analysis plan (local_data.py prereg)
+    ├── conjectures.json               # Opt-in sealed symbolic law candidates & holdout metrics (conjecture.py)
+    ├── conjectures_invariant.json     # Optional sealed conservation/ratio invariant candidates (--target __invariant__)
+    ├── formal_proofs.csv              # Opt-in Lean 4 kernel-verification registry (formal_math.py)
     ├── intake.md                      # Pre-intake audit of user files, column formats & wishlist gaps
     ├── fetch_data.py                  # Reproducible online acquisition script (imports fetch_lib)
     ├── analysis.py                    # Deterministic computation script
@@ -88,6 +96,7 @@ agents/
     ├── data_attempts.csv              # Chronological acquisition log with attempted_utc
     ├── download_log.csv               # Checksummed downloads from fetch_lib
     ├── data/                          # Imported local data copies
+    ├── formal/                        # Opt-in Lake/Lean 4 proof workspaces (<slug>/Challenge.lean, Solution.lean)
     ├── corpus/                        # Imported user-curated source documents
     ├── gates/
     │   ├── source_verifier.md         # Source-Verifier gate trace (Level 2+)

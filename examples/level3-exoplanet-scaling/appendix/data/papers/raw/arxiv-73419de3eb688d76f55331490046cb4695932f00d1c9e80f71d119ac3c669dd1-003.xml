@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/PBj6o4gqypaZj2vp8olkrPMx/mk</id>
+  <title>arXiv Query: search_query=&amp;id_list=2310.16733&amp;start=0&amp;max_results=1</title>
+  <updated>2026-11-27T01:24:44Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=&amp;start=0&amp;max_results=1&amp;id_list=2310.16733" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>1</opensearch:itemsPerPage>
+  <opensearch:totalResults>1</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2310.16733v1</id>
+    <title>Breaking up with the continuous exoplanet mass-radius relation</title>
+    <updated>2023-10-25T16:01:19Z</updated>
+    <link href="https://arxiv.org/abs/2310.16733v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2310.16733v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We use a carefully selected subsample of 1053 confirmed exoplanets from the NASA Exoplanet Archive to construct empirical power-law exoplanet mass-radius-temperature ($M$-$R$-$T$) relations. Using orthogonal distance regression to account for errors in both mass and radius, we allow the data to decide: 1) the number of distinct planetary regimes; 2) whether the boundaries of these regimes are best described by broken power laws joined at mass break points, or by discontinuous power laws motivated by changes in equations of state and temperature. We find strong support from the data for three distinct planetary $M$-$R$ regimes and for those regimes to be discontinuous. Our most successful model involves an $M$-$R$-$T$ relation in which ice/rock (rocky) and ice-giant (neptunian) planets are segregated by a pure-ice equation of state, whilst neptunes and gas giant (jovian) planets are segregated by a mass break at $M_{\rm br} = 115\pm19~M_{\oplus}$. The rocky planet regime is shown to follow $M \propto R^{0.34\pm0.01}$, whilst neptunes have $M\propto R^{0.55\pm0.02}$. Planets in both regimes are seen to extend to similar maximum masses. In the jovian regime, we find that $M \propto R^{0.00\pm0.01}T^{0.35\pm 0.02}$, where $T$ is the planet equilibrium temperature. This implies that, for jovian planets detected so far, equilibrium temperature alone provides a robust estimator of mass.</summary>
+    <category term="astro-ph.EP" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2023-10-25T16:01:19Z</published>
+    <arxiv:comment>11 pages, 11 figures. For submission to The Open Journal of Astrophysics</arxiv:comment>
+    <arxiv:primary_category term="astro-ph.EP"/>
+    <author>
+      <name>Kathryn Edmondson</name>
+      <arxiv:affiliation>Univ. Manchester</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Jordan Norris</name>
+      <arxiv:affiliation>Univ. Manchester</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Eamonn Kerins</name>
+      <arxiv:affiliation>Univ. Manchester</arxiv:affiliation>
+    </author>
+  </entry>
+</feed>

@@ -28,8 +28,9 @@ from providers import base as provider_base  # noqa: E402
 import render_report  # noqa: E402
 import validate_report  # noqa: E402
 
+# subprocess is confined to formal_math.py (the only place that must launch the native `lake`/`lean` binaries).
+SUBPROCESS_ALLOWED = frozenset({"skills/heurisma/scripts/formal_math.py"})
 FORBIDDEN_IMPORTS = frozenset({
-    "subprocess",
     "pty",
     "ctypes",
     "pickle",
@@ -67,7 +68,7 @@ FORBIDDEN_OS_ATTRS = frozenset({
 
 class TestSecurityScannerGuard(unittest.TestCase):
     def test_zero_sast_or_obfuscation_patterns_in_skill_tree(self) -> None:
-        """skills/heurisma/ must contain zero bare os.environ, subprocess, eval/exec, or hex/unicode escapes."""
+        """skills/heurisma/ must contain zero bare os.environ, subprocess (outside formal_math.py), eval/exec, or hex/unicode escapes."""
         violations: list[str] = []
         bare_environ_re = re.compile(r"\bos\.environ(?!\s*\.\s*get\s*\()")
         hex_or_unicode_escape_re = re.compile(r"\\x[0-9a-fA-F]{2}|\\[uU][0-9a-fA-F]{4,8}")
@@ -89,11 +90,18 @@ class TestSecurityScannerGuard(unittest.TestCase):
                         top = alias.name.split(".")[0]
                         if top in FORBIDDEN_IMPORTS:
                             violations.append(f"{rel}:{node.lineno}: forbidden import '{alias.name}'")
+                        if top == "subprocess" and rel not in SUBPROCESS_ALLOWED:
+                            violations.append(f"{rel}:{node.lineno}: subprocess outside formal_math.py")
                 elif isinstance(node, ast.ImportFrom) and node.module:
                     top = node.module.split(".")[0]
                     if top in FORBIDDEN_IMPORTS:
                         violations.append(f"{rel}:{node.lineno}: forbidden import from '{node.module}'")
+                    if top == "subprocess" and rel not in SUBPROCESS_ALLOWED:
+                        violations.append(f"{rel}:{node.lineno}: subprocess outside formal_math.py")
                 elif isinstance(node, ast.Call):
+                    for kw in node.keywords:
+                        if kw.arg == "shell" and isinstance(kw.value, ast.Constant) and kw.value.value is True:
+                            violations.append(f"{rel}:{node.lineno}: shell=True")
                     if isinstance(node.func, ast.Name) and node.func.id in FORBIDDEN_CALLS:
                         violations.append(f"{rel}:{node.lineno}: forbidden call '{node.func.id}()'")
                     elif (

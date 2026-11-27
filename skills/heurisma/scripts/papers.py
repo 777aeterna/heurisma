@@ -116,10 +116,28 @@ _HELD: dict[str, int] = {}
 LOCK_NAME = ".papers.lock"
 
 
+def _pid_alive(pid: int) -> bool:
+    """True when a process with this PID still exists (the lock owner may still be running)."""
+    if pid <= 0:
+        return False
+    if os.name == "nt":
+        # No portable stdlib liveness probe on Windows (os.kill would terminate the process): only this process is
+        # known alive; any other owner's lock is reclaimed once it is older than ``stale_after`` seconds.
+        return pid == os.getpid()
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except (PermissionError, OSError, OverflowError):
+        return True  # it exists but cannot be signalled, or the check failed: do not steal a possibly-live lock
+    return True
+
+
 @contextlib.contextmanager
 def _locked(appendix: Path, timeout: float = 30.0, stale_after: float = 600.0) -> Iterator[None]:
     """Serialise the read-modify-write of the registry files between threads and between processes (a lock file, created
-    exclusively). Re-entrant. A lock file older than ``stale_after`` seconds was left by a crashed command and is taken over."""
+    exclusively). Re-entrant. A lock file older than ``stale_after`` seconds was left by a crashed command and is taken
+    over; a stale lock whose recorded owner process is still alive is never stolen."""
     appendix.mkdir(parents=True, exist_ok=True)
     lock = appendix / LOCK_NAME
     key = str(appendix.resolve())
@@ -135,11 +153,18 @@ def _locked(appendix: Path, timeout: float = 30.0, stale_after: float = 600.0) -
                     break
                 except FileExistsError:
                     try:
-                        if time.time() - lock.stat().st_mtime > stale_after:
-                            lock.unlink()
-                            continue
+                        stale = time.time() - lock.stat().st_mtime > stale_after
                     except OSError:
                         continue  # it vanished between the two calls: try again
+                    if stale:
+                        try:
+                            pid = int(lock.read_text(encoding="utf-8").strip())
+                        except (OSError, ValueError):
+                            pid = None
+                        if pid is None or not _pid_alive(pid):
+                            with contextlib.suppress(OSError):
+                                lock.unlink()
+                            continue
                     if time.monotonic() >= deadline:
                         raise ProviderUnavailable(
                             f"another papers.py command is using {appendix} ({LOCK_NAME} exists); wait for it, "
@@ -227,16 +252,27 @@ def search(ctx: Context, provider: str, query: str, *, limit: int = 25, filters:
 
 
 def lookup(ctx: Context, doi: str, providers: tuple[str, ...] = ("openalex", "crossref")) -> Record | None:
-    """Fetch one work by DOI from each provider, merge the answers and record the result; None if nobody has it."""
+    """Fetch one work by DOI from each provider, merge the answers and record the result; None if nobody has it.
+
+    P1 fix: DataCite arXiv DOIs (`10.48550/arXiv.<id>`) are not indexed in Crossref; route them to OpenAlex + arXiv instead."""
     key = base.normalize_doi(doi)
     if not key:
         raise ProviderUnavailable(f"'{doi}' is not a DOI")
+    arxiv_id = base.arxiv_id_from_doi(key)
+    eff_providers = tuple("arxiv" if (p == "crossref" and arxiv_id) else p for p in providers)
     found: list[Record] = []
     errors: list[ProviderUnavailable] = []
-    for name in providers:
+    not_found = False
+    for name in eff_providers:
         try:
-            rec = PROVIDERS[name].lookup(ctx, key)
+            if name == "arxiv" and arxiv_id:
+                rec = arxiv.lookup(ctx, arxiv_id)
+                if rec:
+                    rec = {**rec, "doi": key}
+            else:
+                rec = PROVIDERS[name].lookup(ctx, key)
         except NotFound:
+            not_found = True
             continue
         except ProviderUnavailable as exc:
             errors.append(exc)
@@ -244,6 +280,15 @@ def lookup(ctx: Context, doi: str, providers: tuple[str, ...] = ("openalex", "cr
         if rec:
             found.append(rec)
     if not found:
+        if not_found:
+            # one provider answered 404 (the work is not there), so the answer is "not found" even though another
+            # provider could not be asked; note the outage instead of degrading the definitive 404 to "unverified".
+            if errors:
+                ctx.warn(
+                    f"'{key}' was reported not found by a provider (404), but another could not be queried "
+                    f"({base.redact(str(errors[-1]), ctx.env)}); treating it as not found"
+                )
+            return None
         if errors:
             raise errors[-1]
         return None
@@ -370,9 +415,29 @@ def fulltext(ctx: Context, rec: Record) -> Path | None:
     candidates: list[tuple[str, str, str]] = []
     if rec.get("pmcid"):
         candidates.append(("europepmc", f"{ctx.base_url('europepmc', europepmc.DEFAULT_URL)}/{rec['pmcid']}/fullTextXML", "xml"))
-    if rec.get("oa_url"):
-        is_arxiv_oa = "arxiv.org" in rec["oa_url"].lower() or rec["oa_url"].startswith(ctx.base_url("arxiv", arxiv.DEFAULT_URL))
-        candidates.append(("arxiv" if is_arxiv_oa else "publisher", rec["oa_url"], "pdf"))
+    arxiv_id = base.arxiv_id_from_doi(rec.get("doi", "")) or base.arxiv_id_from_doi(rec.get("oa_url", ""))
+    oa_url = (rec.get("oa_url") or "").strip()
+    if oa_url:
+        is_arxiv_oa = (
+            "arxiv.org" in oa_url.lower()
+            or oa_url.startswith(ctx.base_url("arxiv", arxiv.DEFAULT_URL))
+            or bool(arxiv_id and "10.48550/arxiv." in oa_url.lower())
+        )
+        # P2 fix: if an arXiv record's oa_url points to a doi.org/10.48550 landing page or arxiv.org/abs/<id>
+        # (or a real https://arxiv.org/pdf/ link while HEURISMA_ARXIV_URL overrides the host), rewrite to <arxiv_base>/pdf/<id>.pdf
+        arxiv_override = (ctx.env.get("HEURISMA_ARXIV_URL") or "").strip().rstrip("/")
+        if arxiv_id and (
+            "doi.org/10.48550/arxiv." in oa_url.lower()
+            or "/abs/" in oa_url.lower()
+            or (arxiv_override and "arxiv.org/pdf/" in oa_url.lower())
+        ):
+            arxiv_base = arxiv_override or "https://arxiv.org"
+            oa_url = f"{arxiv_base}/pdf/{arxiv_id}.pdf"
+            is_arxiv_oa = True
+        candidates.append(("arxiv" if is_arxiv_oa else "publisher", oa_url, "pdf"))
+    elif arxiv_id:
+        arxiv_base = (ctx.env.get("HEURISMA_ARXIV_URL") or "").strip().rstrip("/") or "https://arxiv.org"
+        candidates.append(("arxiv", f"{arxiv_base}/pdf/{arxiv_id}.pdf", "pdf"))
     if not ctx.mailto and base.normalize_doi(rec["doi"]) and not candidates:
         ctx.warn("unpaywall was skipped: set HEURISMA_MAILTO to a contact address you choose to let it look for an open-access copy")
 
@@ -521,11 +586,13 @@ def replay(ctx: Context) -> list[str]:
     problems: list[str] = []
     raw_dir = ctx.appendix / "data" / "papers" / "raw"
     ledger = {r.get("file", ""): r for r in _read(ctx.appendix / "download_log.csv")}  # the newest row of a file wins
-    for entry in _read(ctx.appendix / "search_log.csv"):
-        raw = entry.get("raw_file", "")
-        if raw and not (ctx.appendix.parent / raw).is_file():
-            problems.append(f"{entry.get('query_id', '?')}: the cache file {raw} listed in search_log.csv is missing")
+    # every raw cache the connector fetched is in download_log.csv (search, lookup, verify and import alike), so a
+    # missing raw file is detected from that ledger instead of search_log.csv (which lookup/verify never wrote).
+    for rel in sorted(ledger):
+        if rel.startswith("papers/raw/") and not (ctx.appendix / "data" / rel).is_file():
+            problems.append(f"{rel}: the cache file listed in download_log.csv is missing")
     expected: dict[str, list[Record]] = {}
+    arxiv_views: dict[str, list[Record]] = {}
     for cache in sorted(raw_dir.glob("*")) if raw_dir.is_dir() else []:
         found = _provider_of(cache.name)
         if not found:
@@ -551,8 +618,25 @@ def replay(ctx: Context) -> list[str]:
                 rec["via"] = "import"
             rec["retrieved_utc"] = logged.get("retrieved_utc", "")
             expected.setdefault(rec["doi"], []).append(rec)
+            if name == "arxiv":
+                aid = base.arxiv_id_from_doi(rec.get("doi", "")) or base.arxiv_id_from_doi(rec.get("oa_url", ""))
+                if aid:
+                    arxiv_views.setdefault(aid, []).append(rec)
     for row in read_papers(ctx.appendix):
-        views = expected.get(row["doi"])
+        views = list(expected.get(row["doi"], []))
+        # N2 + PAP-1: reproduce the exact key override `lookup` applies for a DataCite arXiv DOI (10.48550/arxiv.<id>):
+        # the arXiv view is stored under arxiv:<id> (no published DOI) or under the published DOI (<arxiv:doi> present),
+        # never under the DataCite DOI, so re-tag it here and merge it even when OpenAlex also returned a view.
+        if row["doi"].startswith("10.48550/arxiv.") and (
+            row.get("query_id") == "lookup"
+            or "arxiv" in {p for p in row.get("providers", "").split(";") if p}
+            or not views
+        ):
+            aid = base.arxiv_id_from_doi(row["doi"])
+            if aid:
+                for v in arxiv_views.get(aid, []):
+                    if v["doi"] != row["doi"]:
+                        views.append({**v, "doi": row["doi"]})
         if not views:
             problems.append(f"{row['doi']}: no cached response supports this row (added by hand, or its cache file is missing)")
             continue

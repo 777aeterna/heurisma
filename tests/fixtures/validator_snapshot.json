@@ -58,14 +58,14 @@
    [
     "P0-SHA",
     "appendix/sources.csv",
-    "'appendix/data/hybrid_rct_sites.csv' changed since it was registered in appendix/sources.csv: SHA-256 8046c12b2d7c != declared 9a7419cd6056."
+    "'appendix/data/hybrid_rct_sites.csv' changed since it was registered in appendix/sources.csv: SHA-256 8046c12b2d7c != declared 9a7419cd60560e66000022fb1d9f55afa4e207a447812d0bb4538b6e9f7f24b4."
    ]
   ],
   "M02": [
    [
     "P0-SHA",
     "appendix/sources.csv",
-    "'appendix/data/hybrid_rct_sites.csv' changed since it was registered in appendix/sources.csv: SHA-256 9a7419cd6056 != declared deadbeef0000."
+    "'appendix/data/hybrid_rct_sites.csv' changed since it was registered in appendix/sources.csv: SHA-256 9a7419cd6056 != declared deadbeef00000000000000000000000000000000000000000000000000000000."
    ]
   ],
   "M03": [
@@ -84,12 +84,12 @@
    [
     "GATE-BINDING",
     "appendix/gates/source_verifier.md",
-    "appendix/gates/source_verifier.md reviewed an earlier version: REVIEWED-SHA256 5be34406d96ad6dd != current d3b6202c32215b8e; re-run the gate on the current files."
+    "appendix/gates/source_verifier.md reviewed an earlier version: REVIEWED-SHA256 235232b98d2c647e != current 2879510bde818094; re-run the gate on the current files."
    ],
    [
     "GATE-BINDING",
     "appendix/gates/qa.md",
-    "appendix/gates/qa.md reviewed an earlier version: REVIEWED-SHA256 156154e188023d26 != current 35903622b512b70f; re-run the gate on the current files."
+    "appendix/gates/qa.md reviewed an earlier version: REVIEWED-SHA256 0dfe9561b22df8aa != current 3a1c89fc4fef7ca3; re-run the gate on the current files."
    ]
   ],
   "M05": [
@@ -243,7 +243,7 @@
    [
     "HTML-STALE",
     "report.html",
-    "HTML 'report.html' is stale (out of date): sources hash c44bc4d25c1c != embedded 02bd25b086ec; re-run render_report.py."
+    "HTML 'report.html' is stale (out of date): sources hash 6c1ad83a627f != embedded 4366d54ebf71; re-run render_report.py."
    ]
   ],
   "M17": [
@@ -677,11 +677,6 @@
     "P2-SELECTION",
     "appendix/sources.csv",
     "Source 'C2' is agent-fetched literature declared Tier 1 with no downloaded primary document in appendix/download_log.csv; if only a web search summary was read, add '(web summary)' to the title and lower the tier."
-   ],
-   [
-    "P3-PAPER",
-    "appendix/papers.csv",
-    "appendix/papers.csv: Q1: the cache file https://api.openalex.org/works?search=x&api_key=abc123def456&mailto=alias@example.org listed in search_log.csv is missing"
    ]
   ],
   "M46": [
@@ -861,7 +856,87 @@
     "appendix/gates/source_verifier.md",
     "appendix/gates/source_verifier.md has 2 REVIEWED-SHA256 lines; a later pass must replace the file, not append."
    ]
+  ],
+  "M55": [
+   [
+    "P4-LEAN",
+    "appendix/formal_proofs.csv",
+    "appendix/formal/bound_proof/Solution.lean: contains forbidden Lean escape hazard(s): sorry."
+   ]
+  ],
+  "M56": [
+   [
+    "P4-LEAN",
+    "appendix/formal_proofs.csv",
+    "Source 'F1' (kind=formal-proof) has status=unverified_no_toolchain and cannot be declared Tier 1; cap unverified Lean drafts at Tier 3 ([Preliminary])."
+   ]
+  ],
+  "M57": [
+   [
+    "P4-LEAN",
+    "appendix/formal_proofs.csv",
+    "appendix/formal/bound_proof/Challenge.lean: contains vacuous or trivial theorem statement (vacuous_false_premise); cannot sustain a verified formal claim."
+   ],
+   [
+    "P4-LEAN",
+    "appendix/formal_proofs.csv",
+    "appendix/formal/bound_proof/Solution.lean: missing proof theorem against Challenge.lean (Challenge theorem 'main_claim' has no matching proof theorem in Solution.lean)."
+   ]
+  ],
+  "M58": [
+   [
+    "P4-CONJECTURE",
+    "appendix/conjectures.json",
+    "appendix/conjectures.json: holdout_count is 0 (fitting on 100% of rows with no holdout validation is forbidden; require holdout_count >= 2)."
+   ]
+  ],
+  "M59": [
+   [
+    "P4-CONJECTURE",
+    "appendix/conjectures.json",
+    "Claim-Evidence Matrix row 5 tags an unproved symbolic conjecture as [Strong] (appendix/conjectures.json) without a kernel-verified Tier 1 formal proof or independent Tier 1 replication data."
+   ]
+  ],
+  "M60": [
+   [
+    "P4-LEAN",
+    "appendix/formal_proofs.csv",
+    "Source 'F1' (kind=formal-proof) has no matching entry in appendix/formal_proofs.csv; run `formal_math.py check` before registering a formal proof."
+   ]
+  ],
+  "M61": [
+   [
+    "P4-CONJECTURE",
+    "appendix/conjectures.json",
+    "Claim-Evidence Matrix row 5 tags an unproved symbolic conjecture as [Strong] (appendix/conjectures.json) but its only backing is the discovery data itself (C5); cap data-driven conjectures at [Moderate] or [Preliminary] unless backed by a kernel-verified Tier 1 formal proof or independent Tier 1 replication data."
+   ]
+  ],
+  "M62": [
+   [
+    "P4-CONJECTURE",
+    "appendix/conjectures.json",
+    "Claim-Evidence Matrix row 5 tags an unproved symbolic conjecture as [Strong] (appendix/conjectures.json) without a kernel-verified Tier 1 formal proof or independent Tier 1 replication data."
+   ]
+  ],
+  "M63": [
+   [
+    "GATE-SV",
+    "appendix/gates/source_verifier.md",
+    "appendix/gates/source_verifier.md ends in SOURCE-VERIFIER: FAIL; fix the problems and re-run the gate, or name each accepted problem with its justification in the report (cite appendix/gates/source_verifier.md in Section 7)."
+   ]
+  ],
+  "M64": [
+   [
+    "P1-KIND",
+    "appendix/sources.csv",
+    "appendix/sources.csv contains a blank row at line 3; remove empty lines."
+   ],
+   [
+    "GATE-BINDING",
+    "appendix/gates/source_verifier.md",
+    "appendix/gates/source_verifier.md quotes appendix/sources.csv:3 but that line does not contain \"Bloom, N., Han, R., & Liang, J. (2024)\"."
+   ]
   ]
  },
- "version": "0.10.2"
+ "version": "0.11.1"
 }

@@ -16,14 +16,16 @@ if str(SCRIPTS_DIR) not in sys.path:
 
 class TestContractsSync(unittest.TestCase):
     def test_contracts_module_and_scripts_share_constants(self) -> None:
+        import conjecture  # noqa: PLC0415
         import contracts  # noqa: PLC0415
         import fetch_lib  # noqa: PLC0415
+        import formal_math  # noqa: PLC0415
         import local_data  # noqa: PLC0415
         import render_report  # noqa: PLC0415
         import svg_charts  # noqa: PLC0415
         import validate_report  # noqa: PLC0415
 
-        for mod in (fetch_lib, local_data, render_report, svg_charts, validate_report):
+        for mod in (conjecture, fetch_lib, formal_math, local_data, render_report, svg_charts, validate_report):
             self.assertEqual(mod.__version__, contracts.__version__, f"{mod.__name__} version drift")
 
         self.assertIs(local_data.VALID_KINDS, contracts.VALID_KINDS)
@@ -78,6 +80,62 @@ class TestContractsSync(unittest.TestCase):
         codes = {code for _, code, _ in validate_report.CODE_RULES}
         missing = sorted(c for c in codes if c not in doc)
         self.assertEqual(missing, [], f"Validator codes missing from validator-codes.md: {missing}")
+
+    def test_formal_and_discovery_reference_and_skill_routing_synced(self) -> None:
+        import conjecture  # noqa: PLC0415
+        import contracts  # noqa: PLC0415
+        import formal_math  # noqa: PLC0415
+
+        ref_path = REFS_DIR / "formal-and-discovery.md"
+        self.assertTrue(ref_path.is_file(), "Missing references/formal-and-discovery.md")
+        ref_text = ref_path.read_text(encoding="utf-8")
+        self.assertIn(
+            ", ".join(contracts.FORMAL_PROOF_COLS),
+            ref_text,
+            "Exact FORMAL_PROOF_COLS comma-separated schema missing from formal-and-discovery.md",
+        )
+        self.assertIn(
+            ", ".join(conjecture.DIMENSIONS),
+            ref_text,
+            "Exact conjecture.DIMENSIONS tuple missing from formal-and-discovery.md",
+        )
+        for ax in contracts.STANDARD_LEAN_AXIOMS:
+            self.assertIn(ax, ref_text, f"Standard Lean axiom '{ax}' missing from formal-and-discovery.md")
+        for token in (
+            contracts.FORMAL_PROOFS_CSV,
+            contracts.CONJECTURES_JSON,
+            "formal_math.py",
+            "conjecture.py",
+            "Challenge.lean",
+            "Solution.lean",
+            "--reproduce-lean",
+            "additive_gaussian_y",
+            "Statement-Fidelity",
+            '--target "T=s"',
+            '--var "L=m"',
+            "conjecture.py discover appendix/data/",
+            "formal_math.py init kepler-third-law",
+            "formal_math.py check kepler-third-law --register --claim FM1",
+            "formal_math.py fetch-ref anthropics/formal-math",
+            formal_math.DEFAULT_TOOLCHAIN,
+            "_heurisma_same_stmt",
+        ):
+            self.assertIn(token, ref_text, f"{token!r} missing from formal-and-discovery.md")
+
+        skill_md = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("references/formal-and-discovery.md", skill_md)
+        self.assertIn("formal-proof", skill_md)
+        self.assertIn("FORMAL-SHA256", skill_md)
+        # H-04: SKILL.md stays lean (< 275 lines)
+        self.assertLess(len(skill_md.splitlines()), 275, "SKILL.md grew too large; keep details in references/formal-and-discovery.md")
+        # H-02: explicit post-QA re-render + strict validation reminder
+        self.assertIn("render_report.py", skill_md.split("appendix/gates/qa.md", 1)[1])
+        # H-07: same-model correlation disclosure
+        self.assertRegex(skill_md, r"(?i)same-model|correlated blind spots")
+
+        disc_md = (REFS_DIR / "disciplines.md").read_text(encoding="utf-8")
+        self.assertIn("formal-proof", disc_md)
+        self.assertIn("unverified_no_toolchain", disc_md)
 
 
 if __name__ == "__main__":

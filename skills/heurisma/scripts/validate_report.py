@@ -100,7 +100,9 @@ from checks.gates import (  # noqa: E402
     reviewer_items as reviewer_items,
     _POST_REVIEW_RE as _POST_REVIEW_RE,
     _analysis_anchor as _analysis_anchor,
+    _formal_anchor as _formal_anchor,
     _check_analysis_anchor as _check_analysis_anchor,
+    _check_formal_anchor as _check_formal_anchor,
     _check_gate_binding as _check_gate_binding,
 )
 from checks.numeric import (  # noqa: E402
@@ -136,6 +138,12 @@ from checks.provenance import (  # noqa: E402
 )
 from checks.papers import (  # noqa: E402
     check_papers as check_papers,
+)
+from checks.conjecture import (  # noqa: E402
+    check_conjectures as check_conjectures,
+)
+from checks.formal import (  # noqa: E402
+    check_formal_proofs as check_formal_proofs,
 )
 from checks.prereg import (  # noqa: E402
     _files_added_after_prereg as _files_added_after_prereg,
@@ -387,6 +395,13 @@ def validate_report_full(
                 errors.append(f"Level {level} report requires 'appendix/output.txt' with executed script output.")
             if not (appendix_dir / "sources.csv").is_file():
                 errors.append(f"Level {level} report requires 'appendix/sources.csv' logging sources and access dates.")
+            else:
+                raw_sources_lines = (appendix_dir / "sources.csv").read_text(encoding="utf-8-sig", errors="replace").splitlines()
+                for s_lineno, s_raw_line in enumerate(raw_sources_lines, start=1):
+                    if not s_raw_line.strip() or not s_raw_line.replace(",", "").strip():
+                        errors.append(
+                            f"appendix/sources.csv contains a blank row at line {s_lineno}; remove empty lines."
+                        )
 
             # V1: {{fig:id}} <-> charts.json consistency (W1: charts.json lives in the report root)
             charts_json = _find_charts_json(report_dir, appendix_dir, charts_path)
@@ -397,8 +412,8 @@ def validate_report_full(
                     errors.append(f"Level {level} report requires charts.json: charts.json not found ({where}).")
             else:
                 try:
-                    charts_data = json.loads(charts_json.read_text(encoding="utf-8"))
-                except (OSError, json.JSONDecodeError) as exc:
+                    charts_data = json.loads(charts_json.read_text(encoding="utf-8", errors="replace"))
+                except (OSError, ValueError) as exc:
                     errors.append(f"Invalid JSON in {charts_json}: {exc}")
                     charts_data = []
                 if re.search(r"(?<![\w\"])-?(?:NaN|Infinity)(?![\w\"])", charts_json.read_text(encoding="utf-8", errors="replace")):
@@ -444,10 +459,10 @@ def validate_report_full(
                 numbers_json = appendix_dir / "numbers.json"
                 if numbers_json.is_file():
                     try:
-                        loaded_nums = json.loads(numbers_json.read_text(encoding="utf-8"))
+                        loaded_nums = json.loads(numbers_json.read_text(encoding="utf-8", errors="replace"))
                         if isinstance(loaded_nums, dict):
                             known_keys = {str(k) for k in loaded_nums}
-                    except (OSError, json.JSONDecodeError) as exc:
+                    except (OSError, ValueError) as exc:
                         errors.append(f"Invalid JSON in appendix/numbers.json: {exc}")
                 for key in used_num_keys:
                     if key not in known_keys:
@@ -516,10 +531,10 @@ def validate_report_full(
                 _nums_path = appendix_dir / "numbers.json"
                 if _nums_path.is_file():
                     try:
-                        _loaded_n = json.loads(_nums_path.read_text(encoding="utf-8"))
+                        _loaded_n = json.loads(_nums_path.read_text(encoding="utf-8", errors="replace"))
                         if isinstance(_loaded_n, dict):
                             _nums_data_for_checks = _loaded_n
-                    except (OSError, json.JSONDecodeError):
+                    except (OSError, ValueError):
                         pass
                 pre_err, pre_warn = check_preregistration(
                     report_dir, clean_text, section_positions,
@@ -530,6 +545,14 @@ def validate_report_full(
                 paper_err, paper_warn = check_papers(report_dir, sources_rows, set(_extract_citation_ids(clean_text)), level, _run_start_dt)
                 errors.extend(paper_err)
                 warnings.extend(paper_warn)
+                conj_err, conj_warn = check_conjectures(report_dir, clean_text, section_positions, sources_rows, level)
+                errors.extend(conj_err)
+                warnings.extend(conj_warn)
+                formal_err, formal_warn = check_formal_proofs(
+                    report_dir, sources_rows, clean_text, section_positions, level, _run_start_dt
+                )
+                errors.extend(formal_err)
+                warnings.extend(formal_warn)
 
                 # V5a: file:// rows in sources.csv must include a sha256 hash
                 for row_idx, srow in enumerate(sources_rows, start=1):
@@ -570,14 +593,22 @@ def validate_report_full(
                 )
                 errors.extend(paper_err)
                 warnings.extend(paper_warn)
+                conj_err, conj_warn = check_conjectures(report_dir, clean_text, section_positions, sources_rows, level)
+                errors.extend(conj_err)
+                warnings.extend(conj_warn)
+                formal_err, formal_warn = check_formal_proofs(
+                    report_dir, sources_rows, clean_text, section_positions, level, _run_start_dt
+                )
+                errors.extend(formal_err)
+                warnings.extend(formal_warn)
 
             # P0-1: hashes logged by fetch_data.py are recomputed as well
             dl_csv = appendix_dir / "download_log.csv"
             if dl_csv.is_file():
                 try:
-                    with dl_csv.open(encoding="utf-8-sig", newline="") as fh:
+                    with dl_csv.open(encoding="utf-8-sig", errors="replace", newline="") as fh:
                         dl_rows = list(csv.DictReader(fh))
-                except OSError:
+                except (OSError, UnicodeDecodeError):
                     dl_rows = []
                 for dl in dl_rows:
                     fname = (dl.get("file") or "").strip()
@@ -613,7 +644,7 @@ def validate_report_full(
             attempts_csv = appendix_dir / "data_attempts.csv"
             if attempts_csv.is_file():
                 try:
-                    with attempts_csv.open(encoding="utf-8", newline="") as fh:
+                    with attempts_csv.open(encoding="utf-8", errors="replace", newline="") as fh:
                         reader = csv.reader(fh)
                         header = [c.strip() for c in next(reader, [])]
                     missing_cols = [c for c in CANONICAL_DATA_ATTEMPTS_COLS if c not in header]
@@ -621,7 +652,7 @@ def validate_report_full(
                         errors.append(
                             f"appendix/data_attempts.csv is missing canonical column(s): {', '.join(missing_cols)}."
                         )
-                except OSError as exc:
+                except (OSError, UnicodeDecodeError) as exc:
                     errors.append(f"Unable to read appendix/data_attempts.csv: {exc}")
 
             # F2: an own computation (the report's own code) can never be Tier 1 evidence
@@ -637,9 +668,9 @@ def validate_report_full(
             # F1: source described as retrieved/full text although data_attempts.csv logs a failed attempt for its URL
             if attempts_csv.is_file():
                 try:
-                    with attempts_csv.open(encoding="utf-8", newline="") as fh:
+                    with attempts_csv.open(encoding="utf-8", errors="replace", newline="") as fh:
                         attempt_rows = list(csv.DictReader(fh))
-                except OSError:
+                except (OSError, UnicodeDecodeError):
                     attempt_rows = []
                 ok_outcomes = {"used", "ok", "success", "succeeded", "retrieved"}
                 for srow in sources_rows:
@@ -662,10 +693,10 @@ def validate_report_full(
             gates_dir = appendix_dir / "gates"
             gate_sink = errors if level == 3 else warnings
             rv_path = gates_dir / "reviewer.md"
-            if rv_path.is_file():  # a reviewer gate that exists is bound to analysis.py at any level
-                _check_analysis_anchor(
-                    rv_path.read_text(encoding="utf-8", errors="replace"), report_dir, clean_text, section_positions, gate_sink
-                )
+            if rv_path.is_file():  # a reviewer gate that exists is bound to analysis.py and Challenge.lean at any level
+                rv_text = rv_path.read_text(encoding="utf-8", errors="replace")
+                _check_analysis_anchor(rv_text, report_dir, clean_text, section_positions, gate_sink)
+                _check_formal_anchor(rv_text, report_dir, clean_text, section_positions, gate_sink)
             for gate in GATE_FILES:
                 if gate == "reviewer" and level != 3:  # Reviewer #2 is dispatched at Level 3 only
                     continue
@@ -689,21 +720,48 @@ def validate_report_full(
                         f"(see references/agents/{gate.replace('_', '-')}.md, Output section)."
                     )
                 _check_gate_binding(gate, gtext, report_dir, clean_text, section_positions, gate_sink, warnings, errors=errors)
+                sec7_text = _extract_section_slice(clean_text, section_positions, "Limitations & Open Questions")
                 if gate == "qa" and not re.search(r"^QA:\s*PASS\b", gtext, re.MULTILINE):
-                    if "gates/qa.md" not in markdown_text:
+                    # Each `<#> FAIL` check line must be named in Section 7; a FAIL with no extractable check number is an error.
+                    qa_failed = [
+                        m.group(1)
+                        for m in re.finditer(r"^\s*(\d+)[.)]?\s+FAIL\b", gtext, re.MULTILINE)
+                    ]
+                    all_qa_failed_named = bool(qa_failed) and all(
+                        re.search(rf"(?<!\d){re.escape(n)}(?!\d)", sec7_text) for n in qa_failed
+                    )
+                    if not ("gates/qa.md" in sec7_text and all_qa_failed_named):
                         gate_sink.append(
                             "appendix/gates/qa.md has no 'QA: PASS' line; fix the failed checks, or name each accepted "
-                            "FAIL with its justification in the report (cite appendix/gates/qa.md in Section 7)."
+                            "FAIL check number with its justification in the report (cite appendix/gates/qa.md in Section 7)."
                         )
                 if (
                     gate == "source_verifier"
                     and re.search(r"^\s*SOURCE-VERIFIER:\s*FAIL\b", gtext, re.MULTILINE)
-                    and "gates/source_verifier.md" not in markdown_text
                 ):
-                    gate_sink.append(
-                        "appendix/gates/source_verifier.md ends in SOURCE-VERIFIER: FAIL; fix the problems and re-run the gate, or "
-                        "name each accepted problem with its justification in the report (cite appendix/gates/source_verifier.md in Section 7)."
+                    has_sv_cite_in_sec7 = "gates/source_verifier.md" in sec7_text
+                    # Each problem line `<check #> · <target_id> · ...` (with or without its own list number) must have
+                    # its target_id named in Section 7; a FAIL with no extractable problem line is an error.
+                    sv_targets = [
+                        m.group(2).strip()
+                        for m in re.finditer(
+                            r"^\s*(?:\d+[.)]\s+)?(\d+)\s*·\s*([^·\n]+?)\s*·", gtext, re.MULTILINE
+                        )
+                        if m.group(2).strip()
+                    ]
+                    all_sv_targets_named = bool(sv_targets) and all(
+                        any(
+                            tok in sec7_text
+                            for tok in re.findall(r"[A-Za-z0-9_-]+", tgt)
+                            if len(tok) >= 2
+                        )
+                        for tgt in sv_targets
                     )
+                    if not (has_sv_cite_in_sec7 and all_sv_targets_named):
+                        gate_sink.append(
+                            "appendix/gates/source_verifier.md ends in SOURCE-VERIFIER: FAIL; fix the problems and re-run the gate, or "
+                            "name each accepted problem with its justification in the report (cite appendix/gates/source_verifier.md in Section 7)."
+                        )
 
             # C8: gate files are embedded in report.html, so they must not quote home paths or literal markers
             if gates_dir.is_dir():
@@ -727,11 +785,11 @@ def validate_report_full(
             # P1: a limitation cannot rest on attempts inherited from an earlier run (needs attempted_utc column)
             if attempts_csv.is_file():
                 try:
-                    with attempts_csv.open(encoding="utf-8-sig", newline="") as fh:
+                    with attempts_csv.open(encoding="utf-8-sig", errors="replace", newline="") as fh:
                         att_reader = csv.DictReader(fh)
                         att_cols = [c.strip() for c in (att_reader.fieldnames or [])]
                         att_rows = list(att_reader)
-                except OSError:
+                except (OSError, UnicodeDecodeError):
                     att_cols, att_rows = [], []
                 start, start_src = _resolve_run_start(report_dir, run_since, markdown_text)
                 since = start.strftime("%Y-%m-%dT%H:%M:%SZ") if start else ""
@@ -785,6 +843,8 @@ def validate_report_full(
             for fp in sorted(appendix_dir.rglob("*"), key=lambda p: p.relative_to(appendix_dir).parts):
                 if "__pycache__" in fp.parts or fp.suffix == ".pyc":
                     pycache_found = True
+                    continue
+                if ".lake" in fp.parts:
                     continue
                 if fp.is_file() and fp.stat().st_size == 0:
                     warnings.append(f"0-byte file detected in appendix: 'appendix/{fp.relative_to(appendix_dir).as_posix()}'.")
@@ -847,10 +907,10 @@ def validate_report_full(
                 _nf = appendix_dir / "numbers.json"
                 if _nf.is_file():
                     try:
-                        _ln = json.loads(_nf.read_text(encoding="utf-8"))
+                        _ln = json.loads(_nf.read_text(encoding="utf-8", errors="replace"))
                         if isinstance(_ln, dict):
                             _nums_for_closure = _ln
-                    except (OSError, json.JSONDecodeError):
+                    except (OSError, ValueError):
                         pass
                 nc_err, nc_warn = check_numeric_closure(clean_text, section_positions, out_txt, _nums_for_closure, level)
                 errors.extend(nc_err)
@@ -858,8 +918,8 @@ def validate_report_full(
                 _charts_file = _find_charts_json(report_dir, appendix_dir, charts_path)
                 if _charts_file is not None:
                     try:
-                        _charts_loaded = json.loads(_charts_file.read_text(encoding="utf-8"))
-                    except (OSError, json.JSONDecodeError):
+                        _charts_loaded = json.loads(_charts_file.read_text(encoding="utf-8", errors="replace"))
+                    except (OSError, ValueError):
                         _charts_loaded = None  # reported by the charts.json checks above
                     cc_err, cc_warn = check_caption_closure(_charts_loaded, out_txt, _nums_for_closure, level)
                     errors.extend(cc_err)
@@ -889,7 +949,8 @@ def validate_report_full(
         reviewer_gate = report_dir / "appendix" / "gates" / "reviewer.md" if report_dir is not None else None
         if reviewer_gate is not None and reviewer_gate.is_file():
             n_items = reviewer_items(reviewer_gate.read_text(encoding="utf-8", errors="replace"))
-            n_rows = disposition_rows(clean_text)  # same scope as the existence check above: the table belongs in Section 5
+            sec5_text = _extract_section_slice(clean_text, section_positions, "Counter-Evidence & Alternative Explanations")
+            n_rows = disposition_rows(sec5_text)  # count action rows only in Section 5, where the table belongs
             if n_items and n_rows != n_items:
                 errors.append(
                     f"Reviewer #2 raised {n_items} item(s) in appendix/gates/reviewer.md but the Disposition Table has "
@@ -933,18 +994,68 @@ def validate_report(
     return errors
 
 
-REPRODUCED_FILES = ("appendix/output.txt", "appendix/numbers.json", "charts.json")
-_ANALYSIS_CMD_RE = re.compile(r"^\s*(?:\$\s*)?(python3?\s+.*analysis\.py.*?)\s*$")
+REPRODUCED_FILES = ("appendix/output.txt", "appendix/numbers.json")
+# Sealed artifacts that analysis.py must NOT rewrite: --reproduce compares them unchanged so a re-seal on every run
+# (e.g. re-running `conjecture.py discover` inside analysis.py) is detected.
+SEALED_ARTIFACTS = (
+    "appendix/conjectures.json",
+    "appendix/preregistration.json",
+    "appendix/formal_proofs.csv",
+)
+
+
+def _extract_analysis_command(raw: str) -> str:
+    """Extract the ``python* … analysis.py`` command from a README line or an inline code span.
+
+    Stops right after ``analysis.py`` plus at most a bounded run of option/path arguments and an optional
+    ``> target`` redirect, so trailing prose is never captured as arguments. Double-backtick and
+    single-backtick code spans are treated the same.
+    """
+    line = re.sub(r"^(?:(?:[-*+]|\d+[.)])\s+)?(?:\$\s*)?", "", raw.strip())
+    tokens = line.split()
+    if not tokens or not tokens[0].startswith("python"):
+        return ""
+    try:
+        script_idx = next(i for i, t in enumerate(tokens) if t.endswith("analysis.py"))
+    except StopIteration:
+        return ""
+    out = tokens[: script_idx + 1]
+    rest = tokens[script_idx + 1 :]
+    redirect = None
+    if ">" in rest:
+        gi = rest.index(">")
+        redirect = rest[gi:]
+        rest = rest[:gi]
+    for t in rest[:4]:
+        if t.startswith("-") or "/" in t or re.search(r"\.(?:py|csv|json|xlsx|txt)$", t):
+            out.append(t)
+        else:
+            break
+    if redirect:
+        out.extend(redirect[:2])
+    return " ".join(out)
 
 
 def _readme_analysis_command(report_dir: Path) -> str:
     readme = report_dir / "appendix" / "README.md"
     if not readme.is_file():
         return ""
-    for line in readme.read_text(encoding="utf-8", errors="replace").splitlines():
-        m = _ANALYSIS_CMD_RE.match(line.replace("`", ""))
-        if m:
-            return m.group(1)
+    text = readme.read_text(encoding="utf-8", errors="replace")
+    # 1. Prefer inline code spans (single or double backticks) anywhere in a line (including numbered lists)
+    for line in text.splitlines():
+        if line.strip().startswith("```"):
+            continue
+        for span in re.findall(r"`{1,2}([^`\n]+?)`{1,2}", line):
+            cmd = _extract_analysis_command(span)
+            if cmd:
+                return cmd
+    # 2. Fallback: bare/list-prefixed lines without backticks
+    for line in text.splitlines():
+        if line.strip().startswith("```"):
+            continue
+        cmd = _extract_analysis_command(line)
+        if cmd:
+            return cmd
     return ""
 
 
@@ -1004,10 +1115,13 @@ def _reproduce_worker(
 
 
 def reproduce(report_dir: Path, command: str | None = None, timeout: int = 300) -> list[str]:
-    """Re-run appendix/analysis.py in a temporary copy and compare output.txt, numbers.json and charts.json.
+    """Re-run appendix/analysis.py in a temporary copy and compare the reproduced and sealed artifacts.
 
-    The command comes from ``appendix/README.md`` (first ``python3 … analysis.py`` line) or ``command``. The three
-    artifacts are deleted from the copy first, so a file the command does not regenerate is reported, never passed.
+    The command comes from ``appendix/README.md`` (first ``python* … analysis.py`` line) or ``command``.
+    ``appendix/output.txt``, ``appendix/numbers.json`` and ``charts.json`` are deleted from the copy first, so a file
+    the command does not regenerate is reported, never passed. Sealed artifacts (``conjectures.json``,
+    ``preregistration.json``, ``formal_proofs.csv`` and ``formal/*/verify.json``) are compared unchanged so a re-seal
+    on every run is detected. The redirect target must stay inside the temporary copy.
     NOTE: this executes the report's own analysis.py; use it on reports you trust.
     """
     import hashlib
@@ -1028,9 +1142,12 @@ def reproduce(report_dir: Path, command: str | None = None, timeout: int = 300) 
         i = tokens.index(">")
         redirect = tokens[i + 1] if i + 1 < len(tokens) else None
         tokens = tokens[:i]
-    if not tokens or tokens[0] not in ("python", "python3"):
+        if redirect:
+            redir = Path(redirect)
+            if redir.is_absolute() or redirect.startswith(("/", "\\")) or ".." in redir.parts:
+                return ["reproduce: the redirect target must stay inside the report folder (relative path, no '..')."]
+    if not tokens or not tokens[0].startswith("python"):
         return ["reproduce: unsupported command; use 'python3 -B appendix/analysis.py [args] [> appendix/output.txt]'."]
-
     idx = 1
     while idx < len(tokens) and tokens[idx] == "-B":
         idx += 1
@@ -1066,7 +1183,7 @@ def reproduce(report_dir: Path, command: str | None = None, timeout: int = 300) 
             return [f"reproduce: script '{script_rel}' not found inside appendix/."]
 
         redirect_target: Path | None = None
-        if redirect is not None:
+        if redirect:
             candidate = work / redirect
             if candidate.is_symlink():
                 return [f"reproduce: redirect path '{redirect}' cannot be a symlink."]
@@ -1076,7 +1193,13 @@ def reproduce(report_dir: Path, command: str | None = None, timeout: int = 300) 
                 return [f"reproduce: redirect path '{redirect}' escapes the temporary workspace."]
             redirect_target = candidate
 
-        for rel in REPRODUCED_FILES:
+        reproduced = list(REPRODUCED_FILES)
+        charts_json = _find_charts_json(report_dir, report_dir / "appendix")
+        if charts_json is not None:
+            charts_rel = charts_json.relative_to(report_dir).as_posix()
+            if charts_rel not in reproduced:
+                reproduced.append(charts_rel)
+        for rel in reproduced:
             (work / rel).unlink(missing_ok=True)
 
         out_file = tmp_path / "repro_stdout.bin"
@@ -1105,7 +1228,11 @@ def reproduce(report_dir: Path, command: str | None = None, timeout: int = 300) 
         if redirect_target is not None:
             redirect_target.parent.mkdir(parents=True, exist_ok=True)
             redirect_target.write_bytes(stdout_bytes.replace(b"\r\n", b"\n"))
-        for rel in REPRODUCED_FILES:
+
+        def _norm_sha(p: Path) -> str:
+            return hashlib.sha256(p.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+        for rel in reproduced:
             original = report_dir / rel
             if not original.is_file():
                 continue
@@ -1113,11 +1240,92 @@ def reproduce(report_dir: Path, command: str | None = None, timeout: int = 300) 
             if not regenerated.is_file():
                 errors.append(f"reproduce: {rel} was not regenerated by the command (add its output flag or redirect).")
                 continue
-            a = hashlib.sha256(original.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
-            b = hashlib.sha256(regenerated.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+            a, b = _norm_sha(original), _norm_sha(regenerated)
             if a != b:
                 errors.append(f"reproduce: {rel} differs after re-running appendix/analysis.py (sha256 {a[:12]} != {b[:12]}).")
+
+        sealed = list(SEALED_ARTIFACTS)
+        formal_dir = report_dir / "appendix" / "formal"
+        if formal_dir.is_dir():
+            sealed.extend(sorted(fp.relative_to(report_dir).as_posix() for fp in formal_dir.rglob("verify.json")))
+        for rel in sealed:
+            original = report_dir / rel
+            if not original.is_file():
+                continue
+            regenerated = work / rel
+            if not regenerated.is_file() or _norm_sha(original) != _norm_sha(regenerated):
+                errors.append(f"reproduce: {rel} was re-written by the command; sealed artifacts must not change on re-run.")
     return errors
+
+
+def reproduce_lean(
+    report_dir: Path,
+    *,
+    timeout: int = 300,
+    env: dict[str, str] | None = None,
+) -> tuple[list[str], list[str]]:
+    """Explicit opt-in replay of kernel-verified Lean 4 proofs in a temporary copy (never run by default --reproduce).
+
+    NOTE: Executes local `lake build` (including Lean macros/lakefile); invoke only on trusted reports.
+    """
+    import shutil
+    import tempfile
+
+    from contracts import FORMAL_PROOFS_CSV
+    import formal_math
+
+    reg_path = report_dir / "appendix" / FORMAL_PROOFS_CSV
+    if not reg_path.is_file():
+        return [], []
+    try:
+        with reg_path.open(encoding="utf-8-sig", newline="") as fh:
+            rows = list(csv.DictReader(fh))
+    except (OSError, csv.Error, UnicodeDecodeError) as exc:
+        return [f"reproduce: formal_math could not read appendix/{FORMAL_PROOFS_CSV} ({exc})."], []
+
+    verified_by_slug: dict[str, str] = {}
+    for r in rows:
+        st = (r.get("status") or "").strip()
+        sl = (r.get("slug") or "").strip()
+        if st in ("kernel-verified", "comparator-verified") and sl and sl not in verified_by_slug:
+            verified_by_slug[sl] = st
+    if not verified_by_slug:
+        return [], []
+
+    eff_env = formal_math.formal_env() if env is None else dict(env)
+    lake_bin, _ = formal_math.find_lake(eff_env)
+    if lake_bin is None:
+        return [], [
+            "reproduce: formal_math kernel replay skipped because local `lake`/`lean` is not installed "
+            "(SHA-256 and Lean AST hazard checks still ran)."
+        ]
+
+    errors: list[str] = []
+    warnings: list[str] = []
+    with tempfile.TemporaryDirectory() as tmp:
+        work = Path(tmp) / "run"
+        shutil.copytree(report_dir, work, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+        for slug, expected_status in verified_by_slug.items():
+            # Never trust pre-built .lake/build/*.olean shipped with the report; force fresh kernel compilation.
+            prebuilt = work / "appendix" / "formal" / slug / ".lake" / "build"
+            if prebuilt.exists():
+                shutil.rmtree(prebuilt)
+            try:
+                res = formal_math.check_project(work / "appendix", slug, timeout=timeout, env=eff_env)
+            except Exception as exc:  # noqa: BLE001
+                errors.append(f"reproduce: formal_math check failed for '{slug}': {exc}")
+                continue
+            got_status = res.get("status")
+            if got_status not in ("kernel-verified", "comparator-verified"):
+                errors.append(
+                    f"reproduce: formal_math check failed for '{slug}' (status={got_status!r})."
+                )
+            elif expected_status == "comparator-verified" and got_status != "comparator-verified":
+                warnings.append(
+                    f"reproduce: formal_math proof '{slug}' was registered as comparator-verified but replayed as "
+                    f"{got_status!r} because `comparator` is not installed locally."
+                )
+    return errors, warnings
 
 
 def _verdict_line(report_md: Path) -> str:
@@ -1232,9 +1440,16 @@ def main(argv: list[str] | None = None) -> int:
         "--reproduce",
         action="store_true",
         help="Re-run appendix/analysis.py in a temporary copy (command from appendix/README.md) and compare output.txt, "
-        "numbers.json and charts.json. Executes the report's own code: use on reports you trust.",
+        "numbers.json, charts.json, and the sealed artifacts (conjectures.json, preregistration.json, formal_proofs.csv, "
+        "verify.json). Executes the report's own code: use on reports you trust.",
     )
     parser.add_argument("--reproduce-cmd", default=None, help="Override the command used by --reproduce.")
+    parser.add_argument(
+        "--reproduce-lean",
+        action="store_true",
+        help="Explicitly replay kernel-verified Lean 4 projects via local `lake`/`lean` in a temporary copy "
+        "(runs Lean build/macros; never enabled by --reproduce alone).",
+    )
     parser.add_argument(
         "--diff",
         type=Path,
@@ -1268,6 +1483,9 @@ def main(argv: list[str] | None = None) -> int:
             anchor = _analysis_anchor(args.report_path.parent)
             if anchor:
                 print(f"ANALYSIS-SHA256: {anchor}")
+            f_anchor = _formal_anchor(args.report_path.parent)
+            if f_anchor:
+                print(f"FORMAL-SHA256: {f_anchor}")
         return 0
 
     if args.diff is not None:
@@ -1285,6 +1503,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     if args.reproduce or args.reproduce_cmd:
         errors.extend(reproduce(args.report_path.parent, args.reproduce_cmd))
+    if args.reproduce_lean:
+        rl_err, rl_warn = reproduce_lean(args.report_path.parent)
+        errors.extend(rl_err)
+        warnings.extend(rl_warn)
     if args.html is not None:
         html_errors, html_warnings = validate_html_full(args.html)
         errors.extend(html_errors)
@@ -1314,9 +1536,9 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  [WARN {idx}] {warn}", file=sys.stderr)
 
     if errors or (args.strict and warnings):
-        total = len(errors) + (len(warnings) if args.strict else 0)
-        print(f"Heurisma report validation FAILED ({total} violation(s)):", file=sys.stderr)
-        for idx, err in enumerate(errors, start=1):
+        violations = list(errors) + ([f"[strict warning] {w}" for w in warnings] if args.strict else [])
+        print(f"Heurisma report validation FAILED ({len(violations)} violation(s)):", file=sys.stderr)
+        for idx, err in enumerate(violations, start=1):
             print(f"  {idx}. {err}", file=sys.stderr)
         return 1
 

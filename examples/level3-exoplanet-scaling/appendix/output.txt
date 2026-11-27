@@ -1,0 +1,45 @@
+=== HEURISMA LEVEL 3 EXOPLANET KEPLERIAN & MASS-RADIUS ANALYSIS ===
+Dataset: exoplanets_si.csv | N = 1244 planets | Host stars = 1029
+Stellar mass range: 0.118 to 2.320 M_sun
+Orbital period range: 0.2242 to 3650.00 d
+
+--- 1. Sealed Symbolic Discovery & Invariant (conjecture.py) ---
+Top law (C_LAW_1): P_s = 6.2502 * a_m^(3/2) * GM^(-1/2)
+  c0 = 6.2502 vs 2*pi = 6.2832 (deviation = 0.52%)
+  Train BIC = 18800.86 vs Null BIC = 23210.51
+  Holdout (n=311): linear R^2 = 0.993239, log10 R^2 = 0.983415, rel RMSE = 7.72%
+Top invariant (C_INV_1): P_s * a_m^(-3/2) * GM^(1/2) = 6.27644
+  c_inv = 6.27644 vs 2*pi = 6.28319 (deviation = 0.11%)
+  Holdout R^2 = 0.994536, Holdout RMSE = 0.07392
+
+--- 2. Keplerian Residuals, Independent Transit a/R_* Check & Outliers ---
+Pi_1 = P_s * a_m^(-3/2) * GM^(1/2): mean = 6.2544, sd = 0.3529, median = 6.2819, IQR = 0.0181, MAD = 0.0088
+K = P_s^2 * GM / a_m^3 (ideal 4*pi^2 = 39.4784): median = 39.4627, IQR = 0.2271
+Relative period residual (P_obs - P_kep)/P_kep: median = -0.0199%, IQR = 0.2878%, MAD = 0.1399%
+Independent transit a_tr = (a/R_*)*R_* check (n=863): log10 R^2 = 0.987140, Pi_1 med = 6.2783, rel_res med = -0.0781% (IQR=0.9074%)
+Outlier audit: |res - med| > 3*sigma_MAD: n = 339 (27.3%); |res| > 5%: n = 107 (8.6%)
+  Outliers >5% with error bars (n=102): within 3-sigma propagated uncertainty = 77/102 (75.5%)
+  Reduced-mass (M_* + M_p) correction improved 70/107 >5% outliers
+
+--- 3. Stratification by Host-Star Mass, Clustering & Eccentricity ---
+  M-dwarf (< 0.6 M_sun): n=136, Pi_1 med=6.2829 (IQR=0.0366), rel_res med=-0.0045%
+  K/G-dwarf (0.6-1.1 M_sun): n=709, Pi_1 med=6.2822 (IQR=0.0156), rel_res med=-0.0153%
+  F/A-star (> 1.1 M_sun): n=399, Pi_1 med=6.2810 (IQR=0.0183), rel_res med=-0.0354%
+Kruskal-Wallis across stellar-mass strata: H = 2.2882, perm p = 0.3207
+Spearman(M_star, Pi_1): all n=1244 rho = -0.0366 (p=0.1959); 1-per-star n=1029 rho = -0.0321 (p=0.3033)
+Eccentricity available: n=1093 (missing n=151) | Spearman(e, |rel_res|): rho = -0.0555, perm p = 0.0655
+  Circular (e = 0): n=376, |rel_res| med=0.1591% (IQR=0.8292%)
+  Low-ecc (0 < e <= 0.1): n=396, |rel_res| med=0.1047% (IQR=0.5479%)
+  Eccentric (e > 0.1): n=321, |rel_res| med=0.1304% (IQR=0.5064%)
+  Missing e: n=151, |rel_res| med=0.2200% (IQR=1.6797%)
+
+--- 4. Counter-Evidence: Planetary Mass-Radius Regime Breakdown ---
+Global single power law (n=1244): slope = 0.3735 (95% CI [0.3593, 0.3882]), R^2 = 0.7369, RMSE = 0.2022 dex, BIC = -3962.53
+  Rocky (< 2 M_earth): n=31 (Mass-only n=30, slope=0.2857), slope = 0.2817 (95% CI [0.1775, 0.6926], cluster CI [0.1852, 0.6754]), R^2 = 0.2290, rho = 0.7128 (p=0.0005)
+  Sub-Neptune (2-100 M_earth): n=588 (Mass-only n=585, slope=0.5386), slope = 0.5383 (95% CI [0.4975, 0.5713], cluster CI [0.4975, 0.5756]), R^2 = 0.6508, rho = 0.7940 (p=0.0005)
+  Jovian (> 100 M_earth): n=625 (Mass-only n=625, slope=-0.0226), slope = -0.0226 (95% CI [-0.0579, 0.0102], cluster CI [-0.0573, 0.0089]), R^2 = 0.0043, rho = -0.0012 (p=0.9725)
+Rocky vs Sub-Neptune slope equality perm p = 0.0030
+Disconnected 3-regime model: RMSE = 0.1580 dex, BIC = -4548.65, Delta_BIC = 586.12
+Continuous 3-regime model (knots 2, 100 M_earth): slopes = (0.2319, 0.6053, 0.0355), R^2 = 0.8333, RMSE = 0.1610 dex, BIC = -4515.75, Delta_BIC = 553.22
+Continuous knot sensitivity (120 M_earth): Jovian slope = 0.0078, BIC = -4544.23
+5-fold CV out-of-sample RMSE: Global = 0.2028 dex vs Continuous 3-regime = 0.1617 dex

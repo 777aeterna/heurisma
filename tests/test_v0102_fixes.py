@@ -101,7 +101,7 @@ class TestReviewerQuotesSurviveTheFixes(unittest.TestCase):
         self.assertTrue(self.run_case(closed=False))
 
     def test_a_quote_of_a_stable_file_must_still_match(self) -> None:
-        self.assertTrue(self.run_case(closed=True, quote_file="appendix/output.txt"))
+        self.assertTrue(self.run_case(closed=True, quote_file="appendix/run.json"))
 
 
 class TestNumbersAreComparedByValue(unittest.TestCase):

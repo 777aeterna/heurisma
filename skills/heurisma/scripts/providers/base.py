@@ -50,7 +50,7 @@ class NotFound(ProviderUnavailable):
     """The provider answered 404: the work is not in its catalogue."""
 
 
-_DOI_RE = re.compile(r"10\.\d{4,9}/\S+")
+_DOI_RE = re.compile(r"10\.\d{4,9}/[^\s?#]+")
 _DOI_PREFIX_OK = re.compile(r"^(?:https?://(?:dx\.)?doi\.org/|doi:?\s*|[(\[<])?$", re.IGNORECASE)
 
 
@@ -87,8 +87,24 @@ def record_key(text: Any) -> str | None:
 
 
 _ARXIV_URL = re.compile(r"arxiv\.org/(?:abs|pdf)/(.+?)(?:v\d+)?(?:\.pdf)?$", re.IGNORECASE)
+_ARXIV_DOI = re.compile(r"^(?:10\.48550/arxiv\.|arxiv:)(.+?)(?:v\d+)?$", re.IGNORECASE)
 _OPENALEX_URL = re.compile(r"openalex\.org/(W\d+)", re.IGNORECASE)
 _EPMC_URL = re.compile(r"europepmc\.org/article/([A-Za-z]+)/([^\s?#/]+)", re.IGNORECASE)
+
+
+def arxiv_id_from_doi(text: Any) -> str | None:
+    """Return bare arXiv identifier (e.g. '2312.09766') when ``text`` is an arXiv DataCite DOI (10.48550/arXiv.<id>),
+    an ``arxiv:<id>`` key, or an ``arxiv.org/abs|pdf/<id>`` URL; else None."""
+    if not isinstance(text, str) or not text.strip():
+        return None
+    key = record_key(text) or key_from_url(text) or text.strip()
+    m = _ARXIV_DOI.match(key)
+    if m:
+        return m.group(1).lower()
+    m_url = _ARXIV_URL.search(re.split(r"[?#]", text.strip(), maxsplit=1)[0])
+    if m_url:
+        return m_url.group(1).lower()
+    return None
 
 
 def url_for_key(key: str) -> str:
@@ -134,6 +150,7 @@ HEURISMA_ENV_KEYS = (
     "HEURISMA_UNPAYWALL_URL",
 )
 _QUERY_SECRET = fetch_lib.QUERY_SECRET
+_URL_USERINFO = re.compile(r"(https?://)[^/@\s]+@")
 
 
 def heurisma_env() -> dict[str, str]:
@@ -147,11 +164,12 @@ def heurisma_env() -> dict[str, str]:
 
 
 def redact(text: str, env: Mapping[str, str] | None = None) -> str:
-    """Remove credentials from a string that is about to be logged: query parameters and the env values themselves."""
-    active_env = heurisma_env() if env is None else env
+    """Remove credentials from a string that is about to be logged: query parameters, URL userinfo and the env values themselves."""
+    env = heurisma_env() if env is None else env
     out = _QUERY_SECRET.sub(lambda m: f"{m.group(1)}=REDACTED", text)
+    out = _URL_USERINFO.sub(r"\1", out)
     for name in _SECRET_ENV:
-        value = (active_env.get(name) or "").strip()
+        value = (env.get(name) or "").strip()
         if len(value) >= 4:
             out = out.replace(value, "REDACTED")
     return out
@@ -323,7 +341,7 @@ class Context:
     def get(self, provider: str, url: str, *, ext: str = "json", headers: dict[str, str] | None = None) -> bytes:
         """GET ``url`` through ``fetch_lib.fetch`` and return the body; the credentialed URL is never logged."""
         raw_dir = self.appendix / "data" / "papers" / "raw"
-        stem = f"{provider}-{sha256_text(redact(url, self.env))[:12]}"
+        stem = f"{provider}-{sha256_text(redact(url, self.env))}"
         n, placeholder = self._reserve(raw_dir, stem, ext)
         try:
             path = self.download(provider, url, f"papers/raw/{stem}-{n:03d}.{ext}", headers=headers)

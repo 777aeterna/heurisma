@@ -167,7 +167,12 @@ def check_preregistration(
             f"appendix/preregistration.json sealed_utc ({rec['sealed_utc']}) precedes run_started_utc "
             f"({run_start.strftime('%Y-%m-%dT%H:%M:%SZ')})."
         )
+    sec3 = _extract_section_slice(clean_text, section_positions, "Methodology & Evidence Standards")
+    _, dl_names, dl_shas = _download_proof(report_dir, include_attempts=False)
+    has_downloads = bool(dl_names or dl_shas)
     for rel in _files_added_after_prereg(report_dir, rec):
+        if has_downloads and (rel in sec3 or f"appendix/{rel}" in sec3 or Path(rel).name in sec3):
+            continue
         warnings.append(
             f"appendix/{rel} was added after preregistration sealing (appendix/preregistration.json) without a "
             f"download_log.csv or intake.md entry; document its provenance in Section 3, or run `local_data.py intake` "

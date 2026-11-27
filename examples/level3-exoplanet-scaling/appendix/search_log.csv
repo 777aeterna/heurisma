@@ -1,0 +1,7 @@
+query_id,provider,query,filters,n_hits,retrieved_utc,raw_file
+Q1,openalex,Chen Kipping 2017 probabilistic mass radius exoplanet,{},5,2026-11-27T02:13:12Z,appendix/data/papers/raw/openalex-d1dbd2c4bb90c284b8ec857ece27483fa308a3ace734e16edff1c7a9743fe254-001.json
+Q2,openalex,Probabilistic Forecasting of the Masses and Radii of Other Worlds,{},3,2026-11-27T02:13:46Z,appendix/data/papers/raw/openalex-32eb4a977a4272bf877e9ef2285bb44bfc2b449df333539ef4a182c0f6d671c2-001.json
+Q3,openalex,California-Kepler Survey radius gap Fulton,{},3,2026-11-27T02:13:47Z,appendix/data/papers/raw/openalex-103cb8b885f07a9fd791605a911e82805bb75069538c11cc0de7f1803e9f4165-001.json
+Q4,openalex,Most 1.6 Earth-radius planets are not rocky Rogers,{},3,2026-11-27T02:13:48Z,appendix/data/papers/raw/openalex-c7abc41541152e18f08efad8759770a75fa2e31b7329a4e73d78bbde53c705e8-001.json
+Q5,openalex,Mass-Radius Relation for 65 Exoplanets Smaller than 4 Earth Radii Weiss Marcy,{},3,2026-11-27T02:13:49Z,appendix/data/papers/raw/openalex-a5d88f03d0c35d1eb90b884e9971349ee095e50bc760b143b63994c0ea326b2b-001.json
+Q6,openalex,Seager Mallen-Ornelas 2003 unique solution planet star parameters transit,{},3,2026-11-27T02:14:14Z,appendix/data/papers/raw/openalex-9ba58a19af06202f0ec10adc2d5c739080cdf8c1f837700f05199114917f8ff7-001.json

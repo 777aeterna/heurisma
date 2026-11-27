@@ -1,0 +1,9 @@
+target_series,source_tried,query_or_endpoint,outcome,failure_reason,fallback_used,attempted_utc
+openalex request,openalex,GET https://api.openalex.org/works?search=Chen+Kipping+2017+probabilistic+mass+radius+exoplanet&per-page=5&select=id%2Cdoi%2Ctitle%2Cpublication_year%2Ctype%2Cis_retracted%2Ccited_by_count%2Clanguage%2Chas_fulltext%2Cabstract_inverted_index%2Cauthorships%2Cprimary_location%2Copen_access,rejected,the URL host could not be resolved to a stable public address,,2026-11-27T02:12:48Z
+C2 PROBABILISTIC FORECASTING OF THE MASSES AND RADII OF OTHER W,openalex,lookup doi:10.3847/1538-4357/834/1/17,used,,full text; query Q2,2026-11-27T02:14:16Z
+C3 The California-Kepler Survey. III. A Gap in the Radius Distr,openalex,lookup doi:10.3847/1538-3881/aa80eb,used,,full text; query Q3,2026-11-27T02:14:18Z
+C4 MOST 1.6 EARTH-RADIUS PLANETS ARE NOT ROCKY,openalex,lookup doi:10.1088/0004-637x/801/1/41,used,,full text; query Q4,2026-11-27T02:14:19Z
+C5 THE MASS-RADIUS RELATION FOR 65 EXOPLANETS SMALLER THAN 4 EA,openalex,lookup doi:10.1088/2041-8205/783/1/l6,used,,full text; query Q5,2026-11-27T02:14:20Z
+publisher request,publisher,GET https://www.aanda.org/articles/aa/pdf/2020/02/aa36482-19.pdf,HTTP 403,HTTP Error 403: Forbidden,,2026-11-27T02:14:21Z
+C6 Revisited mass-radius relations for exoplanets below 120 M ⊕,openalex,lookup doi:10.1051/0004-6361/201936482,used,,abstract only; query Q1,2026-11-27T02:15:03Z
+C7 Breaking up with the continuous exoplanet mass-radius relati,arxiv+openalex,lookup doi:10.48550/arxiv.2310.16733,used,,full text; query Q1,2026-11-27T02:15:04Z

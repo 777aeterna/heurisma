@@ -73,6 +73,23 @@ class TestAgentsSync(unittest.TestCase):
             text = (PORTABLE / portable).read_text(encoding="utf-8")
             self.assertIn(f"appendix/gates/{trace}", text, msg=portable)
 
+    def test_reviewer_and_source_verifier_cover_formal_proofs_and_blind_back_translation(self) -> None:
+        rev = persona("reviewer.md")
+        self.assertIn("Challenge.lean", rev)
+        self.assertIn("FORMAL-SHA256", rev)
+        self.assertRegex(rev, r"(?i)back-translat")
+        self.assertIn("conjectures.json", rev)
+
+        sv = persona("source-verifier.md")
+        self.assertIn("formal-proof", sv)
+        self.assertIn("formal_proofs.csv", sv)
+        self.assertIn("conjectures.json", sv)
+        self.assertIn("P4-LEAN", sv)
+        self.assertIn("P4-CONJECTURE", sv)
+
+        qa = persona("qa.md")
+        self.assertIn("--reproduce-lean", qa)
+
 
 class TestGateHeaderInPrompts(unittest.TestCase):
     def test_each_prompt_asks_for_the_binding_header(self) -> None:

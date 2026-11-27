@@ -670,7 +670,7 @@ def _render_appendices(appendix_dir: Path | None, i18n: dict[str, str]) -> str:
     linked: list[str] = []
 
     for path in sorted(appendix_dir.rglob("*")):
-        if path.is_dir() or "__pycache__" in path.parts or path.suffix == ".pyc":
+        if path.is_dir() or "__pycache__" in path.parts or ".lake" in path.parts or path.suffix == ".pyc":
             continue
         rel = path.relative_to(appendix_dir)
         rel_str = html.escape(rel.as_posix())
@@ -732,7 +732,7 @@ def compute_source_hash(
     """Return a 12-hex fingerprint of every input that shapes the rendered HTML (W3 stale-HTML detection).
 
     Covers the report Markdown, charts.json, numbers.json (when outside appendix/) and all appendix files,
-    ignoring ``__pycache__``/``.pyc``. Content-only: paths never enter the hash, so it is stable across machines.
+    ignoring ``__pycache__``/``.pyc`` and Lean ``.lake`` build caches. Content-only: paths never enter the hash, so it is stable across machines.
     """
 
     def _file_sha(path: Path) -> str:
@@ -755,7 +755,7 @@ def compute_source_hash(
         appendix_entries: list[tuple[tuple[str, ...], str, str]] = []
         for fp in appendix_dir.rglob("*"):
             rel = fp.relative_to(appendix_dir)
-            if not fp.is_file() or "__pycache__" in fp.parts or fp.suffix == ".pyc" or rel.as_posix() == WITHHELD_MANIFEST:
+            if not fp.is_file() or "__pycache__" in fp.parts or ".lake" in fp.parts or fp.suffix == ".pyc" or rel.as_posix() == WITHHELD_MANIFEST:
                 continue
             appendix_entries.append((rel.parts, f"appendix/{rel.as_posix()}", _file_sha(fp)))
         present = {label for _, label, _ in appendix_entries}

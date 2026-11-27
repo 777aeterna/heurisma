@@ -105,6 +105,8 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(200, (FIXTURES / "europepmc_search.json").read_bytes())
         elif path == "/arxiv/api/query":
             self._send(200, (FIXTURES / "arxiv_feed.xml").read_bytes(), "application/atom+xml")
+        elif path.startswith("/arxiv/pdf/"):
+            self._send(200, (FIXTURES / "sample.pdf").read_bytes(), "application/pdf")
         elif path.startswith("/unpaywall/"):
             doi = path[len("/unpaywall/"):].lower()
             if doi == "10.1038/s41586-024-07500-2":

@@ -1,0 +1,203 @@
+{
+ "target": "P_s",
+ "predictors": [
+  "a_m",
+  "GM",
+  "M_p"
+ ],
+ "units": {
+  "P_s": "s",
+  "a_m": "m",
+  "GM": "m^3/s^2",
+  "M_p": "kg"
+ },
+ "source_ids": [
+  "C1",
+  "C8"
+ ],
+ "likelihood_scale": "additive_gaussian_y",
+ "n_candidates_evaluated": 29,
+ "sort_by": "a_m",
+ "holdout_mode": "tail",
+ "train_count": 933,
+ "holdout_count": 311,
+ "null_train_bic": 23210.51319792359,
+ "null_val_rmse": 301093.04658634274,
+ "null_holdout_rmse": 26270935.253798187,
+ "beats_null": true,
+ "warnings": [],
+ "candidates": [
+  {
+   "family": "buckingham_pi_monomial",
+   "expr": "P_s = 6.2502 * a_m^(3/2) * GM^(-1/2)",
+   "exponents": {
+    "a_m": "3/2",
+    "GM": "-1/2",
+    "M_p": "0"
+   },
+   "parameters": {
+    "c0": 6.250200925484882
+   },
+   "complexity_k": 2,
+   "dimensionally_consistent": true,
+   "train_bic": 18800.8576822396,
+   "val_rmse": 23652.109527881894,
+   "holdout_rmse": 2070861.967846618,
+   "holdout_r2": 0.9932385124570055,
+   "id": "C_LAW_1"
+  },
+  {
+   "family": "power_law",
+   "expr": "P_s = 6.43948 * a_m^1.48999 * GM^-0.494391 * M_p^-0.000952301",
+   "exponents": {
+    "a_m": "1.48999",
+    "GM": "-0.494391",
+    "M_p": "-0.000952301"
+   },
+   "parameters": {
+    "c0": 6.439477628748294
+   },
+   "complexity_k": 4,
+   "dimensionally_consistent": false,
+   "train_bic": 18811.43208488727,
+   "val_rmse": 23577.951285787727,
+   "holdout_rmse": 2092947.13936191,
+   "holdout_r2": 0.9930935246319936,
+   "id": "C_LAW_2"
+  },
+  {
+   "family": "linear_2var",
+   "expr": "P_s = 45315.4 + 7.89753e-05 * a_m + -1.899353e-15 * GM",
+   "exponents": {
+    "a_m": "1",
+    "GM": "1"
+   },
+   "parameters": {
+    "c0": 45315.38790499652,
+    "c1": 7.897532815061379e-05,
+    "c2": -1.8993526782292805e-15
+   },
+   "complexity_k": 3,
+   "dimensionally_consistent": false,
+   "train_bic": 20687.708515089704,
+   "val_rmse": 83811.87333431738,
+   "holdout_rmse": 20645078.312463127,
+   "holdout_r2": 0.3279942067150451,
+   "id": "C_LAW_3"
+  },
+  {
+   "family": "power_law_rational",
+   "expr": "P_s = 2.621415e-08 * a_m^(4/3)",
+   "exponents": {
+    "a_m": "4/3"
+   },
+   "parameters": {
+    "c0": 2.6214150546778568e-08
+   },
+   "complexity_k": 2,
+   "dimensionally_consistent": false,
+   "train_bic": 21449.157227283446,
+   "val_rmse": 104863.97044743704,
+   "holdout_rmse": 11703120.407163002,
+   "holdout_r2": 0.7840549296023025,
+   "id": "C_LAW_4"
+  },
+  {
+   "family": "power_law",
+   "expr": "P_s = 1.924927e-08 * a_m^1.34675",
+   "exponents": {
+    "a_m": "1.34675"
+   },
+   "parameters": {
+    "c0": 1.9249270953186616e-08
+   },
+   "complexity_k": 2,
+   "dimensionally_consistent": false,
+   "train_bic": 21441.252716789928,
+   "val_rmse": 109052.6093201756,
+   "holdout_rmse": 10938607.345779693,
+   "holdout_r2": 0.8113468704595688,
+   "id": "C_LAW_5"
+  },
+  {
+   "family": "linear_2var",
+   "expr": "P_s = -145243 + 7.27781e-05 * a_m + -3.252349e-24 * M_p",
+   "exponents": {
+    "a_m": "1",
+    "M_p": "1"
+   },
+   "parameters": {
+    "c0": -145243.35512239754,
+    "c1": 7.277805204775795e-05,
+    "c2": -3.2523489109446695e-24
+   },
+   "complexity_k": 3,
+   "dimensionally_consistent": false,
+   "train_bic": 21523.17507094341,
+   "val_rmse": 131600.86225209714,
+   "holdout_rmse": 21078327.45100669,
+   "holdout_r2": 0.2994933833149007,
+   "id": "C_LAW_6"
+  },
+  {
+   "family": "linear",
+   "expr": "P_s = -151174 + 7.26034e-05 * a_m",
+   "exponents": {
+    "a_m": "1"
+   },
+   "parameters": {
+    "c0": -151173.8872380291,
+    "c1": 7.260341450231649e-05
+   },
+   "complexity_k": 2,
+   "dimensionally_consistent": false,
+   "train_bic": 21541.071255970743,
+   "val_rmse": 132876.15676111166,
+   "holdout_rmse": 21084163.5011007,
+   "holdout_r2": 0.2991054248610282,
+   "id": "C_LAW_7"
+  },
+  {
+   "family": "exponential",
+   "expr": "P_s = 65058.9 * exp(2.009730e-10 * a_m)",
+   "exponents": {},
+   "parameters": {
+    "c0": 65058.93517965217,
+    "c1": 2.009730456375713e-10
+   },
+   "complexity_k": 2,
+   "dimensionally_consistent": null,
+   "train_bic": 21757.78550355564,
+   "val_rmse": 249755.1623034442,
+   "holdout_rmse": 2.108984595668383e+62,
+   "holdout_r2": -10.0,
+   "id": "C_LAW_8"
+  }
+ ],
+ "pareto_frontier": [
+  {
+   "id": "C_LAW_1",
+   "complexity_k": 2,
+   "val_rmse": 23652.109527881894,
+   "holdout_rmse": 2070861.967846618,
+   "expr": "P_s = 6.2502 * a_m^(3/2) * GM^(-1/2)"
+  },
+  {
+   "id": "C_LAW_2",
+   "complexity_k": 4,
+   "val_rmse": 23577.951285787727,
+   "holdout_rmse": 2092947.13936191,
+   "expr": "P_s = 6.43948 * a_m^1.48999 * GM^-0.494391 * M_p^-0.000952301"
+  }
+ ],
+ "falsifier_point": {
+  "a_m": 149597870700.0,
+  "GM": 1.3271244e+20,
+  "M_p": 5.972168e+24
+ },
+ "falsifier_prediction": "At (a_m=1.496e+11, GM=1.327e+20, M_p=5.972e+24) (beyond observed a_m max 6.732e+11), candidate C_LAW_1 ('P_s = 6.2502 * a_m^(3/2) * GM^(-1/2)') must predict P_s ≈ 3.13925e+07 with max_abs_error <= 6.213e+06.",
+ "data_file": "study/appendix/data/exoplanets_si.csv",
+ "data_sha256": "973221f2c5cca828418c01904a2a6c33d3b51c86e4b73e4ed216222371cdd6ac",
+ "sealed_utc": "2026-11-27T02:16:22Z",
+ "sha256": "0e746607e5e791e7a669663b84587014b1ce2041c2bfb3e265a26d2078f5f9d4"
+}

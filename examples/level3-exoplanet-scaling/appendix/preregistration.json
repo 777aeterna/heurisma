@@ -1,0 +1,12 @@
+{
+ "sealed_utc": "2026-11-27T02:12:40Z",
+ "hypotheses": {
+  "H0": "H₀: Across confirmed transiting exoplanets (0.1 M_sun <= M_* <= 2.5 M_sun), either observational errors and multi-body perturbations break the out-of-sample two-body Keplerian scaling P proportional to a^(3/2) M_*^(-1/2) (holdout R^2 <= 0.90 or systematic residual trend with M_* or eccentricity), or a single unbroken power law suffices for planetary radius R_p(M_p) across rocky, sub-Neptune, and gas-giant regimes without significant slope turnover.",
+  "H1": "H₁: Real observational data empirically recover the exact two-body Keplerian scaling P = 2 pi a^(3/2) (G M_*)^(-1/2) out-of-sample (holdout R^2 > 0.95) and dimensionless ratio invariance P^2 G M_* / a^3 approx 4 pi^2 across stellar mass strata, whereas the planetary mass-radius relation R_p(M_p) exhibits a statistically significant regime breakdown (slope flattening or turnover from positive rocky/sub-Neptune scaling to near-zero/negative degeneracy in the Jovian regime above ~100 M_earth), falsifying a single unbroken power law."
+ },
+ "plan": "1. Fetch confirmed transiting exoplanet parameters from NASA Exoplanet Archive TAP API via fetch_lib.py (allow_private=False). 2. Acquire peer-reviewed Keplerian and mass-radius literature (including at least one 10.48550/arXiv.* DOI) via papers.py. 3. Run conjecture.py units, discover (Keplerian scaling with tail holdout), and discover --target __invariant__. 4. Execute analysis.py for out-of-sample Keplerian residuals, stellar-mass/eccentricity stratification, and broken-power-law vs single-power-law mass-radius counter-evidence, emitting output.txt, numbers.json, and 3+ SVG charts. 5. Formalize a non-trivial Keplerian/convexity theorem in Lean 4 via formal_math.py. 6. Run Level 3 gates, render HTML, and pass validate_report.py --strict --reproduce and papers.py replay.",
+ "known_artifacts": {
+  "run.json": "674421e349b1"
+ },
+ "sha256": "b0b94a650872d57234e2d21acde3fa307b0ac0b75892f8bfe820ba09042df007"
+}

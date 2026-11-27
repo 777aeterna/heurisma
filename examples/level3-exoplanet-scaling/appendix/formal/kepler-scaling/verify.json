@@ -1,0 +1,27 @@
+{
+ "slug": "kepler-scaling",
+ "theorem_name": "kepler_two_body_scaling",
+ "challenge_sha256": "513f92f36b3cc9e944c8d90f9d02c1412e6f8ca8eda0058b6b552dd2f26298a0",
+ "solution_sha256": "76f917b38188f0c28f9ee6a92ad323796b7addcafdc6158d633f4d401bfae5a0",
+ "toolchain": "leanprover/lean4:v4.16.0",
+ "lean_version": "Lean (version 4.16.0, x86_64-unknown-linux-gnu, commit 128a1e6b0a82, Release)",
+ "verification_mode": "kernel-defeq",
+ "status": "kernel-verified",
+ "sorries": 0,
+ "challenge_sorries": 1,
+ "axioms": [
+  "propext"
+ ],
+ "statement_paired": true,
+ "signature_warnings": [],
+ "hazards": {
+  "solution_hazards": [],
+  "challenge_hazards": [],
+  "vacuous_or_trivial": [],
+  "trivial_proof_warnings": [],
+  "unused_hypothesis_warnings": [
+   "unused_hypothesis:kepler_two_body_scaling:hGM"
+  ]
+ },
+ "verified_utc": "2026-11-27T02:39:53Z"
+}

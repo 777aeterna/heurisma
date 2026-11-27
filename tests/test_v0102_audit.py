@@ -224,11 +224,11 @@ class TestSanitizationAndEdgeCases(Base):
             e, w = validate_report.validate_report_full((ws / "report.md").read_text(encoding="utf-8"), level=3, report_dir=ws)
             self.assertEqual([m for m in e + w if "reviewer.md quotes" in m], [])
 
-            # A mismatched appendix quote written with Windows backslashes still fails
+            # A mismatched immutable appendix quote written with Windows backslashes still fails
             gate.write_text(
                 gate.read_text(encoding="utf-8").replace(
                     'QUOTE: appendix/output.txt:1: "Dataset integrity"',
-                    'QUOTE: .\\appendix\\output.txt:1: "wrong quote"',
+                    'QUOTE: .\\appendix\\run.json:1: "wrong quote"',
                 ),
                 encoding="utf-8",
             )

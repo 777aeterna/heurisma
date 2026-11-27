@@ -1,10 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 390" width="920" height="390" role="img" aria-label="Heurisma CLI animated demo showing preprint Tier 1 refusal, HARKing and untraced number detection, and strict reproducible validation passing">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 400" width="920" height="400" role="img" aria-label="Heurisma v0.11.1 CLI animated demo showing preprint Tier 1 refusal, Buckingham Pi &amp; epistemic linter diagnostics, and strict reproducible Level 3 exoplanet validation passing">
   <defs>
     <filter id="termShadow" x="-3%" y="-4%" width="106%" height="110%">
       <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#020617" flood-opacity="0.28"/>
     </filter>
     <style>
-      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13.5px; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13.2px; }
       .dim { fill: #94a3b8; }
       .cmd { fill: #f8fafc; font-weight: 600; }
       .prompt { fill: #38bdf8; font-weight: 700; }
@@ -13,7 +13,6 @@
       .ok { fill: #4ade80; font-weight: 600; }
       .code { fill: #c084fc; font-weight: 700; }
 
-      /* 12s smooth loop revealing each step */
       .s1 { opacity: 0; animation: show1 12s infinite; }
       .s2 { opacity: 0; animation: show2 12s infinite; }
       .s3 { opacity: 0; animation: show3 12s infinite; }
@@ -32,42 +31,40 @@
     </style>
   </defs>
 
-  <!-- Terminal Window -->
-  <rect x="14" y="10" width="892" height="366" rx="12" fill="#0f172a" stroke="#334155" stroke-width="1.2" filter="url(#termShadow)"/>
-  <!-- Title Bar -->
+  <rect x="14" y="10" width="892" height="376" rx="12" fill="#0f172a" stroke="#334155" stroke-width="1.2" filter="url(#termShadow)"/>
   <path d="M26 10 h868 a12 12 0 0 1 12 12 v24 h-892 v-24 a12 12 0 0 1 12 -12 z" fill="#1e293b"/>
   <circle cx="38" cy="28" r="6" fill="#ef4444"/>
   <circle cx="58" cy="28" r="6" fill="#f59e0b"/>
   <circle cx="78" cy="28" r="6" fill="#22c55e"/>
-  <text x="460" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#cbd5e1">heurisma — paper connector &amp; epistemic linter (Python ≥ 3.9 stdlib only)</text>
+  <text x="460" y="33" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#cbd5e1">heurisma v0.11.1 — paper connector, symbolic discovery, Lean 4 &amp; epistemic linter (Python ≥ 3.9 stdlib)</text>
 
   <!-- Step 1: Preprint Tier 1 refused -->
   <g class="s1">
-    <text x="32" y="76" class="mono"><tspan class="prompt">$</tspan> <tspan class="cmd">python3 -B scripts/papers.py cite arxiv:2401.08922 --tier "Tier 1"</tspan></text>
+    <text x="32" y="76" class="mono"><tspan class="prompt">$</tspan> <tspan class="cmd">python3 -B scripts/papers.py cite 10.48550/arXiv.2310.16733 --tier "Tier 1"</tspan></text>
   </g>
   <g class="s2">
     <text x="32" y="100" class="mono err">✗ Error: work_type 'preprint' cannot be cited as Tier 1 (max Tier 2).</text>
     <text x="32" y="120" class="mono dim">  # Objective ceiling enforced before the row can enter appendix/sources.csv</text>
   </g>
 
-  <!-- Step 2: Validator catches HARKing & untraced number -->
+  <!-- Step 2: Validator catches HARKing, unproved conjecture & formal proof hazards -->
   <g class="s3">
     <text x="32" y="158" class="mono"><tspan class="prompt">$</tspan> <tspan class="cmd">python3 -B scripts/validate_report.py draft/report.md --level 3 --strict</tspan></text>
   </g>
   <g class="s4">
     <text x="32" y="182" class="mono err">✗ <tspan class="code">[P2-PREREG]</tspan> H1 contains rounded computed figures (31, 4.5; possible HARKing)</text>
-    <text x="32" y="204" class="mono err">✗ <tspan class="code">[P1-UNTRACED-NUM]</tspan> Section 4 table statistic '93.6%' absent from output.txt / numbers.json</text>
-    <text x="32" y="226" class="mono warn">! <tspan class="code">[GATE-DISP]</tspan> Reviewer #2 raised 4 critiques; Disposition Table resolves only 3</text>
+    <text x="32" y="204" class="mono err">✗ <tspan class="code">[P4-CONJECTURE]</tspan> Matrix row tags unproved symbolic conjecture as [Strong] on discovery data</text>
+    <text x="32" y="226" class="mono warn">! <tspan class="code">[P4-LEAN]</tspan> formal proof status=unverified_no_toolchain capped at Tier 3 ([Preliminary])</text>
   </g>
 
-  <!-- Step 3: Clean Level 3 run passes strict reproduce -->
+  <!-- Step 3: Clean Level 3 exoplanet run passes strict reproduce + Lean kernel replay -->
   <g class="s5">
-    <text x="32" y="266" class="mono"><tspan class="prompt">$</tspan> <tspan class="cmd">python3 -B scripts/validate_report.py examples/level3-emergence-in-physics/report.md \</tspan></text>
-    <text x="52" y="286" class="mono cmd">--level 3 --html examples/level3-emergence-in-physics/report.html --strict --reproduce</text>
+    <text x="32" y="266" class="mono"><tspan class="prompt">$</tspan> <tspan class="cmd">python3 -B scripts/validate_report.py examples/level3-exoplanet-scaling/report.md \</tspan></text>
+    <text x="52" y="286" class="mono cmd">--level 3 --html .../report.html --strict --reproduce --reproduce-lean</text>
   </g>
   <g class="s6">
-    <text x="32" y="314" class="mono ok">✓ Heurisma report validation PASSED (Level 3 · 0 errors, 0 warnings)</text>
-    <text x="32" y="336" class="mono dim">  3 subagent gates · 13 verified papers · 1D/2D Ising analysis.py reproduced byte-for-byte</text>
-    <text x="32" y="358" class="mono"><tspan class="ok">✓ 54/54 adversarial mutations caught</tspan> <tspan class="dim">· 610/610 tests · Ubuntu / macOS / Windows</tspan> <tspan class="prompt cursor">▌</tspan></text>
+    <text x="32" y="314" class="mono ok">✓ Heurisma report validation PASSED (v0.11.1 · Level 3 · 0 errors, 0 warnings)</text>
+    <text x="32" y="336" class="mono dim">  1,244 NASA exoplanets · Buckingham Π · Lean 4 kernel-verified (propext) · 3 gates</text>
+    <text x="32" y="360" class="mono"><tspan class="ok">✓ 64/64 adversarial mutations caught</tspan> <tspan class="dim">· 779/779 tests · Ubuntu / macOS / Windows</tspan> <tspan class="prompt cursor">▌</tspan></text>
   </g>
 </svg>

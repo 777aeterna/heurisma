@@ -15,7 +15,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from checks.common import _parse_utc
+from checks.common import _declared_sha, _parse_utc
 from contracts import NON_PEER_REVIEWED, WITHHELD_MANIFEST, read_withheld
 from providers import base
 
@@ -192,6 +192,37 @@ def check_papers(
             errors.append(
                 f"appendix/papers.csv: '{rel}' changed since it was recorded: SHA-256 {actual[:12]} != recorded {recorded_sha[:12]}."
             )
+
+    # M1: a full text that is on disk and in download_log.csv but no longer referenced by papers.csv or sources.csv
+    # (e.g. the source was removed from both registries without deleting the file) is orphaned. Compare against the
+    # fulltext_file path papers.csv records and the SHA-256 a sources.csv row declares.
+    source_hashes = {h for row in sources_rows if (h := _declared_sha(row))}
+    paper_fulltext_paths = {
+        (rec.get("fulltext_file") or "").strip() for rec in records.values() if (rec.get("fulltext_file") or "").strip()
+    }
+    paper_hashes = {
+        (rec.get("fulltext_sha256") or "").strip().lower()
+        for rec in records.values()
+        if (rec.get("fulltext_sha256") or "").strip()
+    }
+    for fp in sorted(papers_dir.iterdir()) if papers_dir.is_dir() else []:
+        if not fp.is_file():
+            continue
+        name = f"papers/{fp.name}"
+        if name not in logged:
+            continue  # not a file download_log.csv records: a stray file, not a full text the connector saved
+        if f"appendix/data/{name}" in paper_fulltext_paths or f"data/{name}" in withheld:
+            continue
+        try:
+            actual = _file_sha256(fp)
+        except OSError:
+            continue
+        if actual in paper_hashes or any(actual.startswith(h) for h in source_hashes):
+            continue
+        warnings.append(
+            f"appendix/data/{name} is on disk and in appendix/download_log.csv but is referenced by neither "
+            f"appendix/papers.csv nor appendix/sources.csv (orphaned full text); remove it, or the source that saved it."
+        )
 
     try:
         import papers as _papers  # the connector itself: replay needs no network

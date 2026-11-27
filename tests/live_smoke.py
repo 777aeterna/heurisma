@@ -25,6 +25,7 @@ FIXTURES = Path(__file__).resolve().parent / "fixtures" / "papers"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
+import formal_math  # noqa: E402
 import papers  # noqa: E402
 from providers import arxiv, base, crossref, europepmc, openalex, unpaywall  # noqa: E402
 
@@ -109,6 +110,34 @@ def main() -> int:
 
         # Offline replay over all raw responses fetched in this smoke run
         results.append(_check_provider("replay", lambda: f"{len(papers.replay(ctx))} discrepancies"))
+
+        # P-12: Optional live elan/lake/lean kernel smoke check (skips cleanly if lake is not installed)
+        lake_bin, lean_bin = formal_math.find_lake()
+        if lake_bin and lean_bin:
+            def check_live_lean() -> str:
+                formal_math.init_project(
+                    appendix,
+                    "smoke_thm",
+                    theorem_name="smoke_zero",
+                    statement="(n : Nat) : n + 0 = n",
+                )
+                proj = appendix / "formal" / "smoke_thm"
+                (proj / "Solution.lean").write_text(
+                    "import Challenge\n"
+                    "namespace Solution\n"
+                    "theorem smoke_zero (n : Nat) : n + 0 = n := by\n"
+                    "  exact Nat.add_zero n\n"
+                    "end Solution\n",
+                    encoding="utf-8",
+                )
+                res = formal_math.check_project(appendix, "smoke_thm", timeout=120)
+                if res.get("status") not in ("kernel-verified", "comparator-verified"):
+                    raise RuntimeError(f"unexpected status={res.get('status')!r}")
+                return f"status={res['status']}, mode={res.get('verification_mode')}, lean={res.get('lean_version')}"
+
+            results.append(_check_provider("lean4_lake", check_live_lean))
+        else:
+            results.append(("SKIP", "lean4_lake: local `lake`/`lean` not installed (optional toolchain)"))
 
         for w in ctx.warnings:
             print(f"Warning: {w}", file=sys.stderr)

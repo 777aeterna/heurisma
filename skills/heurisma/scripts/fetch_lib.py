@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import http.client
 import ipaddress
 import os
 import re
@@ -44,8 +45,12 @@ QUERY_SECRET = re.compile(r"(?i)\b(api_key|apikey|mailto|email)=([^&\s\"']+)")
 
 
 def scrub_url(url: str) -> str:
-    """``url`` with the value of every credential-like query parameter replaced by ``REDACTED``."""
-    return QUERY_SECRET.sub(lambda m: f"{m.group(1)}=REDACTED", url)
+    """``url`` with any userinfo credentials and the value of every credential-like query parameter replaced by ``REDACTED``."""
+    url = QUERY_SECRET.sub(lambda m: f"{m.group(1)}=REDACTED", url)
+    parts = urlparse(url)
+    if parts.hostname and "@" in parts.netloc:
+        url = parts._replace(netloc=parts.netloc.rpartition("@")[2]).geturl()
+    return url
 
 
 class Refused(urllib.error.URLError):
@@ -78,16 +83,107 @@ def _blocked(host: str | None, allowed_hosts: tuple[str, ...]) -> bool:
     return _is_private_host(host)
 
 
+def _addr_is_private(ip_str: str) -> bool:
+    try:
+        addr = ipaddress.ip_address(ip_str)
+    except ValueError:
+        return False
+    return addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved or addr.is_multicast or addr.is_unspecified
+
+
+def _resolve_public_ips(host: str) -> list[str]:
+    """Public IP addresses ``host`` resolves to (deduped, stable order); empty if it does not resolve or resolves to any private address."""
+    try:
+        infos = socket.getaddrinfo(host, None, proto=socket.IPPROTO_TCP)
+    except (OSError, UnicodeError):
+        return []
+    ips: list[str] = []
+    for info in infos:
+        ip = str(info[4][0]).split("%", 1)[0]
+        if ip in ips:
+            continue
+        if _addr_is_private(ip):
+            return []
+        ips.append(ip)
+    return ips
+
+
+class _PinnedHTTPConnection(http.client.HTTPConnection):
+    """Connect to a pre-resolved IP while keeping the original host in the Host header (DNS-rebinding defence)."""
+
+    def __init__(self, host: str, ip: str, port: int | None = None, **kwargs: Any) -> None:
+        super().__init__(ip, port, **kwargs)
+        self._pinned_host = host
+
+    def putrequest(self, method: str, url: str, skip_host: bool = False, skip_accept_encoding: bool = False) -> None:
+        super().putrequest(method, url, skip_host=True, skip_accept_encoding=skip_accept_encoding)
+        netloc = self._pinned_host
+        if self.port is not None and self.port != self.default_port:
+            netloc = f"{netloc}:{self.port}"
+        self.putheader("Host", netloc)
+
+    def connect(self) -> None:
+        self.sock = socket.create_connection((self.host, self.port), self.timeout, self.source_address)  # type: ignore[attr-defined]
+        if self._tunnel_host:  # type: ignore[attr-defined]
+            self._tunnel()  # type: ignore[attr-defined]
+
+
+class _PinnedHTTPSConnection(_PinnedHTTPConnection, http.client.HTTPSConnection):
+    """TLS variant: performs the handshake with the original host for SNI and certificate validation."""
+
+    default_port = http.client.HTTPSConnection.default_port
+
+    def __init__(self, host: str, ip: str, port: int | None = None, **kwargs: Any) -> None:
+        http.client.HTTPSConnection.__init__(self, ip, port, **kwargs)
+        self._pinned_host = host
+
+    def connect(self) -> None:
+        self.sock = socket.create_connection((self.host, self.port), self.timeout, self.source_address)  # type: ignore[attr-defined]
+        if self._tunnel_host:  # type: ignore[attr-defined]
+            self._tunnel()  # type: ignore[attr-defined]
+        self.sock = self._context.wrap_socket(self.sock, server_hostname=self._pinned_host)  # type: ignore[attr-defined]
+
+
+class _PinnedHTTPSHandler(urllib.request.HTTPSHandler):
+    def __init__(self, ip: str) -> None:
+        super().__init__()
+        self._ip = ip
+        self._req_port: int | None = None
+
+    def https_open(self, req):  # type: ignore[no-untyped-def]
+        self._req_port = urlparse(req.full_url).port
+        return self.do_open(self._make_connection, req)
+
+    def _make_connection(self, host: str, timeout: float | None = None, **kwargs: Any):  # type: ignore[no-untyped-def]
+        return _PinnedHTTPSConnection(host, self._ip, port=self._req_port, timeout=timeout, context=self._context)  # type: ignore[attr-defined]
+
+
+class _PinnedHTTPHandler(urllib.request.HTTPHandler):
+    def __init__(self, ip: str) -> None:
+        super().__init__()
+        self._ip = ip
+        self._req_port: int | None = None
+
+    def http_open(self, req):  # type: ignore[no-untyped-def]
+        self._req_port = urlparse(req.full_url).port
+        return self.do_open(self._make_connection, req)
+
+    def _make_connection(self, host: str, timeout: float | None = None, **kwargs: Any):  # type: ignore[no-untyped-def]
+        return _PinnedHTTPConnection(host, self._ip, port=self._req_port, timeout=timeout)
+
+
 class _GuardedRedirects(urllib.request.HTTPRedirectHandler):
     """Follow only http(s) redirects and, when asked, never to a private or local address (a public link can redirect inwards)."""
 
-    def __init__(self, *, block_private: bool, allowed_hosts: tuple[str, ...]) -> None:
-        self.block_private, self.allowed_hosts = block_private, allowed_hosts
+    def __init__(self, *, block_private: bool, allowed_hosts: tuple[str, ...], pinned_host: str | None = None) -> None:
+        self.block_private, self.allowed_hosts, self.pinned_host = block_private, allowed_hosts, pinned_host
 
     def redirect_request(self, req, fp, code, msg, headers, newurl):  # type: ignore[no-untyped-def]
         parts = urlparse(newurl)
         if parts.scheme not in ("http", "https"):
             raise Refused(f"redirect to '{parts.scheme}:' refused (only http and https are followed)")
+        if self.pinned_host is not None and (parts.hostname or "").lower() != self.pinned_host.lower():
+            raise Refused(f"redirect to a different host ({parts.hostname}) refused while the connection is pinned")
         if self.block_private and _blocked(parts.hostname, self.allowed_hosts):
             raise Refused(f"redirect to a private or local address ({parts.hostname}) refused")
         return super().redirect_request(req, fp, code, msg, headers, newurl)
@@ -166,14 +262,28 @@ def fetch(
         fail("rejected", f"unsupported URL scheme in {shown!r} (only http and https are fetched)")
         return None
 
-    if not allow_private and _blocked(urlparse(url).hostname, allowed_hosts):
+    parsed_url = urlparse(url)
+    if not allow_private and _blocked(parsed_url.hostname, allowed_hosts):
         fail("rejected", "the URL points to a private or local address; a link taken from a response is fetched only if it is public")
         return None
+
+    pinned_host: str | None = None
+    pinned_ip: str | None = None
+    if opener is urllib.request.urlopen and not allow_private and parsed_url.hostname and parsed_url.hostname.lower() not in {h.lower() for h in allowed_hosts}:
+        ips = _resolve_public_ips(parsed_url.hostname)
+        if not ips:
+            fail("rejected", "the URL host could not be resolved to a stable public address")
+            return None
+        pinned_host = parsed_url.hostname
+        pinned_ip = ips[0]
 
     import urllib.request as _rq
 
     if opener is urllib.request.urlopen:
-        opener = urllib.request.build_opener(_GuardedRedirects(block_private=not allow_private, allowed_hosts=allowed_hosts)).open
+        handlers: list[Any] = [_GuardedRedirects(block_private=not allow_private, allowed_hosts=allowed_hosts, pinned_host=pinned_host)]
+        if pinned_ip is not None:
+            handlers.insert(0, _PinnedHTTPSHandler(pinned_ip) if parsed_url.scheme == "https" else _PinnedHTTPHandler(pinned_ip))
+        opener = urllib.request.build_opener(*handlers).open
 
     ua = user_agent or os.environ.get("HEURISMA_UA") or DEFAULT_USER_AGENT
     last_outcome, last_reason = "error", "no attempt made"

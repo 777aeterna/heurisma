@@ -9,6 +9,16 @@ import re
 # Stable machine-readable codes for --json (documented in references/validator-codes.md; keep the two in sync).
 # (message regex, code, file template: \1 = first group of the regex). The first matching rule wins.
 CODE_RULES: list[tuple[str, str, str]] = [
+    (
+        r"^appendix/formal_proofs\.csv: |^appendix/formal/\S+: |^Source '[^']*' \(kind=formal-proof\)|^Claim-Evidence Matrix row \d+ rests solely on formal-proof|^reproduce: formal_math",
+        "P4-LEAN",
+        "appendix/formal_proofs.csv",
+    ),
+    (
+        r"^appendix/\S*conjecture\S*\.json: |^Claim-Evidence Matrix row \d+ tags an unproved symbolic conjecture|^Section 4 presents conjectured",
+        "P4-CONJECTURE",
+        "appendix/conjectures.json",
+    ),
     (r"^appendix/papers\.csv: ", "P3-PAPER", "appendix/papers.csv"),
     (r"^Source '[^']*' \(\S+\) (?:is not in appendix/papers\.csv|was retrieved by the connector|is a (?:preprint|report) in appendix/papers\.csv|is retracted according to appendix/papers\.csv|is Tier 1 but its record was imported)", "P3-PAPER", "appendix/papers.csv"),
     (r"^Source '[^']*' \(\S+\): the title in sources\.csv does not match the title papers\.csv records", "P3-PAPER", "appendix/papers.csv"),
@@ -38,7 +48,7 @@ CODE_RULES: list[tuple[str, str, str]] = [
     (r"^appendix/data/papers/EXCLUDED\.csv: ", "P3-PAPER", "appendix/data/papers/EXCLUDED.csv"),
     (r"appendix/gates/source_verifier\.md ends in SOURCE-VERIFIER: FAIL", "GATE-SV", "appendix/gates/source_verifier.md"),
     (r"^Reviewer #2 raised \d+ item\(s\)", "GATE-DISP", "report.md"),
-    (r"appendix/gates/([a-z_]+)\.md (?:is missing header|reviewed an earlier version|quotes |is a self-review|records ANALYSIS-SHA256|has \d+ REVIEWED-SHA256 lines)", "GATE-BINDING", "appendix/gates/\\1.md"),
+    (r"appendix/gates/([a-z_]+)\.md (?:is missing header|reviewed an earlier version|quotes |is a self-review|records (?:ANALYSIS|FORMAL)-SHA256|has \d+ REVIEWED-SHA256 lines)", "GATE-BINDING", "appendix/gates/\\1.md"),
     (r"^Level \d report requires charts\.json|^Invalid JSON in .*charts|is not strict JSON", "FIG-JSON", "charts.json"),
     (r"^Chart '[^']*': (?:near-identical|fan chart)", "FIG-DESIGN", "charts.json"),
     (r"^Chart '[^']*': ", "FIG-SCHEMA", "charts.json"),
@@ -49,7 +59,7 @@ CODE_RULES: list[tuple[str, str, str]] = [
     (r"must include in-text citations", "CITE-NONE", "report.md"),
     (r"does not match any claim_id", "CITE-UNKNOWN", "report.md"),
     (r"is never cited in the report text", "CITE-UNCITED", "appendix/sources.csv"),
-    (r"has no kind column|has no kind\.$|has kind '", "P1-KIND", "appendix/sources.csv"),
+    (r"has no kind column|has no kind\.$|has kind '|^appendix/sources\.csv contains a blank row", "P1-KIND", "appendix/sources.csv"),
     (r"in appendix/sources\.csv has tier '", "SRC-TIER", "appendix/sources.csv"),
     (r"^appendix/data/sources_metadata\.csv |^Table appendix/data/\S+ cites primary_source_id", "SRC-META", "appendix/data/sources_metadata.csv"),
     (r"^Source '[^']*' has data_as_of .* later than the As-Of", "P1-ASOF", "appendix/sources.csv"),

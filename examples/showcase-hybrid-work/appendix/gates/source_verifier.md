@@ -1,5 +1,5 @@
 MODE: self-review
-REVIEWED-SHA256: 5be34406d96ad6ddd235bc91dcd3d1a4ceaad3481b4a2cd512cb3a7a9680110a
+REVIEWED-SHA256: 235232b98d2c647e6e1a87747444e798a2b4db19b07874cf82f2ed8ef1909079
 REVIEWED-UTC: 2026-11-21T12:27:08Z
 QUOTE: appendix/sources.csv:2: "C1,"Multi-site engineering CSV"
 QUOTE: appendix/sources.csv:3: "Bloom, N., Han, R., & Liang, J. (2024)"

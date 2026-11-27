@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-__version__ = "0.10.2"
+__version__ = "0.11.1"
 
 # Epistemic confidence tags (canonical English + localized Spanish)
 TAG_TO_CANONICAL: dict[str, str] = {
@@ -23,8 +23,29 @@ ALL_TAGS: tuple[str, ...] = tuple(TAG_TO_CANONICAL.keys())
 STRONG_TAGS: tuple[str, ...] = ("[Strong]", "[Fuerte]")
 
 # Provenance schemas
-VALID_KINDS: tuple[str, ...] = ("data", "literature", "press", "own-computation")
+VALID_KINDS: tuple[str, ...] = ("data", "literature", "press", "own-computation", "formal-proof")
 WEAK_KINDS: tuple[str, ...] = ("press", "blog", "own-computation")
+
+# Formal verification & symbolic conjecture schemas (scripts/formal_math.py, scripts/conjecture.py)
+FORMAL_PROOFS_CSV = "formal_proofs.csv"  # relative to appendix/
+FORMAL_PROOF_COLS: tuple[str, ...] = (
+    "proof_id",
+    "slug",
+    "theorem_name",
+    "challenge_file",
+    "challenge_sha256",
+    "solution_file",
+    "solution_sha256",
+    "toolchain",
+    "lean_version",
+    "verification_mode",
+    "status",
+    "sorries",
+    "axioms",
+    "verified_utc",
+)
+STANDARD_LEAN_AXIOMS: frozenset[str] = frozenset({"propext", "Classical.choice", "Quot.sound"})
+CONJECTURES_JSON = "conjectures.json"  # relative to appendix/
 DOCUMENT_KINDS: tuple[str, ...] = ("literature", "press")
 VALID_SELECTIONS: tuple[str, ...] = ("user-curated", "agent-fetched", "third-party")
 # The tier column is canonical: every tier rule matches "Tier N", so "3" or "T3" would bypass them.

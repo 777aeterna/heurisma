@@ -1,5 +1,5 @@
 MODE: self-review
-REVIEWED-SHA256: 156154e188023d2646494ab693e26609b07059342131344f6d318d75d4febea4
+REVIEWED-SHA256: 0dfe9561b22df8aa3669a001a2a1372990e59f4d25458628fb0e227d14cd6169
 REVIEWED-UTC: 2026-11-23T18:47:40Z
 QUOTE: report.md:6: "- **Calibrated Verdict:** A six-month"
 QUOTE: appendix/output.txt:1: "Dataset integrity: sites=16, total_engineers=590"

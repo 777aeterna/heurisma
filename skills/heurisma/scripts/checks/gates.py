@@ -19,7 +19,7 @@ GATE_HASH_FILES: dict[str, tuple[str, ...]] = {
 }
 GATE_HEADER_FIELDS: tuple[tuple[str, str], ...] = (
     ("MODE:", r"^\s*MODE:\s*(?:subagent|self-review)\b"),
-    ("REVIEWED-SHA256:", r"^\s*REVIEWED-SHA256:\s*[0-9a-fA-F]{12,64}\b"),
+    ("REVIEWED-SHA256:", r"^\s*REVIEWED-SHA256:\s*[0-9a-fA-F]{64}\b"),
     ("REVIEWED-UTC:", r"^\s*REVIEWED-UTC:\s*\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?Z"),
 )
 GATE_MIN_QUOTES = 2
@@ -36,7 +36,7 @@ def _gate_files(report_dir: Path, gate: str) -> list[tuple[str, Path]]:
     if appendix.is_dir():
         for fp in sorted(appendix.rglob("*"), key=lambda p: p.relative_to(appendix).parts):
             rel = fp.relative_to(appendix)
-            if fp.is_file() and rel.parts[0] != "gates" and "__pycache__" not in fp.parts and fp.suffix != ".pyc":
+            if fp.is_file() and rel.parts[0] != "gates" and "__pycache__" not in fp.parts and ".lake" not in fp.parts and fp.suffix != ".pyc":
                 if rel.as_posix() != WITHHELD_MANIFEST:  # a distribution artifact, not something the gate reviewed
                     files.append(("appendix/" + rel.as_posix(), fp))
     return files
@@ -68,9 +68,26 @@ _POST_REVIEW_RE = re.compile(r"post-review\s+changes|cambios\s+posteriores\s+a\s
 
 
 def _analysis_anchor(report_dir: Path) -> str:
-    """12-hex SHA-256 prefix of appendix/analysis.py ('' when absent): what the reviewer's code reading is bound to."""
+    """SHA-256 of appendix/analysis.py ('' when absent): what the reviewer's code reading is bound to."""
     fp = report_dir / "appendix" / "analysis.py"
-    return _file_sha256(fp)[:12] if fp.is_file() else ""
+    return _file_sha256(fp) if fp.is_file() else ""
+
+
+def _formal_anchor(report_dir: Path) -> str:
+    """SHA-256 over appendix/formal/*/Challenge.lean ('' when absent): binds Reviewer #2 statement fidelity."""
+    import hashlib
+
+    formal_dir = report_dir / "appendix" / "formal"
+    if not formal_dir.is_dir():
+        return ""
+    challenges = sorted(formal_dir.glob("*/Challenge.lean"), key=lambda p: p.relative_to(formal_dir).as_posix())
+    if not challenges:
+        return ""
+    h = hashlib.sha256()
+    for fp in challenges:
+        rel = fp.relative_to(report_dir).as_posix()
+        h.update(f"{rel}\t{_file_sha256(fp)}\n".encode("utf-8"))
+    return h.hexdigest()
 
 
 def _check_analysis_anchor(
@@ -81,17 +98,39 @@ def _check_analysis_anchor(
     sink: list[str],
 ) -> None:
     """reviewer.md may record ANALYSIS-SHA256; analysis.py edited after that needs a 'Post-review changes' subsection."""
-    declared = re.search(r"^\s*ANALYSIS-SHA256:\s*([0-9a-fA-F]{12,64})\b", gtext, re.MULTILINE)
+    declared = re.search(r"^\s*ANALYSIS-SHA256:\s*([0-9a-fA-F]{64})\b", gtext, re.MULTILINE)
     current = _analysis_anchor(report_dir)
-    if not declared or not current or current.startswith(declared.group(1).lower()[:12]):
+    if not declared or not current or current == declared.group(1).lower():
         return
     sec5 = _extract_section_slice(clean_text, section_positions, "Counter-Evidence & Alternative Explanations")
     if _POST_REVIEW_RE.search(sec5):
         return
     sink.append(
         f"appendix/gates/reviewer.md records ANALYSIS-SHA256 {declared.group(1)[:12]} but appendix/analysis.py is now "
-        f"{current}: analysis.py changed after the reviewer saw it; list what changed in a 'Post-review changes' "
+        f"{current[:12]}: analysis.py changed after the reviewer saw it; list what changed in a 'Post-review changes' "
         f"subsection of Section 5, or run Reviewer #2 again."
+    )
+
+
+def _check_formal_anchor(
+    gtext: str,
+    report_dir: Path,
+    clean_text: str,
+    section_positions: dict[str, int],
+    sink: list[str],
+) -> None:
+    """reviewer.md may record FORMAL-SHA256; Challenge.lean edited after review needs a 'Post-review changes' subsection."""
+    declared = re.search(r"^\s*FORMAL-SHA256:\s*([0-9a-fA-F]{64})\b", gtext, re.MULTILINE)
+    current = _formal_anchor(report_dir)
+    if not declared or not current or current == declared.group(1).lower():
+        return
+    sec5 = _extract_section_slice(clean_text, section_positions, "Counter-Evidence & Alternative Explanations")
+    if _POST_REVIEW_RE.search(sec5):
+        return
+    sink.append(
+        f"appendix/gates/reviewer.md records FORMAL-SHA256 {declared.group(1)[:12]} but appendix/formal/*/Challenge.lean "
+        f"is now {current[:12]}: Challenge.lean changed after Reviewer #2 audited statement fidelity; disclose in a "
+        f"'Post-review changes' subsection of Section 5, or run Reviewer #2 again."
     )
 
 
@@ -128,10 +167,10 @@ def _check_gate_binding(
             f"appendix/gates/{gate}.md is missing header field(s): {', '.join(missing)}; the gate must say who wrote it, "
             f"which version it reviewed (validate_report.py --gate-hash {gate}) and quote what it read."
         )
-    declared = re.search(r"^\s*REVIEWED-SHA256:\s*([0-9a-fA-F]{12,64})", gtext, re.MULTILINE)
+    declared = re.search(r"^\s*REVIEWED-SHA256:\s*([0-9a-fA-F]{64})\b", gtext, re.MULTILINE)
     if declared:
         current = gate_hash(report_dir, gate)
-        if not current.startswith(declared.group(1).lower()):
+        if current != declared.group(1).lower():
             msg = (
                 f"appendix/gates/{gate}.md reviewed an earlier version: REVIEWED-SHA256 {declared.group(1)[:16]} != current "
                 f"{current[:16]}; re-run the gate on the current files."
@@ -144,9 +183,19 @@ def _check_gate_binding(
             else:
                 gate_sink.append(msg)
     root = report_dir.resolve()
-    # Reviewer #2 quotes the draft; once its critiques are closed, the author has corrected those very lines (same reason the
-    # pre-fix hash is accepted). Quotes of the appendix still have to match.
+    # Reviewer #2 quotes the draft and the files its hash covers. Once its critiques are closed in the Disposition
+    # Table, the author has legitimately re-run analysis.py, so report.md, sources.csv, data_attempts.csv, output.txt
+    # and charts.json all change by design (B4 / VAL-5) and those QUOTE: targets are exempt. Quotes of other appendix
+    # files (e.g. preregistration.json) still have to match unless the quoted line itself changed to fix a critique.
     reviewed_draft_fixed = gate == "reviewer" and _closed_disposition(clean_text, section_positions)
+    reviewer_exempt_targets = {
+        root / "report.md",
+        root / "appendix" / "sources.csv",
+        root / "appendix" / "data_attempts.csv",
+        root / "appendix" / "output.txt",
+        root / "charts.json",
+        root / "appendix" / "charts.json",
+    }
     for rel, line_no, quoted in quotes:
         rel_posix = rel.replace("\\", "/")
         target = (report_dir / rel_posix).resolve()
@@ -155,7 +204,7 @@ def _check_gate_binding(
         except ValueError:
             gate_sink.append(f"appendix/gates/{gate}.md quotes '{rel}', which is outside the report folder.")
             continue
-        if reviewed_draft_fixed and target == root / "report.md":
+        if reviewed_draft_fixed and target in reviewer_exempt_targets:
             continue
         lines = target.read_text(encoding="utf-8", errors="replace").splitlines() if target.is_file() else []
         idx = int(line_no) - 1
